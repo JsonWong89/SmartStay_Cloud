@@ -1,33 +1,27 @@
-import { create } from 'zustand';
-import type { Role, User } from './types';
+import { create } from "zustand";
 
+// ✅ Define the structure of your global state
 interface AuthState {
-  user: User | null;
-  login: (name: string, role: Role) => void;
-  logout: () => void;
+  // The currently logged-in user's info
+  user: {
+    fullName: string;
+    email: string;
+    role: string;
+  } | null;
+
+  // --- Actions ---
+  // Save user info after login or register
+  setUser: (user: { fullName: string; email: string; role: string }) => void;
+
+  // Clear user info when logged out
+  clearUser: () => void;
 }
 
+// ✅ Create Zustand store
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  login: (name, role) => {
-    const user: User = { id: crypto.randomUUID(), name, role };
-    set({ user });
-    // Persist to localStorage for demo/session
-    localStorage.setItem('smartstay_user', JSON.stringify(user));
-  },
-  logout: () => {
-    set({ user: null });
-    localStorage.removeItem('smartstay_user');
-  },
-}));
+  user: null, // Default: no user logged in
 
-// Rehydrate store from localStorage on load (simple demo persistence)
-const saved = localStorage.getItem('smartstay_user');
-if (saved) {
-  try {
-    const user = JSON.parse(saved) as User;
-    useAuthStore.setState({ user });
-  } catch {
-    localStorage.removeItem('smartstay_user');
-  }
-}
+  setUser: (user) => set({ user }),
+
+  clearUser: () => set({ user: null }),
+}));

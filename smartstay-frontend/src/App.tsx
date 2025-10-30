@@ -3,6 +3,9 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 // ✅ Import your pages
 import RegisterPage from "./pages/Admin/Register_page"; // Adjust path if needed
+import Dashboard from "./pages/Staff/Dashboard"; 
+import Reservation from "./pages/Staff/Reservation"; 
+
 import LoginPage from "./pages/LoginPage";
 // You can later add:
 // import HomePage from "./pages/HomePage";
@@ -13,12 +16,18 @@ const App: React.FC = () => {
   return (
     <Routes>
       {/* Default route -> Login */}
-      <Route path="/" element={<LoginPage />} />
+      {/* <Route path="/" element={<LoginPage />} /> */}
+      <Route path="/" element={<Dashboard />} />
       {/* Explicit login route for direct links */}
       <Route path="/login" element={<LoginPage />} />
 
       {/* Admin/Manager Registration */}
       <Route path="/register" element={<RegisterPage />} />
+
+      {/* Staff */}
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/reservation" element={<Reservation />} />
+
 
       {/* Login Page (optional, will use later) */}
       <Route path="/login" element={<LoginPage />} />
@@ -26,6 +35,7 @@ const App: React.FC = () => {
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+    
   );
 };
 

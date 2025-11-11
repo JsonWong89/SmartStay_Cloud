@@ -42,27 +42,27 @@ export default function Sidebar({
     {
       section: "MAIN",
       items: [
-        { name: "Dashboard", path: "/dashboard", icon: <FiHome /> },
-        { name: "Reservation", path: "/reservation", icon: <FiCalendar /> },
-        { name: "Room Operation", path: "/room-operation", icon: <FiKey /> },
+        { name: "Dashboard", path: "/staff/dashboard", icon: FiHome },
+        { name: "Reservation", path: "/staff/reservation", icon: FiCalendar },
+        { name: "Room Operation", path: "/staff/room-operation", icon: FiKey },
       ],
     },
     {
       section: "MANAGEMENT",
       items: [
-        { name: "Manage Staff", path: "/manage-staff", icon: <FiUsers /> },
-        { name: "Manage Guests", path: "/manage-guests", icon: <FiUserCheck /> },
-        // { name: "Promotions", path: "/promotions", icon: <FiTag /> },
-        // { name: "Report", path: "/report", icon: <FiBarChart2 /> },
-        // { name: "Maintenance", path: "/maintenance", icon: <FiTool /> },
+        { name: "Manage Staff", path: "/staff/manage-staff", icon: FiUsers },
+        { name: "Manage Guests", path: "/staff/manage-guests", icon: FiUserCheck },
+        // { name: "Promotions", path: "/staff/promotions", icon: FiTag },
+        // { name: "Report", path: "/staff/report", icon: FiBarChart2 },
+        // { name: "Maintenance", path: "/staff/maintenance", icon: FiTool },
       ],
     },
     {
       section: "SETTINGS",
       items: [
-        // { name: "Manage Platform", path: "/manage-platform", icon: <FiGlobe /> },
-        // { name: "Upgrade Plan", path: "/upgrade-plan", icon: <FiTrendingUp /> },
-        { name: "Settings", path: "/settings", icon: <FiSettings /> },
+        // { name: "Manage Platform", path: "/staff/manage-platform", icon: FiGlobe },
+        // { name: "Upgrade Plan", path: "/staff/upgrade-plan", icon: FiTrendingUp },
+        { name: "Settings", path: "/staff/settings", icon: FiSettings },
       ],
     },
   ];
@@ -201,7 +201,7 @@ export default function Sidebar({
                   navigate(item.path);
                 }}
               >
-                {item.icon}
+                <span style={{ fontSize: "18px" }}><item.icon /></span>
                 {!collapsed && <span>{item.name}</span>}
               </div>
             ))}
@@ -211,11 +211,11 @@ export default function Sidebar({
 
       <div style={styles.footer}>
         <div style={{ display: collapsed ? "none" : "flex", gap: "14px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <FiBell /> Notifications
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+            <FiBell size={16} /> <span>Notifications</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <FiHelpCircle /> Support
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+            <FiHelpCircle size={16} /> <span>Support</span>
           </div>
         </div>
 

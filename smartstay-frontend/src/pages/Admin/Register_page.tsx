@@ -1,6 +1,7 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store"; // Adjust path if your store.ts is elsewhere
+import { useAuthStore } from "../../store";
+import { API_ENDPOINTS, apiPost } from "../../config/api";
 
 interface FormData {
   fullName: string;
@@ -65,16 +66,12 @@ const RegisterPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email,
-          passwordHash: formData.password,
-          role: formData.role,
-          hotelID: formData.hotelId ? parseInt(formData.hotelId) : null,
-        }),
+      const response = await apiPost(API_ENDPOINTS.USERS.BASE, {
+        fullName: formData.fullName,
+        email: formData.email,
+        passwordHash: formData.password,
+        role: formData.role || "Manager",
+        status: "Active"
       });
 
       const result = await response.json();

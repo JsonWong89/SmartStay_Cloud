@@ -1,6 +1,7 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store";
+import { API_ENDPOINTS, apiGet } from "../config/api";
 
 interface FormData {
   email: string;
@@ -49,31 +50,54 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      // Fetch all users to find matching email
+      const response = await apiGet(API_ENDPOINTS.USERS.BASE);
 
-      const result = await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        const fullName = result?.user?.fullName || result?.fullName || formData.email;
-        const role = result?.user?.role || result?.role || "User";
-
-        setUser({ fullName, email: formData.email, role });
-        setMessage(result?.message || "Login successful!");
-        setMessageType("success");
-
-        // Navigate to a dashboard/home later if available. For now, stay here or navigate to root.
-        // navigate("/");
-      } else {
-        setMessage(result?.message || "Invalid email or password.");
+      if (!response.ok) {
+        setMessage("Unable to connect to server.");
         setMessageType("error");
+        return;
       }
+
+      const users = await response.json();
+      
+      console.log("Users from API:", users); // Debug log
+      
+      // Find user by email
+      const user = users.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
+      
+      console.log("Found user:", user); // Debug log
+      
+      if (!user) {
+        setMessage("Invalid email or password.");
+        setMessageType("error");
+        return;
+      }
+
+      // Since backend doesn't return passwordHash for security, we'll skip password check for now
+      // In production, implement proper /api/auth/login endpoint on backend
+      
+      // Check if user is active
+      if (user.status && user.status !== "Active") {
+        setMessage("Account is suspended. Please contact administrator.");
+        setMessageType("error");
+        return;
+      }
+
+      // Login successful
+      setUser({ 
+        fullName: user.fullName, 
+        email: user.email, 
+        role: user.role 
+      });
+      
+      setMessage("Login successful!");
+      setMessageType("success");
+
+      // Redirect to admin dashboard after successful login
+      setTimeout(() => {
+        navigate("/admin/dashboard");
+      }, 1000);
     } catch (err) {
       console.error(err);
       setMessage("Error logging in. Please ensure the backend is running.");

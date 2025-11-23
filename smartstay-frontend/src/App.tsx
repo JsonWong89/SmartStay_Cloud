@@ -1,10 +1,14 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
-// ✅ Import your pages
-import RegisterPage from "./pages/Admin/Register_page"; // Adjust path if needed
+import RegisterPage from "./pages/Admin/Register_page"; 
 import Dashboard from "./pages/Staff/Dashboard"; 
-import Reservation from "./pages/Staff/Reservation"; 
+import ReservationManagement from "./pages/Staff/Reservation"; 
+import FrontDeskApp from "./pages/Staff/FrontDesk";
+import BookingDetailsPage from "./pages/Staff/BookingDetailsPage";
+import WalkInBookingPage from "./pages/Staff/BookingPage";
+import RoomOperationPage from "./pages/Staff/RoomOperationPage";
+import GuestManagementPage from "./pages/Staff/ManageGuestPage";
+
 
 import LoginPage from "./pages/LoginPage";
 // You can later add:
@@ -18,7 +22,7 @@ const App: React.FC = () => {
       {/* Default route -> Login */}
       {/* <Route path="/" element={<LoginPage />} /> */}
       <Route path="/" element={<Dashboard />} />
-      {/* Explicit login route for direct links */}
+
       <Route path="/login" element={<LoginPage />} />
 
       {/* Admin/Manager Registration */}
@@ -26,7 +30,21 @@ const App: React.FC = () => {
 
       {/* Staff */}
       <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/reservation" element={<Reservation />} />
+      <Route path="/frontDesk" element={<FrontDeskApp />} />
+      <Route path="/reservation" element={<ReservationManagement />} />
+      <Route
+        path="/booking"
+        element={
+          <BookingDetailsPage
+            booking={{} as any}
+            goBack={() => {}}
+            updateBooking={() => {}}
+          />
+        }
+      />
+      <Route path="/walk-in-booking" element={<WalkInBookingPage />} />
+      <Route path="/room-operation" element={<RoomOperationPage />} />
+      <Route path="/manage-guests" element={<GuestManagementPage />} />
 
 
       {/* Login Page (optional, will use later) */}

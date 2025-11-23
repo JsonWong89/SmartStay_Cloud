@@ -1,121 +1,128 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import { API_BASE_URL } from '../../config';
 
 interface Reservation {
-  id: number;
+  bookingID: number;
+  guestID: number;
+  roomID: number;
   hotelName: string;
   roomType: string;
   checkInDate: string;
   checkOutDate: string;
-  guests: number;
-  totalPrice: number;
-  depositPaid: number;
-  status: 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled';
-  bookingDate: string;
-  canCancel: boolean;
-  canReview: boolean;
+  totalGuests: number;
+  totalAmount: number;
+  depositAmount: number;
+  bookingStatus: string;
+  createdAt: string;
 }
 
 const MyReservations: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
-  // Mock reservations data - replace with API call
-  const [reservations, setReservations] = useState<Reservation[]>([
-    {
-      id: 1,
-      hotelName: 'Grand Plaza Hotel',
-      roomType: 'Deluxe Double',
-      checkInDate: '2025-11-20',
-      checkOutDate: '2025-11-25',
-      guests: 2,
-      totalPrice: 900,
-      depositPaid: 180,
-      status: 'confirmed',
-      bookingDate: '2025-11-10',
-      canCancel: true,
-      canReview: false,
-    },
-    {
-      id: 2,
-      hotelName: 'Seaside Resort',
-      roomType: 'Ocean View Suite',
-      checkInDate: '2025-11-15',
-      checkOutDate: '2025-11-18',
-      guests: 2,
-      totalPrice: 750,
-      depositPaid: 150,
-      status: 'checked-out',
-      bookingDate: '2025-11-01',
-      canCancel: false,
-      canReview: true,
-    },
-    {
-      id: 3,
-      hotelName: 'City Center Inn',
-      roomType: 'Standard Single',
-      checkInDate: '2025-10-10',
-      checkOutDate: '2025-10-12',
-      guests: 1,
-      totalPrice: 160,
-      depositPaid: 32,
-      status: 'cancelled',
-      bookingDate: '2025-10-01',
-      canCancel: false,
-      canReview: false,
-    },
-  ]);
-
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  useEffect(() => {
+    const fetchReservations = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/bookings/guest/${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setReservations(data);
+        } else {
+          console.error('Failed to fetch reservations');
+        }
+      } catch (error) {
+        console.error('Error fetching reservations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReservations();
+  }, [user?.id]);
 
   const filteredReservations = reservations.filter((res) => {
     if (filterStatus === 'all') return true;
-    return res.status === filterStatus;
+    return res.bookingStatus.toLowerCase() === filterStatus.toLowerCase();
   });
 
-  const handleCancelReservation = (reservationId: number) => {
+  const canCancelBooking = (booking: Reservation) => {
+    const checkInDate = new Date(booking.checkInDate);
+    const today = new Date();
+    return booking.bookingStatus === 'Pending' || booking.bookingStatus === 'Confirmed' && checkInDate > today;
+  };
+
+  const canReviewBooking = (booking: Reservation) => {
+    const checkOutDate = new Date(booking.checkOutDate);
+    const today = new Date();
+    return checkOutDate < today && (booking.bookingStatus === 'Confirmed' || booking.bookingStatus === 'Completed');
+  };
+
+  const handleCancelReservation = async (bookingId: number) => {
     const confirmed = window.confirm(
       'Are you sure you want to cancel this reservation?\n\nNote: Your deposit is non-refundable.'
     );
 
     if (confirmed) {
-      setReservations((prev) =>
-        prev.map((res) =>
-          res.id === reservationId ? { ...res, status: 'cancelled' as const, canCancel: false } : res
-        )
-      );
-      alert('Reservation cancelled successfully. Your deposit will not be refunded.');
+      try {
+        // TODO: Implement cancel booking API endpoint
+        // const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel`, { method: 'PUT' });
+        // if (response.ok) {
+        setReservations((prev) =>
+          prev.map((res) =>
+            res.bookingID === bookingId ? { ...res, bookingStatus: 'Cancelled' } : res
+          )
+        );
+        alert('Reservation cancelled successfully. Your deposit will not be refunded.');
+        // }
+      } catch (error) {
+        console.error('Error cancelling reservation:', error);
+        alert('Failed to cancel reservation. Please try again.');
+      }
     }
   };
 
-  const handleViewReceipt = (reservationId: number) => {
-    // In real implementation, this would fetch and display the actual receipt
-    alert(`Receipt for reservation #${reservationId} will be displayed/downloaded.\nReceipt will also be sent to ${user?.email}`);
+  const handleViewReceipt = (bookingId: number) => {
+    // TODO: Implement receipt generation/view
+    alert(`Receipt for booking #${bookingId} will be displayed/downloaded.\nReceipt will also be sent to ${user?.email}`);
   };
 
-  const handleWriteReview = (reservationId: number) => {
-    navigate(`/guest/review/${reservationId}`);
+  const handleWriteReview = (bookingId: number) => {
+    navigate(`/guest/review/${bookingId}`);
   };
 
   const getStatusBadge = (status: string) => {
-    const badges = {
+    const statusLower = status.toLowerCase();
+    const badges: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
       confirmed: 'bg-blue-100 text-blue-800',
       'checked-in': 'bg-green-100 text-green-800',
-      'checked-out': 'bg-gray-100 text-gray-800',
+      completed: 'bg-gray-100 text-gray-800',
       cancelled: 'bg-red-100 text-red-800',
     };
-    return badges[status as keyof typeof badges] || 'bg-gray-100 text-gray-800';
+    return badges[statusLower] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusIcon = (status: string) => {
-    const icons = {
+    const statusLower = status.toLowerCase();
+    const icons: Record<string, string> = {
+      pending: '⏳',
       confirmed: '✓',
       'checked-in': '🏨',
-      'checked-out': '✓✓',
+      completed: '✓✓',
       cancelled: '✗',
     };
-    return icons[status as keyof typeof icons] || '•';
+    return icons[statusLower] || '•';
   };
 
   return (
@@ -195,8 +202,15 @@ const MyReservations: React.FC = () => {
           </div>
         </div>
 
-        {/* Reservations List */}
-        {filteredReservations.length === 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="text-xl text-gray-600">Loading your reservations...</div>
+          </div>
+        ) : (
+          <>
+            {/* Reservations List */}
+            {filteredReservations.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-8 text-center">
             <p className="text-xl text-gray-600">No reservations found</p>
             <button
@@ -209,7 +223,7 @@ const MyReservations: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {filteredReservations.map((reservation) => (
-              <div key={reservation.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+              <div key={reservation.bookingID} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
                 <div className="md:flex">
                   {/* Visual Indicator */}
                   <div className="md:w-32 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-5xl">
@@ -222,14 +236,14 @@ const MyReservations: React.FC = () => {
                       <div>
                         <h3 className="text-xl font-bold text-gray-800">{reservation.hotelName}</h3>
                         <p className="text-gray-600">{reservation.roomType}</p>
-                        <p className="text-sm text-gray-500">Booking ID: #{reservation.id}</p>
+                        <p className="text-sm text-gray-500">Booking ID: #{reservation.bookingID}</p>
                       </div>
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(
-                          reservation.status
+                          reservation.bookingStatus
                         )}`}
                       >
-                        {getStatusIcon(reservation.status)} {reservation.status.toUpperCase().replace('-', ' ')}
+                        {getStatusIcon(reservation.bookingStatus)} {reservation.bookingStatus.toUpperCase().replace('-', ' ')}
                       </span>
                     </div>
 
@@ -244,59 +258,59 @@ const MyReservations: React.FC = () => {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Guests</p>
-                        <p className="font-semibold">{reservation.guests} guest{reservation.guests > 1 ? 's' : ''}</p>
+                        <p className="font-semibold">{reservation.totalGuests} guest{reservation.totalGuests > 1 ? 's' : ''}</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="bg-gray-50 p-3 rounded-md">
                         <p className="text-xs text-gray-500">Total Price</p>
-                        <p className="text-lg font-bold text-gray-800">${reservation.totalPrice}</p>
+                        <p className="text-lg font-bold text-gray-800">${reservation.totalAmount}</p>
                       </div>
                       <div className="bg-blue-50 p-3 rounded-md">
                         <p className="text-xs text-gray-500">Deposit Paid</p>
-                        <p className="text-lg font-bold text-blue-600">${reservation.depositPaid}</p>
+                        <p className="text-lg font-bold text-blue-600">${reservation.depositAmount}</p>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-2">
                       <button
-                        onClick={() => handleViewReceipt(reservation.id)}
+                        onClick={() => handleViewReceipt(reservation.bookingID)}
                         className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition"
                       >
                         📄 View Receipt
                       </button>
 
-                      {reservation.canCancel && (
+                      {canCancelBooking(reservation) && (
                         <button
-                          onClick={() => handleCancelReservation(reservation.id)}
+                          onClick={() => handleCancelReservation(reservation.bookingID)}
                           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition"
                         >
                           ✗ Cancel Booking
                         </button>
                       )}
 
-                      {reservation.canReview && (
+                      {canReviewBooking(reservation) && (
                         <button
-                          onClick={() => handleWriteReview(reservation.id)}
+                          onClick={() => handleWriteReview(reservation.bookingID)}
                           className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm transition"
                         >
                           ⭐ Write Review
                         </button>
                       )}
 
-                      {reservation.status === 'confirmed' && (
+                      {reservation.bookingStatus === 'Confirmed' && (
                         <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition">
                           ℹ️ Modify Booking
                         </button>
                       )}
                     </div>
 
-                    {reservation.status === 'cancelled' && (
+                    {reservation.bookingStatus.toLowerCase() === 'cancelled' && (
                       <div className="mt-3 bg-red-50 border-l-4 border-red-400 p-3">
                         <p className="text-sm text-red-700">
-                          This reservation was cancelled. Deposit of ${reservation.depositPaid} was not refunded.
+                          This reservation was cancelled. Deposit of ${reservation.depositAmount} was not refunded.
                         </p>
                       </div>
                     )}
@@ -314,19 +328,19 @@ const MyReservations: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-blue-600">
-                  {reservations.filter((r) => r.status === 'confirmed').length}
+                  {reservations.filter((r) => r.bookingStatus.toLowerCase() === 'confirmed' || r.bookingStatus.toLowerCase() === 'pending').length}
                 </p>
                 <p className="text-sm text-gray-600">Upcoming</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">
-                  {reservations.filter((r) => r.status === 'checked-out').length}
+                  {reservations.filter((r) => r.bookingStatus.toLowerCase() === 'completed').length}
                 </p>
                 <p className="text-sm text-gray-600">Completed</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-red-600">
-                  {reservations.filter((r) => r.status === 'cancelled').length}
+                  {reservations.filter((r) => r.bookingStatus.toLowerCase() === 'cancelled').length}
                 </p>
                 <p className="text-sm text-gray-600">Cancelled</p>
               </div>
@@ -336,6 +350,8 @@ const MyReservations: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

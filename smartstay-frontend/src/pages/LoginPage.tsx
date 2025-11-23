@@ -49,7 +49,7 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch("https://localhost:7168/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -61,15 +61,15 @@ const LoginPage: React.FC = () => {
       const result = await response.json().catch(() => ({}));
 
       if (response.ok) {
+        const id = result?.user?.id || result?.id;
         const fullName = result?.user?.fullName || result?.fullName || formData.email;
         const role = result?.user?.role || result?.role || "User";
 
-        setUser({ fullName, email: formData.email, role });
+        setUser({ id, fullName, email: formData.email, role });
         setMessage(result?.message || "Login successful!");
         setMessageType("success");
 
-        // Navigate to a dashboard/home later if available. For now, stay here or navigate to root.
-        // navigate("/");
+        navigate("/guest/dashboard");
       } else {
         setMessage(result?.message || "Invalid email or password.");
         setMessageType("error");

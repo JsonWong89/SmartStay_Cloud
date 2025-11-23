@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import { API_BASE_URL } from '../../config';
+
+interface RecentBooking {
+  bookingID: number;
+  hotelName: string;
+  roomType: string;
+  checkInDate: string;
+  bookingStatus: string;
+  depositAmount: number;
+}
 
 const GuestDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +20,32 @@ const GuestDashboard: React.FC = () => {
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guests, setGuests] = useState(1);
+  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentBookings = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/bookings/guest/${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          // Get the 3 most recent bookings
+          setRecentBookings(data.slice(0, 3));
+        }
+      } catch (error) {
+        console.error('Error fetching recent bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentBookings();
+  }, [user?.id]);
 
   const handleLogout = () => {
     clearUser();
@@ -147,15 +183,55 @@ const GuestDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Bookings */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Recent Activity</h3>
-          <div className="space-y-3">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-2xl font-bold text-gray-800">Recent Bookings</h3>
+            <button
+              onClick={() => navigate('/guest/reservations')}
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
+              View All →
+            </button>
+          </div>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading...</div>
+          ) : recentBookings.length === 0 ? (
             <div className="border-l-4 border-blue-500 pl-4 py-2">
               <p className="text-gray-700">No recent bookings</p>
               <p className="text-sm text-gray-500">Start searching for your next stay!</p>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              {recentBookings.map((booking) => (
+                <div
+                  key={booking.bookingID}
+                  className="border-l-4 border-blue-500 pl-4 py-3 bg-gray-50 rounded-r-md hover:bg-gray-100 transition cursor-pointer"
+                  onClick={() => navigate('/guest/reservations')}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-gray-800">{booking.hotelName}</p>
+                      <p className="text-sm text-gray-600">{booking.roomType}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Check-in: {new Date(booking.checkInDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        booking.bookingStatus === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                        booking.bookingStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {booking.bookingStatus}
+                      </span>
+                      <p className="text-sm text-gray-600 mt-1">Deposit: ${booking.depositAmount}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

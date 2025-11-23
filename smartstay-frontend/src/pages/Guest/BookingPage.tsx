@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import { API_BASE_URL } from '../../config';
 
 interface RoomDetails {
   id: number;
   hotelName: string;
   roomType: string;
   price: number;
-  capacity: number;
-  amenities: string[];
+  imageUrl?: string;
 }
 
 const BookingPage: React.FC = () => {
@@ -32,18 +32,44 @@ const BookingPage: React.FC = () => {
   const [idDocument, setIdDocument] = useState<File | null>(null);
   const [additionalDoc, setAdditionalDoc] = useState<File | null>(null);
   const [stayDuration, setStayDuration] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Mock room data - replace with API call
-  const [room, setRoom] = useState<RoomDetails>({
-    id: parseInt(roomId || '1'),
-    hotelName: 'Grand Plaza Hotel',
-    roomType: 'Deluxe Double',
-    price: 180,
-    capacity: 2,
-    amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'Room Service'],
-  });
-
+  // Room data from API
+  const [room, setRoom] = useState<RoomDetails | null>(null);
   const [isLongTermStay, setIsLongTermStay] = useState(false);
+
+  // Fetch room details
+  useEffect(() => {
+    const fetchRoomDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch room details');
+        }
+        
+        const data = await response.json();
+        setRoom({
+          id: data.id,
+          hotelName: data.hotelName,
+          roomType: data.roomType,
+          price: data.price,
+          imageUrl: data.imageUrl
+        });
+      } catch (err) {
+        console.error('Error fetching room:', err);
+        setError('Could not load room details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (roomId) {
+      fetchRoomDetails();
+    }
+  }, [roomId]);
 
   useEffect(() => {
     if (checkInDate && checkOutDate) {
@@ -56,7 +82,7 @@ const BookingPage: React.FC = () => {
     }
   }, [checkInDate, checkOutDate]);
 
-  const totalPrice = room.price * stayDuration;
+  const totalPrice = room ? room.price * stayDuration : 0;
   const depositAmount = totalPrice * 0.2; // 20% deposit
 
   const handleIdUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,8 +97,13 @@ const BookingPage: React.FC = () => {
     }
   };
 
-  const handleSubmitBooking = (e: React.FormEvent) => {
+  const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!room || !user?.id) {
+      alert('Missing room or user information');
+      return;
+    }
 
     // Validation
     if (!guestName || !guestEmail || !guestPhone || !guestAddress) {
@@ -95,29 +126,52 @@ const BookingPage: React.FC = () => {
       return;
     }
 
-    // Create booking object
-    const bookingData = {
-      roomId: room.id,
-      hotelName: room.hotelName,
-      roomType: room.roomType,
-      checkInDate,
-      checkOutDate,
-      guests,
-      guestName,
-      guestEmail,
-      guestPhone,
-      guestAddress,
-      specialRequests,
-      totalPrice,
-      depositAmount,
-      idDocument: idDocument.name,
-      additionalDoc: additionalDoc?.name,
-    };
+    try {
+      setLoading(true);
 
-    console.log('Booking Data:', bookingData);
+      // Create booking via API
+      const bookingRequest = {
+        guestID: user.id,
+        roomID: room.id,
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate,
+        totalGuests: guests,
+        totalAmount: totalPrice,
+        specialRequests: specialRequests
+      };
 
-    // Navigate to payment page
-    navigate(`/guest/payment`, { state: { booking: bookingData } });
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingRequest)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to create booking');
+      }
+
+      const bookingData = await response.json();
+      console.log('Booking created:', bookingData);
+
+      // Navigate to payment page with booking data
+      navigate(`/guest/payment`, { 
+        state: { 
+          booking: {
+            ...bookingData,
+            hotelName: room.hotelName,
+            roomType: room.roomType
+          }
+        } 
+      });
+    } catch (err: any) {
+      console.error('Booking error:', err);
+      alert(`Failed to create booking: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -137,10 +191,35 @@ const BookingPage: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Booking Form */}
-          <div className="lg:col-span-2">
+      {loading && !room ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <p className="text-xl text-gray-600">Loading room details...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg shadow-md p-8 text-center">
+            <p className="text-xl text-red-600 font-semibold">⚠️ {error}</p>
+            <button 
+              onClick={() => navigate(-1)} 
+              className="mt-4 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md transition"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      ) : !room ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <p className="text-xl text-gray-600">Room not found</p>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Booking Form */}
+            <div className="lg:col-span-2">
             <form onSubmit={handleSubmitBooking} className="space-y-6">
               {/* Guest Information */}
               <div className="bg-white rounded-lg shadow-md p-6">
@@ -363,7 +442,8 @@ const BookingPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

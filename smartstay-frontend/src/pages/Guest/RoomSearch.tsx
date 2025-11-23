@@ -7,8 +7,6 @@ interface Room {
   hotelName: string;
   roomType: string;
   price: number;
-  capacity: number;
-  amenities: string[];
   available: boolean;
   imageUrl?: string;
 }
@@ -24,71 +22,102 @@ const RoomSearch: React.FC = () => {
   const [guests, setGuests] = useState(parseInt(searchParams.get('guests') || '1'));
   const [hotelFilter, setHotelFilter] = useState('');
   const [roomTypeFilter, setRoomTypeFilter] = useState('');
-  const [maxPrice, setMaxPrice] = useState(500);
+  const [maxPrice, setMaxPrice] = useState(1000);
 
-  // Mock room data - replace with API call
-  const [rooms, setRooms] = useState<Room[]>([
-    {
-      id: 1,
-      hotelName: 'Grand Plaza Hotel',
-      roomType: 'Deluxe Single',
-      price: 120,
-      capacity: 1,
-      amenities: ['WiFi', 'AC', 'TV', 'Mini Bar'],
-      available: true,
-    },
-    {
-      id: 2,
-      hotelName: 'Grand Plaza Hotel',
-      roomType: 'Deluxe Double',
-      price: 180,
-      capacity: 2,
-      amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'Room Service'],
-      available: true,
-    },
-    {
-      id: 3,
-      hotelName: 'Seaside Resort',
-      roomType: 'Ocean View Suite',
-      price: 250,
-      capacity: 2,
-      amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'Balcony', 'Sea View'],
-      available: true,
-    },
-    {
-      id: 4,
-      hotelName: 'City Center Inn',
-      roomType: 'Standard Single',
-      price: 80,
-      capacity: 1,
-      amenities: ['WiFi', 'AC', 'TV'],
-      available: true,
-    },
-    {
-      id: 5,
-      hotelName: 'Luxury Heights',
-      roomType: 'Presidential Suite',
-      price: 450,
-      capacity: 4,
-      amenities: ['WiFi', 'AC', 'TV', 'Mini Bar', 'Kitchen', 'Jacuzzi', 'Butler Service'],
-      available: true,
-    },
-  ]);
+  // Initialize with empty array
+  const [rooms, setRooms] = useState<Room[]>([]); 
+  const [loading, setLoading] = useState(true); // Add loading state
+  const [error, setError] = useState('');       // Add error state
 
-  const [filteredRooms, setFilteredRooms] = useState<Room[]>(rooms);
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoading(true);
+        setError(''); // Clear any previous errors
+        
+        console.log('Fetching rooms from backend...');
+        const response = await fetch('https://localhost:7168/api/rooms'); 
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch rooms');
+        }
+        
+        const data = await response.json();
+        console.log('Received data:', data);
+        console.log('Number of rooms:', data.length);
+        
+        // Backend already returns the correct format, just use it directly
+        const mappedRooms = data.map((r: any) => ({
+          id: r.id,
+          hotelName: r.hotelName,
+          roomType: r.roomType,
+          price: r.price,
+          available: r.available,
+          imageUrl: r.imageUrl
+        }));
+
+        console.log('Mapped rooms:', mappedRooms);
+
+        console.log('Mapped rooms:', mappedRooms);
+        setRooms(mappedRooms);
+        setFilteredRooms(mappedRooms);
+      } catch (err) {
+        console.error("API Error:", err);
+        setError('Could not load rooms. Please ensure backend is running.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, []); // Empty dependency array = run once on load
 
   useEffect(() => {
     filterRooms();
   }, [hotelFilter, roomTypeFilter, maxPrice, guests, rooms]);
 
   const filterRooms = () => {
-    let filtered = rooms.filter((room) => {
-      const matchesHotel = !hotelFilter || room.hotelName.toLowerCase().includes(hotelFilter.toLowerCase());
-      const matchesRoomType = !roomTypeFilter || room.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase());
-      const matchesPrice = room.price <= maxPrice;
-      const matchesCapacity = room.capacity >= guests;
-      return matchesHotel && matchesRoomType && matchesPrice && matchesCapacity && room.available;
+    console.log('Filtering rooms...', { 
+      totalRooms: rooms.length, 
+      hotelFilter, 
+      roomTypeFilter, 
+      maxPrice, 
+      guests 
     });
+    
+    let filtered = rooms.filter((room) => {
+      // Filter by hotel name
+      if (hotelFilter && !room.hotelName.toLowerCase().includes(hotelFilter.toLowerCase())) {
+        console.log(`Room ${room.id} filtered out by hotel name`);
+        return false;
+      }
+      
+      // Filter by room type
+      if (roomTypeFilter && !room.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase())) {
+        console.log(`Room ${room.id} filtered out by room type`);
+        return false;
+      }
+      
+      // Filter by price
+      if (room.price > maxPrice) {
+        console.log(`Room ${room.id} filtered out by price: ${room.price} > ${maxPrice}`);
+        return false;
+      }
+      
+      // Filter by availability
+      if (!room.available) {
+        console.log(`Room ${room.id} filtered out by availability`);
+        return false;
+      }
+      
+      return true;
+    });
+    
+    console.log('Filtered rooms count:', filtered.length);
     setFilteredRooms(filtered);
   };
 
@@ -198,14 +227,14 @@ const RoomSearch: React.FC = () => {
                 <input
                   type="range"
                   min="50"
-                  max="500"
+                  max="1000"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(parseInt(e.target.value))}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>$50</span>
-                  <span>$500</span>
+                  <span>$1000</span>
                 </div>
               </div>
 
@@ -231,7 +260,22 @@ const RoomSearch: React.FC = () => {
               </p>
             </div>
 
-            {filteredRooms.length === 0 ? (
+            {loading ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <p className="text-xl text-gray-600">Loading rooms...</p>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg shadow-md p-8 text-center">
+                <p className="text-xl text-red-600 font-semibold">⚠️ {error}</p>
+                <p className="text-gray-600 mt-2">Make sure your backend is running on https://localhost:7168</p>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md transition"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : filteredRooms.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <p className="text-xl text-gray-600">No rooms match your criteria</p>
                 <p className="text-gray-500 mt-2">Try adjusting your filters</p>
@@ -242,8 +286,17 @@ const RoomSearch: React.FC = () => {
                   <div key={room.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
                     <div className="md:flex">
                       {/* Room Image */}
-                      <div className="md:w-1/3 bg-gradient-to-br from-blue-400 to-purple-500 h-64 md:h-auto flex items-center justify-center text-white text-6xl">
-                        🛏️
+                      <div className="md:w-1/3 bg-gray-200 h-64 md:h-auto flex items-center justify-center overflow-hidden">
+                        {room.imageUrl ? (
+                          <img 
+                            src={room.imageUrl} 
+                            alt={room.roomType} 
+                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300" 
+                          />
+                        ) : (
+                          /* Fallback if no image exists in DB */
+                          <div className="text-6xl">🛏️</div>
+                        )}
                       </div>
 
                       {/* Room Details */}
@@ -259,21 +312,7 @@ const RoomSearch: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="mb-4">
-                          <p className="text-sm text-gray-600 mb-2">
-                            👥 Capacity: {room.capacity} guest{room.capacity > 1 ? 's' : ''}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {room.amenities.map((amenity, index) => (
-                              <span
-                                key={index}
-                                className="bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm"
-                              >
-                                {amenity}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
+
 
                         <div className="flex gap-3">
                           <button

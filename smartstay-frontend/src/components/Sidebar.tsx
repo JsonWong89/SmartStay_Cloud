@@ -1,21 +1,9 @@
-// Sidebar.tsx
+// components/Sidebar.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiHome,
-  FiCalendar,
-  FiKey,
-  FiUsers,
-  FiUserCheck,
-  FiTag,
-  FiBarChart2,
-  FiTool,
-  FiSettings,
-  FiTrendingUp,
-  FiGlobe,
-  FiMenu,
-  FiBell,
-  FiHelpCircle,
+  FiHome, FiCalendar, FiKey, FiUsers, FiUserCheck, FiSettings,
+  FiMenu, FiBell, FiHelpCircle, FiMonitor, FiUserPlus, FiUser, FiLogOut
 } from "react-icons/fi";
 
 interface SidebarProps {
@@ -42,189 +30,105 @@ export default function Sidebar({
     {
       section: "MAIN",
       items: [
-        { name: "Dashboard", path: "/dashboard", icon: <FiHome /> },
-        { name: "Reservation", path: "/reservation", icon: <FiCalendar /> },
-        { name: "Room Operation", path: "/room-operation", icon: <FiKey /> },
+        { name: "Dashboard", path: "/dashboard", icon: <FiHome className="h-5 w-5" /> },
+        { name: "Front Desk", path: "/frontDesk", icon: <FiMonitor className="h-5 w-5" /> },
+        { name: "Reservation", path: "/reservation", icon: <FiCalendar className="h-5 w-5" /> },
+        { name: "Walk-in Booking", path: "/walk-in-booking", icon: <FiUserPlus className="h-5 w-5" /> },
+        { name: "Room Operation", path: "/room-operation", icon: <FiKey className="h-5 w-5" /> },
       ],
     },
     {
       section: "MANAGEMENT",
       items: [
-        { name: "Manage Staff", path: "/manage-staff", icon: <FiUsers /> },
-        { name: "Manage Guests", path: "/manage-guests", icon: <FiUserCheck /> },
-        // { name: "Promotions", path: "/promotions", icon: <FiTag /> },
-        // { name: "Report", path: "/report", icon: <FiBarChart2 /> },
-        // { name: "Maintenance", path: "/maintenance", icon: <FiTool /> },
+        { name: "Manage Staff", path: "/manage-staff", icon: <FiUsers className="h-5 w-5" /> },
+        { name: "Manage Guests", path: "/manage-guests", icon: <FiUserCheck className="h-5 w-5" /> },
       ],
     },
     {
       section: "SETTINGS",
       items: [
-        // { name: "Manage Platform", path: "/manage-platform", icon: <FiGlobe /> },
-        // { name: "Upgrade Plan", path: "/upgrade-plan", icon: <FiTrendingUp /> },
-        { name: "Settings", path: "/settings", icon: <FiSettings /> },
+        { name: "Profile", path: "/profile", icon: <FiUser className="h-5 w-5" /> },
+        { name: "Logout", path: "/settings", icon: <FiLogOut className="h-5 w-5" /> },
       ],
     },
   ];
 
-  const styles = {
-    sidebar: {
-      position: "fixed" as const,
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: collapsed ? "80px" : "250px",
-      backgroundColor: "#ffffff",
-      display: "flex",
-      flexDirection: "column" as const,
-      justifyContent: "space-between",
-      borderRight: "1px solid #e5e7eb",
-      boxShadow: "2px 0 6px rgba(0,0,0,0.05)",
-      transition: "width 0.3s ease",
-      overflow: "hidden",
-      zIndex: 10,
-    },
-    topSection: {
-      padding: "20px",
-    },
-    logoRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: collapsed ? "center" : "space-between",
-      marginBottom: "30px",
-    },
-    logoText: {
-      fontWeight: 700,
-      fontSize: "18px",
-      color: "#111827",
-      display: collapsed ? "none" : "block",
-    },
-    toggleBtn: {
-      backgroundColor: "#f3f4f6",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontSize: "18px",
-      padding: "6px 10px",
-    },
-    subtitle: {
-      fontSize: "13px",
-      color: "#6b7280",
-      display: collapsed ? "none" : "block",
-      marginBottom: "4px",
-    },
-    subinfo: {
-      fontSize: "12px",
-      color: "#9ca3af",
-      display: collapsed ? "none" : "block",
-      marginBottom: "20px",
-    },
-    sectionTitle: {
-      fontSize: "11px",
-      color: "#9ca3af",
-      letterSpacing: "1px",
-      marginBottom: "8px",
-      display: collapsed ? "none" : "block",
-    },
-    menuItem: (active: boolean) => ({
-      display: "flex",
-      alignItems: "center",
-      gap: collapsed ? "0" : "10px",
-      padding: collapsed ? "10px" : "10px 15px",
-      borderRadius: "8px",
-      backgroundColor: active ? "#e0f2fe" : "transparent",
-      color: active ? "#0284c7" : "#111827",
-      fontWeight: active ? 600 : 500,
-      cursor: "pointer",
-      marginBottom: "6px",
-      justifyContent: collapsed ? "center" : "flex-start",
-      transition: "all 0.3s",
-      fontSize: "14px",
-    }),
-    footer: {
-      borderTop: "1px solid #e5e7eb",
-      padding: "16px 20px",
-      color: "#6b7280",
-      fontSize: "13px",
-    },
-    userRow: {
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      marginTop: "10px",
-    },
-    userAvatar: {
-      width: "32px",
-      height: "32px",
-      borderRadius: "50%",
-      backgroundColor: "#d1d5db",
-    },
-    userInfo: {
-      display: collapsed ? "none" : "block",
-    },
-    userName: {
-      fontWeight: 600,
-      color: "#111827",
-    },
-    userRole: {
-      fontSize: "12px",
-      color: "#9ca3af",
-    },
-  };
-
   return (
-    <aside style={styles.sidebar}>
-      <div style={styles.topSection}>
-        <div style={styles.logoRow}>
-          <div style={styles.logoText}>Smart<span style={{ color: "#0284c7" }}>Stay</span></div>
-          <button style={styles.toggleBtn} onClick={handleToggle}>
-            <FiMenu />
+    <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-gradient-to-b from-blue-950 via-blue-900 to-indigo-950 text-white shadow-[2px_0_6px_rgba(0,0,0,0.05)] transition-all duration-300 ${collapsed ? "w-20" : "w-[230px]"}`}>
+      <div className="flex-1 overflow-y-auto px-5 pt-5">
+        {/* Logo + Toggle */}
+        <div className={`mb-[30px] flex items-center ${collapsed ? "justify-center" : "justify-between"}`}>
+          <h1 className={`font-bold text-[18px] ${collapsed ? "hidden" : "block"}`}>
+            🏨 SmartStay
+          </h1>
+          <button
+            onClick={handleToggle}
+            className="rounded-md bg-white/10 p-[6px] hover:bg-white/20 transition"
+          >
+            <FiMenu className="h-[18px] w-[18px] text-cyan-300" />
           </button>
         </div>
 
+        {/* Subtitle - only when expanded */}
         {!collapsed && (
-          <>
-            <div style={styles.subtitle}>Hotel Management System</div>
-            <div style={styles.subinfo}>Staff</div>
-          </>
+          <div className="mb-5">
+            <p className="text-[13px] text-cyan-200 mb-1">Hotel Management System</p>
+            <p className="text-[12px] text-cyan-300">Staff</p>
+          </div>
         )}
 
+        {/* Menu */}
         {menuItems.map((section) => (
-          <div key={section.section}>
-            <div style={styles.sectionTitle}>{section.section}</div>
-            {section.items.map((item) => (
-              <div
-                key={item.name}
-                style={styles.menuItem(activePage === item.name)}
-                onClick={() => {
-                  setActivePage(item.name);
-                  navigate(item.path);
-                }}
-              >
-                {item.icon}
-                {!collapsed && <span>{item.name}</span>}
-              </div>
-            ))}
+          <div key={section.section} className="mb-6">
+            <p className={`text-[11px] font-normal uppercase tracking-[1px] text-cyan-400 mb-2 ${collapsed ? "hidden" : "block"}`}>
+              {section.section}
+            </p>
+            <div className="space-y-1.5">
+              {section.items.map((item) => (
+                <button
+                  key={item.name}
+                  onClick={() => {
+                    setActivePage(item.name);
+                    navigate(item.path);
+                  }}
+                  className={`flex w-full items-center rounded-lg text-[14px] font-medium transition-all ${
+                    collapsed ? "justify-center py-2.5" : "gap-2.5 py-2.5 pl-4 pr-4"
+                  } ${
+                    activePage === item.name
+                      ? "bg-cyan-500/20 text-cyan-300 font-semibold"
+                      : "text-gray-200 hover:bg-white/10"
+                  }`}
+                >
+                  {item.icon}
+                  {!collapsed && <span>{item.name}</span>}
+                </button>
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
-      <div style={styles.footer}>
-        <div style={{ display: collapsed ? "none" : "flex", gap: "14px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <FiBell /> Notifications
+      {/* Footer */}
+      <div className="border-t border-white/10 px-5 py-4">
+        {/* {!collapsed && (
+          <div className="mb-4 flex gap-6 text-[13px] text-cyan-300">
+            <button className="flex items-center gap-1.5 hover:text-white">
+              <FiBell className="h-4 w-4" /> Notifications
+            </button>
+            <button className="flex items-center gap-1.5 hover:text-white">
+              <FiHelpCircle className="h-4 w-4" /> Support
+            </button>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <FiHelpCircle /> Support
-          </div>
-        </div>
+        )} */}
 
-        <div style={styles.userRow}>
-          <div style={styles.userAvatar}></div>
-          <div style={styles.userInfo}>
-            <div style={styles.userName}>Lulu</div>
-            <div style={styles.userRole}>Staff Manager</div>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600" />
+          {!collapsed && (
+            <div>
+              <p className="text-[14px] font-semibold text-white">Lulu</p>
+              <p className="text-[12px] text-cyan-300">Staff Manager</p>
+            </div>
+          )}
         </div>
       </div>
     </aside>

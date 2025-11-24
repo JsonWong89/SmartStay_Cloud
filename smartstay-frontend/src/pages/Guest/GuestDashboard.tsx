@@ -12,6 +12,15 @@ interface RecentBooking {
   depositAmount: number;
 }
 
+interface Hotel {
+  hotelID: number;
+  hotelName: string;
+  location: string;
+  description?: string;
+  imageUrl?: string;
+  rating?: number;
+}
+
 const GuestDashboard: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -21,7 +30,9 @@ const GuestDashboard: React.FC = () => {
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guests, setGuests] = useState(1);
   const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hotelsLoading, setHotelsLoading] = useState(true);
 
   useEffect(() => {
     const fetchRecentBookings = async () => {
@@ -46,6 +57,80 @@ const GuestDashboard: React.FC = () => {
 
     fetchRecentBookings();
   }, [user?.id]);
+
+  useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/hotels`);
+        if (response.ok) {
+          const data = await response.json();
+          // Get first 3 hotels for featured section
+          setHotels(data.slice(0, 3));
+        } else {
+          // Fallback to mock data if API endpoint doesn't exist yet
+          setHotels([
+            {
+              hotelID: 1,
+              hotelName: 'Grand Plaza Hotel',
+              location: 'New York, USA',
+              description: 'Luxury 5-star hotel in the heart of Manhattan with stunning city views',
+              imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
+              rating: 4.8
+            },
+            {
+              hotelID: 2,
+              hotelName: 'Seaside Resort',
+              location: 'Miami Beach, USA',
+              description: 'Beachfront paradise with world-class amenities and ocean views',
+              imageUrl: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800',
+              rating: 4.6
+            },
+            {
+              hotelID: 3,
+              hotelName: 'Mountain View Lodge',
+              location: 'Aspen, USA',
+              description: 'Cozy mountain retreat perfect for ski enthusiasts and nature lovers',
+              imageUrl: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
+              rating: 4.7
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching hotels:', error);
+        // Use mock data on network error
+        setHotels([
+          {
+            hotelID: 1,
+            hotelName: 'Grand Plaza Hotel',
+            location: 'New York, USA',
+            description: 'Luxury 5-star hotel in the heart of Manhattan with stunning city views',
+            imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
+            rating: 4.8
+          },
+          {
+            hotelID: 2,
+            hotelName: 'Seaside Resort',
+            location: 'Miami Beach, USA',
+            description: 'Beachfront paradise with world-class amenities and ocean views',
+            imageUrl: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800',
+            rating: 4.6
+          },
+          {
+            hotelID: 3,
+            hotelName: 'Mountain View Lodge',
+            location: 'Aspen, USA',
+            description: 'Cozy mountain retreat perfect for ski enthusiasts and nature lovers',
+            imageUrl: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
+            rating: 4.7
+          }
+        ]);
+      } finally {
+        setHotelsLoading(false);
+      }
+    };
+
+    fetchHotels();
+  }, []);
 
   const handleLogout = () => {
     clearUser();
@@ -159,28 +244,58 @@ const GuestDashboard: React.FC = () => {
         {/* Featured Hotels Section */}
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-gray-800 mb-4">Featured Hotels</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((hotel) => (
-              <div key={hotel} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
-                <div className="h-48 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-6xl">
-                  🏨
-                </div>
-                <div className="p-4">
-                  <h4 className="text-xl font-semibold mb-2">Hotel {hotel}</h4>
-                  <p className="text-gray-600 mb-2">Premium accommodations with modern amenities</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-blue-600">From $99/night</span>
+          {hotelsLoading ? (
+            <div className="text-center py-8 text-gray-500">Loading hotels...</div>
+          ) : hotels.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <p className="text-gray-600">No hotels available at the moment</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {hotels.map((hotel) => (
+                <div key={hotel.hotelID} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
+                  {hotel.imageUrl ? (
+                    <img
+                      src={hotel.imageUrl}
+                      alt={hotel.hotelName}
+                      className="h-48 w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`h-48 bg-gradient-to-br from-blue-400 to-purple-500 items-center justify-center text-white text-6xl ${
+                      hotel.imageUrl ? 'hidden' : 'flex'
+                    }`}
+                  >
+                    🏨
+                  </div>
+                  <div className="p-4">
+                    <h4 className="text-xl font-semibold mb-1">{hotel.hotelName}</h4>
+                    <p className="text-sm text-gray-500 mb-2">📍 {hotel.location}</p>
+                    {hotel.rating && (
+                      <div className="flex items-center mb-2">
+                        <span className="text-yellow-500">{'⭐'.repeat(Math.round(hotel.rating))}</span>
+                        <span className="text-sm text-gray-600 ml-1">({hotel.rating})</span>
+                      </div>
+                    )}
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {hotel.description || 'Premium accommodations with modern amenities'}
+                    </p>
                     <button
                       onClick={() => navigate('/guest/search')}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm"
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm transition"
                     >
                       View Rooms
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Recent Bookings */}

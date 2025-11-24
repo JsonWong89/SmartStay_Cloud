@@ -16,6 +16,8 @@ import MyReservations from "./pages/Guest/MyReservations";
 import PaymentPage from "./pages/Guest/PaymentPage";
 import ReviewPage from "./pages/Guest/ReviewPage";
 import GuestProfile from "./pages/Guest/GuestProfile";
+import ReceiptPage from "./pages/Guest/ReceiptPage";
+import MyReviewsPage from "./pages/Guest/MyReviewsPage";
 
 // ✅ App component
 const App: React.FC = () => {
@@ -41,6 +43,8 @@ const App: React.FC = () => {
       <Route path="/guest/reservations" element={<MyReservations />} />
       <Route path="/guest/payment" element={<PaymentPage />} />
       <Route path="/guest/review/:reservationId" element={<ReviewPage />} />
+      <Route path="/guest/reviews" element={<MyReviewsPage />} />
+      <Route path="/guest/receipt/:bookingId" element={<ReceiptPage />} />
       <Route path="/guest/profile" element={<GuestProfile />} />
 
       {/* Redirect unknown routes */}

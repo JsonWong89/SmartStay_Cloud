@@ -80,26 +80,32 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
     } else if (paymentIntent?.status === 'succeeded') {
       // Confirm payment in backend
       try {
-        await fetch(`${API_BASE_URL}/payments/confirm`, {
+        const response = await fetch(`${API_BASE_URL}/payments/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             bookingID: booking.bookingID,
             amount: booking.depositAmount,
-            paymentMethod: 'Stripe'
+            paymentMethod: 'CreditCard'  
           })
         });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Payment confirmation failed' }));
+          console.error('Payment confirmation error:', errorData);
+          throw new Error(errorData.message || 'Failed to confirm payment');
+        }
 
         setSucceeded(true);
         setProcessing(false);
 
         // Redirect to success page
         setTimeout(() => {
-          navigate('/guest/my-reservations');
+          navigate('/guest/reservations');
         }, 2000);
       } catch (err) {
         console.error('Error confirming payment:', err);
-        setError('Payment succeeded but confirmation failed');
+        setError(err instanceof Error ? err.message : 'Payment succeeded but confirmation failed. Please contact support with booking ID: ' + booking.bookingID);
         setProcessing(false);
       }
     }

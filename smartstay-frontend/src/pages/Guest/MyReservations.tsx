@@ -9,6 +9,7 @@ interface Reservation {
   roomID: number;
   hotelName: string;
   roomType: string;
+  imageUrl?: string;
   checkInDate: string;
   checkOutDate: string;
   totalGuests: number;
@@ -93,8 +94,7 @@ const MyReservations: React.FC = () => {
   };
 
   const handleViewReceipt = (bookingId: number) => {
-    // TODO: Implement receipt generation/view
-    alert(`Receipt for booking #${bookingId} will be displayed/downloaded.\nReceipt will also be sent to ${user?.email}`);
+    navigate(`/guest/receipt/${bookingId}`);
   };
 
   const handleWriteReview = (bookingId: number) => {
@@ -225,9 +225,22 @@ const MyReservations: React.FC = () => {
             {filteredReservations.map((reservation) => (
               <div key={reservation.bookingID} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
                 <div className="md:flex">
-                  {/* Visual Indicator */}
-                  <div className="md:w-32 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-5xl">
-                    🏨
+                  {/* Room Image */}
+                  <div className="md:w-48 h-48 md:h-auto">
+                    {reservation.imageUrl ? (
+                      <img
+                        src={reservation.imageUrl}
+                        alt={reservation.roomType}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-5xl">
+                        🏨
+                      </div>
+                    )}
                   </div>
 
                   {/* Reservation Details */}

@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import { API_BASE_URL } from '../../config';
+
+interface BookingDetails {
+  bookingID: number;
+  hotelName: string;
+  roomType: string;
+  checkInDate: string;
+  checkOutDate: string;
+}
 
 const ReviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,17 +24,36 @@ const ReviewPage: React.FC = () => {
   const [service, setService] = useState(0);
   const [facilities, setFacilities] = useState(0);
   const [valueForMoney, setValueForMoney] = useState(0);
+  const [booking, setBooking] = useState<BookingDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Mock reservation data
-  const reservation = {
-    id: reservationId,
-    hotelName: 'Grand Plaza Hotel',
-    roomType: 'Deluxe Double',
-    checkInDate: '2025-11-15',
-    checkOutDate: '2025-11-18',
-  };
+  // Fetch booking details
+  useEffect(() => {
+    const fetchBooking = async () => {
+      if (!reservationId) return;
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/bookings/${reservationId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setBooking(data);
+        } else {
+          alert('Booking not found');
+          navigate('/guest/reservations');
+        }
+      } catch (error) {
+        console.error('Error fetching booking:', error);
+        alert('Failed to load booking details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooking();
+  }, [reservationId, navigate]);
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (rating === 0) {
@@ -33,31 +61,55 @@ const ReviewPage: React.FC = () => {
       return;
     }
 
-    if (!reviewText.trim()) {
-      alert('Please write your review');
+    if (!reviewText.trim() || reviewText.length < 50) {
+      alert('Please write a review with at least 50 characters');
       return;
     }
 
-    const reviewData = {
-      reservationId,
-      hotelName: reservation.hotelName,
-      rating,
-      reviewTitle,
-      reviewText,
-      ratings: {
-        cleanliness,
-        service,
-        facilities,
-        valueForMoney,
-      },
-      guestName: user?.fullName,
-      date: new Date().toISOString(),
-    };
+    if (!user?.id || !reservationId) {
+      alert('Invalid user or booking information');
+      return;
+    }
 
-    console.log('Review Submitted:', reviewData);
+    setSubmitting(true);
 
-    alert('Thank you for your review! Your feedback helps us improve our service.');
-    navigate('/guest/reservations');
+    try {
+      // Combine all ratings and comments into a detailed comment
+      const detailedComment = `${reviewTitle ? reviewTitle + '\n\n' : ''}${reviewText}${
+        cleanliness || service || facilities || valueForMoney
+          ? '\n\nDetailed Ratings: Cleanliness: ' + (cleanliness || 'N/A') + 
+            ', Service: ' + (service || 'N/A') + 
+            ', Facilities: ' + (facilities || 'N/A') + 
+            ', Value: ' + (valueForMoney || 'N/A')
+          : ''
+      }`;
+
+      const reviewData = {
+        bookingID: parseInt(reservationId),
+        guestID: user.id,
+        rating,
+        comment: detailedComment,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewData),
+      });
+
+      if (response.ok) {
+        alert('Thank you for your review! Your feedback helps us improve our service.');
+        navigate('/guest/reservations');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Failed to submit review. You may have already reviewed this booking.');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('Failed to submit review. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderStars = (
@@ -121,6 +173,21 @@ const ReviewPage: React.FC = () => {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <p className="text-xl text-gray-600">Loading booking details...</p>
+          </div>
+        ) : !booking ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <p className="text-xl text-gray-600">Booking not found</p>
+            <button
+              onClick={() => navigate('/guest/reservations')}
+              className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+            >
+              Back to Reservations
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmitReview} className="space-y-6">
           {/* Reservation Info */}
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -128,19 +195,19 @@ const ReviewPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600">Hotel</p>
-                <p className="font-semibold">{reservation.hotelName}</p>
+                <p className="font-semibold">{booking.hotelName}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Room Type</p>
-                <p className="font-semibold">{reservation.roomType}</p>
+                <p className="font-semibold">{booking.roomType}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Check-in</p>
-                <p className="font-semibold">{reservation.checkInDate}</p>
+                <p className="font-semibold">{new Date(booking.checkInDate).toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Check-out</p>
-                <p className="font-semibold">{reservation.checkOutDate}</p>
+                <p className="font-semibold">{new Date(booking.checkOutDate).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
@@ -240,19 +307,26 @@ const ReviewPage: React.FC = () => {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition"
+              disabled={submitting}
+              className={`flex-1 font-bold py-3 px-4 rounded-md transition ${
+                submitting
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
             >
-              Submit Review
+              {submitting ? 'Submitting...' : 'Submit Review'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/guest/reservations')}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-md transition"
+              disabled={submitting}
+              className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-md transition disabled:opacity-50"
             >
               Cancel
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );

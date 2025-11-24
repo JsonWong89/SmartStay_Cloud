@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store";
-import { API_ENDPOINTS, apiGet } from "../config/api";
+import { API_ENDPOINTS, apiPost } from "../config/api";
 
 interface FormData {
   email: string;
@@ -50,23 +50,35 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      // Fetch all users to find matching email
-      const response = await apiGet(API_ENDPOINTS.USERS.BASE);
+      // Call proper login endpoint with credentials
+      let user: any = null;
+      try {
+        const response = await apiPost(API_ENDPOINTS.AUTH.LOGIN, {
+          email: formData.email,
+          password: formData.password,
+        });
+        const contentType = response.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
-      if (!response.ok) {
-        setMessage("Unable to connect to server.");
-        setMessageType("error");
+        if (!response.ok) {
+          const serverMsg = typeof payload === 'string' ? payload.slice(0, 180) : (payload?.message || '');
+          if (response.status === 401) {
+            setMessage('Invalid email or password.');
+          } else {
+            setMessage(`Server responded ${response.status}. ${serverMsg ? 'Details: ' + serverMsg : 'No details.'}`);
+          }
+          setMessageType('error');
+          return;
+        }
+        user = payload;
+      } catch (fetchErr: any) {
+        console.error('Network/Fetch error:', fetchErr);
+        setMessage(`Network error reaching API. ${fetchErr?.message || ''}`);
+        setMessageType('error');
         return;
       }
-
-      const users = await response.json();
       
-      console.log("Users from API:", users); // Debug log
-      
-      // Find user by email
-      const user = users.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
-      
-      console.log("Found user:", user); // Debug log
+      console.log("Login response:", user); // Debug log
       
       if (!user) {
         setMessage("Invalid email or password.");
@@ -74,21 +86,11 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      // Since backend doesn't return passwordHash for security, we'll skip password check for now
-      // In production, implement proper /api/auth/login endpoint on backend
-      
-      // Check if user is active
-      if (user.status && user.status !== "Active") {
-        setMessage("Account is suspended. Please contact administrator.");
-        setMessageType("error");
-        return;
-      }
-
       // Login successful
       setUser({ 
-        fullName: user.fullName, 
-        email: user.email, 
-        role: user.role 
+        fullName: user.fullName || user.FullName, 
+        email: user.email || user.Email, 
+        role: user.role || user.Role 
       });
       
       setMessage("Login successful!");

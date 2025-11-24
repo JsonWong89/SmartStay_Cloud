@@ -14,6 +14,8 @@ import ReportsPage from "./pages/Admin/ReportsPage";
 import MonitorPage from "./pages/Admin/MonitorPage";
 import ManageManagersPage from "./pages/Admin/ManageManagersPage";
 import CreateManagerPage from "./pages/Admin/CreateManagerPage";
+import CreateHotelPage from "./pages/Admin/CreateHotelPage";
+import EditHotelPage from "./pages/Admin/EditHotelPage";
 
 const App: React.FC = () => {
   return (
@@ -31,6 +33,8 @@ const App: React.FC = () => {
       <Route path="/admin/manage-managers" element={<ManageManagersPage />} />
       <Route path="/admin/manage-managers/new" element={<CreateManagerPage />} />
       <Route path="/admin/hotels" element={<HotelsPage />} />
+      <Route path="/admin/hotels/new" element={<CreateHotelPage />} />
+      <Route path="/admin/hotels/edit/:id" element={<EditHotelPage />} />
       <Route path="/admin/room-types" element={<RoomTypesPage />} />
       <Route path="/admin/reports" element={<ReportsPage />} />
       <Route path="/admin/monitor" element={<MonitorPage />} />

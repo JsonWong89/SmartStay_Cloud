@@ -66,15 +66,21 @@ const RegisterPage: React.FC = () => {
         return;
       }
 
-      const response = await apiPost(API_ENDPOINTS.USERS.BASE, {
+      const payload: any = {
         fullName: formData.fullName,
         email: formData.email,
         passwordHash: formData.password,
         role: formData.role || "Manager",
-        status: "Active"
-      });
+      };
+      if (formData.role === "Manager" && formData.hotelId) {
+        payload.hotelId = Number(formData.hotelId);
+      }
 
-      const result = await response.json();
+      const response = await apiPost(API_ENDPOINTS.USERS.BASE, payload);
+      const contentType = response.headers.get('content-type') || '';
+      const result = contentType.includes('application/json')
+        ? await response.json()
+        : { message: await response.text() };
 
       if (response.ok) {
         setUser({
@@ -87,12 +93,15 @@ const RegisterPage: React.FC = () => {
         setMessageType("success");
         setTimeout(() => navigate("/login"), 1200);
       } else {
-        setMessage(result.message || "Registration failed. Try again.");
+        setMessage(result.message || `Registration failed (HTTP ${response.status}).`);
         setMessageType("error");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setMessage("Error registering user. Please check your backend connection.");
+    } catch (error: any) {
+      console.error("Register network error:", error);
+      const details = error?.message ? ` Details: ${error.message}` : "";
+      setMessage(
+        `Error registering user. This usually means the API isn't reachable or CORS blocked the request.${details}`
+      );
       setMessageType("error");
     } finally {
       setLoading(false);

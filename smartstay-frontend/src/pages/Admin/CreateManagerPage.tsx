@@ -8,7 +8,7 @@ type FormState = {
   fullName: string;
   email: string;
   password: string;
-  status: string;
+  hotelId: string;
 };
 
 const CreateManagerPage: React.FC = () => {
@@ -17,7 +17,7 @@ const CreateManagerPage: React.FC = () => {
     fullName: '',
     email: '',
     password: '',
-    status: 'Active',
+    hotelId: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string>('');
@@ -50,21 +50,29 @@ const CreateManagerPage: React.FC = () => {
       setMessageType('error');
       return;
     }
+    if (form.hotelId && isNaN(Number(form.hotelId))) {
+      setMessage('Hotel ID must be a number');
+      setMessageType('error');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const payload = {
+      const payload: any = {
         fullName: form.fullName,
         email: form.email,
         passwordHash: form.password, // backend currently expects passwordHash field
-        role: 'Manager',
-        status: form.status,
+        role: 'Hotel Manager',
       };
+      if (form.hotelId) payload.hotelId = Number(form.hotelId);
 
       const res = await apiPost(API_ENDPOINTS.USERS.BASE, payload);
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await res.json()
+        : { message: await res.text() };
       if (!res.ok) {
-        throw new Error(data?.message || 'Failed to create manager');
+        throw new Error(data?.message || `Failed to create manager (HTTP ${res.status})`);
       }
 
       setMessage('Manager created successfully');
@@ -144,15 +152,15 @@ const CreateManagerPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="status">Status</label>
+                <label htmlFor="hotelId">Hotel ID (optional)</label>
                 <input
-                  id="status"
-                  name="status"
-                  type="text"
-                  value={form.status}
+                  id="hotelId"
+                  name="hotelId"
+                  type="number"
+                  value={form.hotelId}
                   onChange={handleChange}
                   className="input"
-                  placeholder="Active"
+                  placeholder="Enter Hotel ID for this manager"
                 />
               </div>
 

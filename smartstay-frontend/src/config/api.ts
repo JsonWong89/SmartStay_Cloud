@@ -9,7 +9,7 @@ export const API_ENDPOINTS = {
   
   // Authentication
   AUTH: {
-    LOGIN: `${API_BASE_URL}/api/auth/login`,
+    LOGIN: `${API_BASE_URL}/api/login`,
     REGISTER: `${API_BASE_URL}/api/auth/register`,
     LOGOUT: `${API_BASE_URL}/api/auth/logout`,
   },

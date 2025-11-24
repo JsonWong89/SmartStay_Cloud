@@ -27,49 +27,32 @@ namespace SmartStay.Data
             // User configuration
             modelBuilder.Entity<Models.User>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.UserID);
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.Role);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.PasswordHash).IsRequired();
                 entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.Role).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
             });
 
             // Hotel configuration
             modelBuilder.Entity<Models.Hotel>(entity =>
             {
-                entity.HasKey(e => e.Id);
-                entity.HasIndex(e => e.Code).IsUnique();
-                entity.HasIndex(e => e.Status);
-                entity.Property(e => e.Code).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Email).HasMaxLength(255);
-                entity.Property(e => e.Phone).HasMaxLength(50);
-                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.HasKey(e => e.HotelID);
+                entity.HasIndex(e => e.HotelName);
+                entity.Property(e => e.HotelName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Address).HasMaxLength(255);
                 entity.Property(e => e.City).HasMaxLength(100);
-                entity.Property(e => e.State).HasMaxLength(100);
-                entity.Property(e => e.Country).HasMaxLength(100);
-                entity.Property(e => e.PostalCode).HasMaxLength(20);
-                entity.Property(e => e.Timezone).HasMaxLength(50);
-                entity.Property(e => e.Currency).HasMaxLength(10);
             });
 
             // HotelManager configuration
             modelBuilder.Entity<Models.HotelManager>(entity =>
             {
-                entity.HasKey(e => e.Id);
-                entity.HasIndex(e => new { e.UserId, e.HotelId }).IsUnique();
-                entity.HasOne(e => e.User)
-                    .WithMany(u => u.HotelManagers)
-                    .HasForeignKey(e => e.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.Hotel)
-                    .WithMany(h => h.HotelManagers)
-                    .HasForeignKey(e => e.HotelId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasKey(e => e.UserID);
+                entity.Property(e => e.FullName).HasMaxLength(255);
+                entity.Property(e => e.Email).HasMaxLength(255);
+                entity.Property(e => e.Role).HasMaxLength(50);
             });
 
             // RoomType configuration

@@ -8,7 +8,7 @@ const NavigationBar: React.FC = () => {
   const navItems = [
     { path: '/admin/manage-managers', label: 'Manage Managers Accounts' },
     { path: '/admin/hotels', label: 'Add or Remove Hotels' },
-    { path: '/admin/room-types', label: 'Configure Room Types & Pricing' },
+    { path: '/admin/rooms', label: 'Configure Room Types & Pricing' },
     { path: '/admin/reports', label: 'View System Reports' },
     { path: '/admin/monitor', label: 'Monitor Overall' },
   ];

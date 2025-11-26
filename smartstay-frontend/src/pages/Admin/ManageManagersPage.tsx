@@ -13,13 +13,35 @@ type Manager = {
   createdAt?: string;
 };
 
+type Hotel = {
+  hotelID: number;
+  hotelName: string;
+};
+
 const ManageManagersPage: React.FC = () => {
   const [managers, setManagers] = useState<Manager[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [query, setQuery] = useState<string>('');
 
   useEffect(() => {
+    const fetchHotels = async () => {
+      try {
+        const res = await apiGet(API_ENDPOINTS.HOTELS.BASE);
+        if (res.ok) {
+          const data = await res.json();
+          const hotelList: Hotel[] = data.map((h: any) => ({
+            hotelID: h.hotelID ?? h.HotelID,
+            hotelName: h.hotelName ?? h.HotelName ?? '',
+          }));
+          setHotels(hotelList);
+        }
+      } catch (e) {
+        console.error('Failed to load hotels', e);
+      }
+    };
+
     const fetchManagers = async () => {
       setLoading(true);
       setError('');
@@ -122,8 +144,16 @@ const ManageManagersPage: React.FC = () => {
         console.log('=== fetchManagers complete ===');
       }
     };
+    
+    fetchHotels();
     fetchManagers();
   }, []);
+
+  const getHotelName = (hotelID?: number): string => {
+    if (!hotelID) return '';
+    const hotel = hotels.find(h => h.hotelID === hotelID);
+    return hotel?.hotelName || '';
+  };
 
   const filteredManagers = useMemo(() => {
     if (!query.trim()) return managers;
@@ -190,8 +220,8 @@ const ManageManagersPage: React.FC = () => {
                         <tr>
                           <th style={{ textAlign: 'left', paddingLeft: '20px' }}>Manager</th>
                           <th style={{ textAlign: 'left' }}>Contact</th>
-                          <th>User ID</th>
-                          <th>
+                          <th style={{ textAlign: 'center' }}>User ID</th>
+                          <th style={{ textAlign: 'center' }}>
                             <span style={{
                               display: 'inline-block',
                               padding: '4px 8px',
@@ -201,8 +231,9 @@ const ManageManagersPage: React.FC = () => {
                               fontWeight: 600
                             }}>Role</span>
                           </th>
-                          <th>Hotel ID</th>
-                          <th>Joined</th>
+                          <th style={{ textAlign: 'center' }}>Hotel</th>
+                          <th style={{ textAlign: 'center' }}>Joined</th>
+                          <th style={{ textAlign: 'center' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -237,7 +268,7 @@ const ManageManagersPage: React.FC = () => {
                                 </div>
                               </div>
                             </td>
-                            <td>
+                            <td style={{ textAlign: 'left' }}>
                               <div style={{ color: '#374151' }}>{m.email || '-'}</div>
                             </td>
                             <td style={{ textAlign: 'center', color: '#6b7280', fontFamily: 'monospace' }}>
@@ -256,28 +287,59 @@ const ManageManagersPage: React.FC = () => {
                                 {m.role}
                               </span>
                             </td>
-                            <td style={{ textAlign: 'center', color: '#6b7280' }}>
+                            <td style={{ textAlign: 'center', color: '#374151' }}>
                               {m.hotelID ? (
-                                <span style={{
-                                  display: 'inline-block',
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  background: '#f3f4f6',
-                                  fontFamily: 'monospace',
-                                  fontSize: '13px'
-                                }}>
-                                  {m.hotelID}
-                                </span>
+                                <div>
+                                  <div style={{ fontWeight: 500 }}>
+                                    {getHotelName(m.hotelID) || 'Unknown Hotel'}
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                                    ID: {m.hotelID}
+                                  </div>
+                                </div>
                               ) : (
                                 <span style={{ color: '#d1d5db' }}>—</span>
                               )}
                             </td>
-                            <td style={{ color: '#6b7280', fontSize: '14px' }}>
+                            <td style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px' }}>
                               {m.createdAt ? new Date(m.createdAt).toLocaleDateString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 year: 'numeric'
                               }) : '-'}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                <Link
+                                  to={`/admin/manage-managers/edit/${m.userID}`}
+                                  className="btn-secondary"
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '13px',
+                                    textDecoration: 'none'
+                                  }}
+                                >
+                                  Edit
+                                </Link>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete manager "${m.fullName}"?`)) {
+                                      // Add delete logic here
+                                      alert('Delete functionality to be implemented');
+                                    }
+                                  }}
+                                  className="btn-secondary"
+                                  style={{
+                                    padding: '6px 12px',
+                                    fontSize: '13px',
+                                    background: '#fee2e2',
+                                    color: '#dc2626',
+                                    border: '1px solid #fecaca'
+                                  }}
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}

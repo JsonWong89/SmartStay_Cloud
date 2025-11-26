@@ -26,11 +26,11 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `${API_BASE_URL}/api/hotels/${id}`,
   },
   
-  // Room Types
-  ROOM_TYPES: {
-    BASE: `${API_BASE_URL}/api/roomtypes`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/roomtypes/${id}`,
-    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/roomtypes?hotelId=${hotelId}`,
+  // Rooms Management
+  ROOMS: {
+    BASE: `${API_BASE_URL}/api/rooms`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/rooms/${id}`,
+    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/rooms?hotelId=${hotelId}`,
   },
   
   // Rate Plans (Pricing)

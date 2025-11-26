@@ -1,14 +1,19 @@
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import NavigationBar from '../../components/NavigationBar';
 import '../../styles/AdminPages.css';
-import { API_ENDPOINTS, apiPost } from '../../config/api';
+import { API_ENDPOINTS, apiGet, apiPost, apiPut } from '../../config/api';
 
 type FormState = {
   fullName: string;
   email: string;
   password: string;
   hotelId: string;
+};
+
+type Hotel = {
+  hotelID: number;
+  hotelName: string;
 };
 
 const CreateManagerPage: React.FC = () => {
@@ -19,11 +24,36 @@ const CreateManagerPage: React.FC = () => {
     password: '',
     hotelId: '',
   });
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [loadingHotels, setLoadingHotels] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const fetchHotels = async () => {
+      setLoadingHotels(true);
+      try {
+        const res = await apiGet(API_ENDPOINTS.HOTELS.BASE);
+        if (!res.ok) {
+          throw new Error('Failed to fetch hotels');
+        }
+        const data = await res.json();
+        const hotelList: Hotel[] = data.map((h: any) => ({
+          hotelID: h.hotelID ?? h.HotelID,
+          hotelName: h.hotelName ?? h.HotelName ?? '',
+        }));
+        setHotels(hotelList);
+      } catch (e: any) {
+        console.error('Failed to load hotels', e);
+      } finally {
+        setLoadingHotels(false);
+      }
+    };
+    fetchHotels();
+  }, []);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -74,6 +104,12 @@ const CreateManagerPage: React.FC = () => {
       if (!res.ok) {
         throw new Error(data?.message || `Failed to create manager (HTTP ${res.status})`);
       }
+
+      console.log('✅ Manager created successfully');
+      
+      // Note: The relationship is managed through Users.HotelID only
+      // The Hotels.ManagerID should be updated by the backend automatically
+      // or through a separate backend process to maintain data consistency
 
       setMessage('Manager created successfully');
       setMessageType('success');
@@ -152,16 +188,22 @@ const CreateManagerPage: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="hotelId">Hotel ID (optional)</label>
-                <input
+                <label htmlFor="hotelId">Hotel (optional)</label>
+                <select
                   id="hotelId"
                   name="hotelId"
-                  type="number"
                   value={form.hotelId}
                   onChange={handleChange}
                   className="input"
-                  placeholder="Enter Hotel ID for this manager"
-                />
+                  disabled={loadingHotels}
+                >
+                  <option value="">-- Select a hotel --</option>
+                  {hotels.map((hotel) => (
+                    <option key={hotel.hotelID} value={hotel.hotelID}>
+                      {hotel.hotelName} (ID: {hotel.hotelID})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-actions">

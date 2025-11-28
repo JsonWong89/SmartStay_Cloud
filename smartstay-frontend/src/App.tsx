@@ -11,7 +11,6 @@ import ManageUsersPage from "./pages/Admin/ManageManagersPage";
 import HotelsPage from "./pages/Admin/HotelsPage";
 import RoomTypesPage from "./pages/Admin/RoomTypesPage";
 import ReportsPage from "./pages/Admin/ReportsPage";
-import MonitorPage from "./pages/Admin/MonitorPage";
 import ManageManagersPage from "./pages/Admin/ManageManagersPage";
 import CreateManagerPage from "./pages/Admin/CreateManagerPage";
 import EditManagerPage from "./pages/Admin/EditManagerPage";
@@ -45,7 +44,6 @@ const App: React.FC = () => {
       <Route path="/admin/rooms/edit/:id" element={<EditRoomPage />} />
       <Route path="/admin/room-types" element={<RoomTypesPage />} />
       <Route path="/admin/reports" element={<ReportsPage />} />
-      <Route path="/admin/monitor" element={<MonitorPage />} />
 
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />

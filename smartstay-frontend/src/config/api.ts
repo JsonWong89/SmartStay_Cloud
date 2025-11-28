@@ -66,11 +66,11 @@ export const API_ENDPOINTS = {
   },
   
   // Monitoring
-  MONITOR: {
-    HEALTH: `${API_BASE_URL}/api/monitor/health`,
-    EVENTS: `${API_BASE_URL}/api/systemevents`,
-    AUDIT_LOGS: `${API_BASE_URL}/api/auditlogs`,
-  },
+  // MONITOR: {
+  //   HEALTH: `${API_BASE_URL}/api/monitor/health`,
+  //   EVENTS: `${API_BASE_URL}/api/systemevents`,
+  //   AUDIT_LOGS: `${API_BASE_URL}/api/auditlogs`,
+  // },
   
   // System
   SYSTEM: {

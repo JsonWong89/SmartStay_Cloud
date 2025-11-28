@@ -33,13 +33,6 @@ const AdminDashboard: React.FC = () => {
       path: '/admin/reports',
       color: '#43e97b',
     },
-    {
-      title: 'System Monitor',
-      description: 'Monitor overall system health and activities',
-      icon: '📈',
-      path: '/admin/monitor',
-      color: '#fa709a',
-    },
   ];
 
   return (

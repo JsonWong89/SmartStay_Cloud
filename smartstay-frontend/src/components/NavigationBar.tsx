@@ -10,7 +10,6 @@ const NavigationBar: React.FC = () => {
     { path: '/admin/hotels', label: 'Add or Remove Hotels' },
     { path: '/admin/rooms', label: 'Configure Room Types & Pricing' },
     { path: '/admin/reports', label: 'View System Reports' },
-    { path: '/admin/monitor', label: 'Monitor Overall' },
   ];
 
   return (

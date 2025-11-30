@@ -14,6 +14,7 @@ import RoomSearch from "./pages/Guest/RoomSearch";
 import BookingPage from "./pages/Guest/BookingPage";
 import MyReservations from "./pages/Guest/MyReservations";
 import PaymentPage from "./pages/Guest/PaymentPage";
+import BookingConfirmation from "./pages/Guest/BookingConfirmation";
 import ReviewPage from "./pages/Guest/ReviewPage";
 import GuestProfile from "./pages/Guest/GuestProfile";
 import ReceiptPage from "./pages/Guest/ReceiptPage";
@@ -42,6 +43,7 @@ const App: React.FC = () => {
       <Route path="/guest/booking/:roomId" element={<BookingPage />} />
       <Route path="/guest/reservations" element={<MyReservations />} />
       <Route path="/guest/payment" element={<PaymentPage />} />
+      <Route path="/guest/booking-confirmation" element={<BookingConfirmation />} />
       <Route path="/guest/review/:reservationId" element={<ReviewPage />} />
       <Route path="/guest/reviews" element={<MyReviewsPage />} />
       <Route path="/guest/receipt/:bookingId" element={<ReceiptPage />} />

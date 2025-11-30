@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { API_BASE_URL } from '../../config';
+import GuestNavbar from '../../components/GuestNavbar';
 
 interface RecentBooking {
   bookingID: number;
@@ -132,92 +133,68 @@ const GuestDashboard: React.FC = () => {
     fetchHotels();
   }, []);
 
-  const handleLogout = () => {
-    clearUser();
-    navigate('/login');
-  };
+  const quickLinks = [
+    { title: 'Search Rooms', icon: '🔍', path: '/guest/search', color: 'bg-gradient-to-br from-blue-500 to-blue-600', description: 'Find your perfect room' },
+    { title: 'My Reservations', icon: '📋', path: '/guest/reservations', color: 'bg-gradient-to-br from-blue-600 to-blue-700', description: 'View your bookings' },
+    { title: 'My Profile', icon: '👤', path: '/guest/profile', color: 'bg-gradient-to-br from-sky-500 to-blue-500', description: 'Manage your account' },
+    { title: 'Reviews', icon: '⭐', path: '/guest/reviews', color: 'bg-gradient-to-br from-blue-700 to-indigo-700', description: 'Share your experience' },
+  ];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     navigate(`/guest/search?checkIn=${checkInDate}&checkOut=${checkOutDate}&guests=${guests}`);
   };
 
-  const quickLinks = [
-    { title: 'Search Rooms', icon: '🔍', path: '/guest/search', color: 'bg-blue-500' },
-    { title: 'My Reservations', icon: '📋', path: '/guest/reservations', color: 'bg-green-500' },
-    { title: 'My Profile', icon: '👤', path: '/guest/profile', color: 'bg-purple-500' },
-    { title: 'Reviews', icon: '⭐', path: '/guest/reviews', color: 'bg-yellow-500' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">🏨 SmartStay</h1>
-              <p className="text-sm text-gray-600">Guest Portal</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-700">Welcome, <strong>{user?.fullName || 'Guest'}</strong></span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50">
+      <GuestNavbar />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section with Search */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-xl p-8 mb-8 text-white">
-          <h2 className="text-4xl font-bold mb-4">Find Your Perfect Stay</h2>
-          <p className="text-lg mb-6">Book your ideal room with ease and comfort</p>
+        <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl shadow-xl p-8 md:p-12 mb-8 text-white">
+          <h2 className="text-4xl md:text-5xl font-bold mb-3">Find Your Perfect Stay</h2>
+          <p className="text-lg md:text-xl mb-8 text-blue-50">Discover amazing hotels and book your ideal room with ease</p>
           
-          <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 text-gray-800">
+          <form onSubmit={handleSearch} className="bg-white rounded-xl p-6 shadow-lg text-gray-800">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Check-in Date</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Check-in Date</label>
                 <input
                   type="date"
                   value={checkInDate}
                   onChange={(e) => setCheckInDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Check-out Date</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Check-out Date</label>
                 <input
                   type="date"
                   value={checkOutDate}
                   onChange={(e) => setCheckOutDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Guests</label>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Guests</label>
                 <input
                   type="number"
                   min="1"
                   max="10"
                   value={guests}
                   onChange={(e) => setGuests(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
                 />
               </div>
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition"
+                  className="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md hover:shadow-lg"
                 >
-                  Search Rooms
+                  🔍 Search Rooms
                 </button>
               </div>
             </div>
@@ -226,17 +203,24 @@ const GuestDashboard: React.FC = () => {
 
         {/* Quick Links */}
         <div className="mb-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickLinks.map((link, index) => (
-              <div
-                key={index}
+          <h3 className="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {quickLinks.map((link) => (
+              <button
+                key={link.title}
                 onClick={() => navigate(link.path)}
-                className={`${link.color} hover:opacity-90 rounded-lg shadow-lg p-6 text-white cursor-pointer transition transform hover:scale-105`}
+                className={`${link.color} text-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 relative overflow-hidden group`}
               >
-                <div className="text-4xl mb-3">{link.icon}</div>
-                <h4 className="text-xl font-semibold">{link.title}</h4>
-              </div>
+                {/* Hover Effect Overlay */}
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform duration-300">{link.icon}</div>
+                  <h4 className="font-bold text-lg mb-1">{link.title}</h4>
+                  <p className="text-xs text-blue-100 opacity-90">{link.description}</p>
+                </div>
+              </button>
             ))}
           </div>
         </div>
@@ -245,7 +229,10 @@ const GuestDashboard: React.FC = () => {
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-gray-800 mb-4">Featured Hotels</h3>
           {hotelsLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading hotels...</div>
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-lg text-gray-600">Loading hotels...</span>
+            </div>
           ) : hotels.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <p className="text-gray-600">No hotels available at the moment</p>
@@ -310,7 +297,10 @@ const GuestDashboard: React.FC = () => {
             </button>
           </div>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading bookings...</span>
+            </div>
           ) : recentBookings.length === 0 ? (
             <div className="border-l-4 border-blue-500 pl-4 py-2">
               <p className="text-gray-700">No recent bookings</p>

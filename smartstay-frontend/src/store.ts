@@ -3,13 +3,14 @@ import { create } from "zustand";
 // ✅ Define the structure of your global state
 interface AuthState {
   user: {
-    id?: number; // Add ID here!
+    id?: string; // Changed to string to match backend
     fullName: string;
     email: string;
     role: string;
+    phone?: string; // Add phone number
   } | null;
 
-  setUser: (user: { id?: number; fullName: string; email: string; role: string }) => void;
+  setUser: (user: { id?: string; fullName: string; email: string; role: string; phone?: string }) => void;
   clearUser: () => void;
 }
 

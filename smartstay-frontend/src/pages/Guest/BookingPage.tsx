@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { API_BASE_URL } from '../../config';
+import GuestNavbar from '../../components/GuestNavbar';
 
 interface RoomDetails {
   id: number;
@@ -17,14 +18,15 @@ const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const user = useAuthStore((state) => state.user);
 
-  const checkInDate = searchParams.get('checkIn') || '';
-  const checkOutDate = searchParams.get('checkOut') || '';
+  // Editable dates - initialize from search params
+  const [checkInDate, setCheckInDate] = useState(searchParams.get('checkIn') || '');
+  const [checkOutDate, setCheckOutDate] = useState(searchParams.get('checkOut') || '');
   const guests = parseInt(searchParams.get('guests') || '1');
 
   // Guest Information
   const [guestName, setGuestName] = useState(user?.fullName || '');
   const [guestEmail, setGuestEmail] = useState(user?.email || '');
-  const [guestPhone, setGuestPhone] = useState('');
+  const [guestPhone, setGuestPhone] = useState(user?.phone || '');
   const [guestAddress, setGuestAddress] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
 
@@ -107,17 +109,19 @@ const BookingPage: React.FC = () => {
 
     // Validation
     if (!guestName || !guestEmail || !guestPhone || !guestAddress) {
-      alert('Please fill in all required fields');
+      alert('Please fill in all required guest information');
       return;
     }
 
+    // MANDATORY: ID document (IC) must be uploaded
     if (!idDocument) {
-      alert('Please upload your ID document (IC)');
+      alert('❌ ID Document (IC) is mandatory for all bookings. Please upload your identification card.');
       return;
     }
 
+    // CONDITIONAL: Additional proof required for long-term stays (> 30 days)
     if (isLongTermStay && !additionalDoc) {
-      alert('Long-term stay requires additional proof document');
+      alert(`❌ Additional proof document is required for long-term stays (${stayDuration} days). Please upload Visa, Employment Letter, or Work Permit.`);
       return;
     }
 
@@ -175,25 +179,33 @@ const BookingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-md">
+    <div className="min-h-screen bg-gray-50">
+      <GuestNavbar />
+
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">🏨 Complete Your Booking</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Complete Your Booking</h1>
+              <p className="text-sm text-gray-600 mt-1">Fill in your details to confirm reservation</p>
+            </div>
             <button
               onClick={() => navigate(-1)}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition"
+              className="text-gray-600 hover:text-blue-600 font-medium transition"
             >
               ← Back
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
       {loading && !room ? (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+            </div>
             <p className="text-xl text-gray-600">Loading room details...</p>
           </div>
         </div>
@@ -296,40 +308,64 @@ const BookingPage: React.FC = () => {
 
               {/* Document Upload */}
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Document Upload</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-4">📄 Document Upload</h2>
+                
+                {/* Mandatory Notice */}
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-semibold text-red-800">
+                        🔒 MANDATORY: ID Document (IC) Required
+                      </p>
+                      <p className="text-xs text-red-700 mt-1">
+                        All guests must upload a valid identification card before booking
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ID Document (IC) <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Upload ID Document (IC) <span className="text-red-600 text-lg">*</span>
                     </label>
                     <input
                       type="file"
                       accept="image/*,.pdf"
                       onChange={handleIdUpload}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                       required
                     />
-                    {idDocument && (
-                      <p className="mt-2 text-sm text-green-600">
-                        ✓ {idDocument.name} uploaded
+                    {idDocument ? (
+                      <p className="mt-2 text-sm text-green-600 font-medium">
+                        ✓ {idDocument.name} uploaded successfully
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-xs text-red-600 font-medium">
+                        ⚠ Please upload your IC/Passport before proceeding
                       </p>
                     )}
                   </div>
 
                   {isLongTermStay && (
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
                       <div className="flex">
                         <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                          <svg className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                           </svg>
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm text-yellow-700">
-                            <strong>Long-term stay detected ({stayDuration} days)</strong>
-                            <br />
-                            Additional proof document required for stays over 30 days
+                          <p className="text-sm font-semibold text-orange-800">
+                            ⏱ Long-Term Stay Detected: {stayDuration} Days
+                          </p>
+                          <p className="text-xs text-orange-700 mt-1">
+                            Stays exceeding 30 days require additional verification documents
                           </p>
                         </div>
                       </div>
@@ -338,23 +374,27 @@ const BookingPage: React.FC = () => {
 
                   {isLongTermStay && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Additional Proof Document <span className="text-red-500">*</span>
+                      <label className="block text-sm font-semibold text-gray-800 mb-2">
+                        📎 Additional Proof Document <span className="text-red-600 text-lg">*</span>
                       </label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
                         onChange={handleAdditionalDocUpload}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         required={isLongTermStay}
                       />
-                      {additionalDoc && (
-                        <p className="mt-2 text-sm text-green-600">
-                          ✓ {additionalDoc.name} uploaded
+                      {additionalDoc ? (
+                        <p className="mt-2 text-sm text-green-600 font-medium">
+                          ✓ {additionalDoc.name} uploaded successfully
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-xs text-orange-600 font-medium">
+                          ⚠ Required: Work permit, student visa, or employment letter
                         </p>
                       )}
-                      <p className="mt-2 text-xs text-gray-500">
-                        Required documents: Work permit, student visa, or employment letter
+                      <p className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                        <strong>Accepted documents:</strong> Work Permit, Student Visa, Employment Letter, Sponsorship Letter
                       </p>
                     </div>
                   )}
@@ -378,57 +418,74 @@ const BookingPage: React.FC = () => {
 
           {/* Booking Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Booking Summary</h2>
               
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Hotel</p>
-                  <p className="font-semibold">{room.hotelName}</p>
+                  <p className="font-semibold text-gray-800">{room.hotelName}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Room Type</p>
-                  <p className="font-semibold">{room.roomType}</p>
+                  <p className="font-semibold text-gray-800">{room.roomType}</p>
                 </div>
 
-                <hr />
+                <hr className="border-gray-200" />
 
+                {/* Editable Check-in Date */}
                 <div>
-                  <p className="text-sm text-gray-600">Check-in</p>
-                  <p className="font-semibold">{checkInDate || 'Not selected'}</p>
+                  <label className="block text-sm text-gray-600 mb-1">Check-in Date</label>
+                  <input
+                    type="date"
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    required
+                  />
                 </div>
 
+                {/* Editable Check-out Date */}
                 <div>
-                  <p className="text-sm text-gray-600">Check-out</p>
-                  <p className="font-semibold">{checkOutDate || 'Not selected'}</p>
+                  <label className="block text-sm text-gray-600 mb-1">Check-out Date</label>
+                  <input
+                    type="date"
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    min={checkInDate || new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    required
+                  />
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Duration</p>
-                  <p className="font-semibold">{stayDuration} night{stayDuration !== 1 ? 's' : ''}</p>
+                  <p className="font-semibold text-gray-800">{stayDuration} night{stayDuration !== 1 ? 's' : ''}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Guests</p>
-                  <p className="font-semibold">{guests} guest{guests !== 1 ? 's' : ''}</p>
+                  <p className="font-semibold text-gray-800">{guests} guest{guests !== 1 ? 's' : ''}</p>
                 </div>
 
-                <hr />
+                <hr className="border-gray-200" />
 
                 <div>
                   <p className="text-sm text-gray-600">Price per night</p>
-                  <p className="font-semibold">${room.price}</p>
+                  <p className="font-semibold text-gray-800">${room.price}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Total Price</p>
-                  <p className="text-2xl font-bold text-blue-600">${totalPrice}</p>
+                  <p className="text-2xl font-bold text-blue-600">${totalPrice.toFixed(2)}</p>
                 </div>
 
-                <div className="bg-blue-50 p-3 rounded-md">
-                  <p className="text-sm text-gray-600">Deposit Required (20%)</p>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <p className="text-sm text-gray-600 mb-1">Deposit Required (20%)</p>
                   <p className="text-xl font-bold text-blue-600">${depositAmount.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Pay now to secure your reservation</p>
                 </div>
 
                 <hr />

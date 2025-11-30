@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import GuestNavbar from '../../components/GuestNavbar';
 
 interface Room {
   id: number;
@@ -135,23 +136,16 @@ const RoomSearch: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-md">
+    <div className="min-h-screen bg-gray-50">
+      <GuestNavbar />
+
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="cursor-pointer" onClick={() => navigate('/guest/dashboard')}>
-              <h1 className="text-2xl font-bold text-gray-800">🏨 SmartStay</h1>
-            </div>
-            <button
-              onClick={() => navigate('/guest/dashboard')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition"
-            >
-              ← Back to Dashboard
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-800">Search Available Rooms</h1>
+          <p className="text-sm text-gray-600 mt-1">Find your perfect accommodation</p>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -261,7 +255,10 @@ const RoomSearch: React.FC = () => {
             </div>
 
             {loading ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <div className="bg-white rounded-lg shadow-md p-12 text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+                </div>
                 <p className="text-xl text-gray-600">Loading rooms...</p>
               </div>
             ) : error ? (

@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import GuestNavbar from '../../components/GuestNavbar';
 
 const GuestProfile: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const clearUser = useAuthStore((state) => state.clearUser);
+
+  // Helper function to get initials (same as navbar)
+  const getInitials = (name: string = '') => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'G';
+  };
 
   // Profile state
   const [isEditing, setIsEditing] = useState(false);
@@ -85,24 +96,16 @@ const GuestProfile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-md">
+    <div className="min-h-screen bg-gray-50">
+      <GuestNavbar />
+
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">👤 My Profile</h1>
-              <p className="text-sm text-gray-600">Manage your account information</p>
-            </div>
-            <button
-              onClick={() => navigate('/guest/dashboard')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition"
-            >
-              ← Back to Dashboard
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-800">👤 My Profile</h1>
+          <p className="text-sm text-gray-600 mt-1">Manage your account information</p>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
@@ -131,13 +134,14 @@ const GuestProfile: React.FC = () => {
               {/* Profile Picture */}
               <div className="flex justify-center mb-6">
                 <div className="relative">
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-5xl">
-                    👤
+                  <div className="w-32 h-32 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full flex items-center justify-center text-white text-5xl font-bold shadow-lg">
+                    {getInitials(fullName)}
                   </div>
                   {isEditing && (
                     <button
                       type="button"
-                      className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition"
+                      className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-2 hover:bg-blue-700 transition shadow-md"
+                      title="Change profile picture"
                     >
                       📷
                     </button>

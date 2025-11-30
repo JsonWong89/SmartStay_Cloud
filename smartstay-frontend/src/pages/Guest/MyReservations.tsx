@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { API_BASE_URL } from '../../config';
+import GuestNavbar from '../../components/GuestNavbar';
 
 interface Reservation {
   bookingID: number;
@@ -53,42 +54,69 @@ const MyReservations: React.FC = () => {
   }, [user?.id]);
 
   const filteredReservations = reservations.filter((res) => {
-    if (filterStatus === 'all') return true;
+    if (filterStatus === 'all') {
+      // 'All' means all bookings regardless of status
+      return true;
+    }
+    if (filterStatus === 'confirmed') {
+      return res.bookingStatus === 'Confirmed';
+    }
+    if (filterStatus === 'checkedin') {
+      return res.bookingStatus === 'CheckedIn';
+    }
+    if (filterStatus === 'checkedout') {
+      return res.bookingStatus === 'CheckedOut';
+    }
+    if (filterStatus === 'cancelled') {
+      return res.bookingStatus === 'Cancelled';
+    }
     return res.bookingStatus.toLowerCase() === filterStatus.toLowerCase();
   });
 
   const canCancelBooking = (booking: Reservation) => {
-    const checkInDate = new Date(booking.checkInDate);
-    const today = new Date();
-    return booking.bookingStatus === 'Pending' || booking.bookingStatus === 'Confirmed' && checkInDate > today;
+    return booking.bookingStatus === 'Confirmed';
   };
 
   const canReviewBooking = (booking: Reservation) => {
     const checkOutDate = new Date(booking.checkOutDate);
     const today = new Date();
-    return checkOutDate < today && (booking.bookingStatus === 'Confirmed' || booking.bookingStatus === 'Completed');
+    // Can only review CheckedOut bookings after check-out
+    return checkOutDate < today && booking.bookingStatus === 'CheckedOut';
   };
 
   const handleCancelReservation = async (bookingId: number) => {
     const confirmed = window.confirm(
-      'Are you sure you want to cancel this reservation?\n\nNote: Your deposit is non-refundable.'
+      'Are you sure you want to cancel this reservation?\n\nIMPORTANT: Your deposit is non-refundable and will not be returned.'
     );
 
     if (confirmed) {
       try {
-        // TODO: Implement cancel booking API endpoint
-        // const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel`, { method: 'PUT' });
-        // if (response.ok) {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel`, { 
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Cancellation failed' }));
+          throw new Error(errorData.message || 'Failed to cancel reservation');
+        }
+
+        const result = await response.json();
+        
+        // Update local state
         setReservations((prev) =>
           prev.map((res) =>
             res.bookingID === bookingId ? { ...res, bookingStatus: 'Cancelled' } : res
           )
         );
-        alert('Reservation cancelled successfully. Your deposit will not be refunded.');
-        // }
+        
+        alert('Reservation cancelled successfully. Note: Your deposit is non-refundable.');
       } catch (error) {
         console.error('Error cancelling reservation:', error);
-        alert('Failed to cancel reservation. Please try again.');
+        alert(error instanceof Error ? error.message : 'Failed to cancel reservation. Please try again.');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -102,99 +130,87 @@ const MyReservations: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusLower = status.toLowerCase();
     const badges: Record<string, string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      'checked-in': 'bg-green-100 text-green-800',
-      completed: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
+      Confirmed: 'bg-blue-100 text-blue-800',
+      CheckedIn: 'bg-green-100 text-green-800',
+      CheckedOut: 'bg-purple-100 text-purple-800',
+      Cancelled: 'bg-red-100 text-red-800',
     };
-    return badges[statusLower] || 'bg-gray-100 text-gray-800';
+    return badges[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusIcon = (status: string) => {
-    const statusLower = status.toLowerCase();
     const icons: Record<string, string> = {
-      pending: '⏳',
-      confirmed: '✓',
-      'checked-in': '🏨',
-      completed: '✓✓',
-      cancelled: '✗',
+      Confirmed: '✓',
+      CheckedIn: '🏨',
+      CheckedOut: '✅',
+      Cancelled: '✗',
     };
-    return icons[statusLower] || '•';
+    return icons[status] || '•';
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-md">
+    <div className="min-h-screen bg-gray-50">
+      <GuestNavbar />
+
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">📋 My Reservations</h1>
-              <p className="text-sm text-gray-600">Manage your bookings</p>
-            </div>
-            <button
-              onClick={() => navigate('/guest/dashboard')}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition"
-            >
-              ← Back to Dashboard
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-800">My Reservations</h1>
+          <p className="text-sm text-gray-600 mt-1">Manage and track all your bookings</p>
         </div>
-      </header>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filter Tabs */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-md font-medium transition ${
+              className={`px-4 py-2 rounded-lg font-medium transition ${
                 filterStatus === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              All Reservations
+              📋 All Reservations
             </button>
             <button
               onClick={() => setFilterStatus('confirmed')}
-              className={`px-4 py-2 rounded-md font-medium transition ${
+              className={`px-4 py-2 rounded-lg font-medium transition ${
                 filterStatus === 'confirmed'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Confirmed
+              ✓ Confirmed
             </button>
             <button
-              onClick={() => setFilterStatus('checked-in')}
-              className={`px-4 py-2 rounded-md font-medium transition ${
-                filterStatus === 'checked-in'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              onClick={() => setFilterStatus('checkedin')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filterStatus === 'checkedin'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Checked In
+              🏨 Checked In
             </button>
             <button
-              onClick={() => setFilterStatus('checked-out')}
-              className={`px-4 py-2 rounded-md font-medium transition ${
-                filterStatus === 'checked-out'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              onClick={() => setFilterStatus('checkedout')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filterStatus === 'checkedout'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Past Stays
+              ✅ Checked Out
             </button>
             <button
               onClick={() => setFilterStatus('cancelled')}
-              className={`px-4 py-2 rounded-md font-medium transition ${
+              className={`px-4 py-2 rounded-lg font-medium transition ${
                 filterStatus === 'cancelled'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               Cancelled
@@ -204,7 +220,10 @@ const MyReservations: React.FC = () => {
 
         {/* Loading State */}
         {loading ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="bg-white rounded-lg shadow-md p-12 text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600"></div>
+            </div>
             <div className="text-xl text-gray-600">Loading your reservations...</div>
           </div>
         ) : (
@@ -307,23 +326,34 @@ const MyReservations: React.FC = () => {
                       {canReviewBooking(reservation) && (
                         <button
                           onClick={() => handleWriteReview(reservation.bookingID)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md text-sm transition"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition"
                         >
                           ⭐ Write Review
                         </button>
                       )}
-
-                      {reservation.bookingStatus === 'Confirmed' && (
-                        <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition">
-                          ℹ️ Modify Booking
-                        </button>
-                      )}
                     </div>
+
+                    {/* Status Messages */}
+                    {reservation.bookingStatus.toLowerCase() === 'confirmed' && (
+                      <div className="mt-3 bg-yellow-50 border-l-4 border-yellow-400 p-3">
+                        <p className="text-sm text-yellow-700">
+                          ⏳ <strong>Payment Received:</strong> Your deposit has been paid. Please check in on {reservation.checkInDate} to complete your booking.
+                        </p>
+                      </div>
+                    )}
+
+                    {reservation.bookingStatus.toLowerCase() === 'checkedout' && (
+                      <div className="mt-3 bg-green-50 border-l-4 border-green-400 p-3">
+                        <p className="text-sm text-green-700">
+                          ✓ <strong>Stay Completed:</strong> Thank you for choosing SmartStay! We hope you enjoyed your stay.
+                        </p>
+                      </div>
+                    )}
 
                     {reservation.bookingStatus.toLowerCase() === 'cancelled' && (
                       <div className="mt-3 bg-red-50 border-l-4 border-red-400 p-3">
                         <p className="text-sm text-red-700">
-                          This reservation was cancelled. Deposit of ${reservation.depositAmount} was not refunded.
+                          ✗ <strong>Cancelled:</strong> This reservation was cancelled. Your deposit of ${reservation.depositAmount} is non-refundable.
                         </p>
                       </div>
                     )}

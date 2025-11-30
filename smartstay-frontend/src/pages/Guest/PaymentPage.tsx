@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { STRIPE_PUBLISHABLE_KEY, API_BASE_URL } from '../../config';
+import { useAuthStore } from '../../store';
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -15,12 +16,17 @@ interface BookingData {
   totalGuests: number;
   totalAmount: number;
   depositAmount: number;
+  guestID?: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
 }
 
 const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
   const stripe = useStripe();
   const elements = useElements();
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -99,10 +105,30 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
         setSucceeded(true);
         setProcessing(false);
 
-        // Redirect to success page
+        // Redirect to booking confirmation page
         setTimeout(() => {
-          navigate('/guest/reservations');
-        }, 2000);
+          navigate('/guest/booking-confirmation', {
+            state: {
+              booking: {
+                bookingID: booking.bookingID,
+                guestID: user?.id || '',
+                guestName: user?.fullName || booking.guestName || '',
+                guestEmail: user?.email || booking.guestEmail || '',
+                guestPhone: booking.guestPhone || '',
+                hotelName: booking.hotelName,
+                roomType: booking.roomType,
+                checkInDate: booking.checkInDate,
+                checkOutDate: booking.checkOutDate,
+                totalGuests: booking.totalGuests,
+                totalAmount: booking.totalAmount,
+                depositAmount: booking.depositAmount,
+                bookingStatus: 'Confirmed',
+                confirmationNumber: `BK${booking.bookingID}`,
+                createdAt: new Date().toISOString()
+              }
+            }
+          });
+        }, 1500);
       } catch (err) {
         console.error('Error confirming payment:', err);
         setError(err instanceof Error ? err.message : 'Payment succeeded but confirmation failed. Please contact support with booking ID: ' + booking.bookingID);

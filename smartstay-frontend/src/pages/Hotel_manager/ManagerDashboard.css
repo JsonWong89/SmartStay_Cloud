@@ -424,3 +424,176 @@
   flex-direction: column;
   gap: 10px;
 }
+.room-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.room-table th {
+  background: #333;
+  color: white;
+  padding: 8px;
+}
+
+.room-table td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.room-thumb {
+  width: 70px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.btn-edit {
+  background: #3498db;
+  padding: 5px 10px;
+  border: none;
+  color: white;
+  margin-right: 5px;
+  border-radius: 4px;
+}
+
+.btn-del {
+  background: #e74c3c;
+  padding: 5px 10px;
+  border: none;
+  color: white;
+  border-radius: 4px;
+}
+
+.status.available {
+  color: green;
+  font-weight: bold;
+}
+
+.status.occupied {
+  color: red;
+  font-weight: bold;
+}
+
+.status.maintenance {
+  color: orange;
+  font-weight: bold;
+}
+
+.modal {
+  background: #fafafa;
+  padding: 20px;
+  margin-top: 25px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.modal input,
+.modal textarea,
+.modal select {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+/* PAGE WRAPPER */
+.manager-rooms {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+/* TITLE */
+.manager-rooms h2 {
+    margin-bottom: 15px;
+}
+
+/* MAIN TABLE */
+.rooms-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.rooms-table th,
+.rooms-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+
+.rooms-table th {
+    background: #f7f7f7;
+    font-weight: bold;
+}
+
+/* BUTTONS */
+.btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.btn-add {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-edit {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-delete {
+    background: #e63946;
+    color: white;
+}
+
+.btn-cancel {
+    background: #aaa;
+    color: white;
+}
+
+/* MODAL BOX */
+.modal-box {
+    background: white;
+    padding: 20px;
+    width: 400px;
+    border-radius: 8px;
+    margin-top: 20px;
+
+    /* shadow */
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+}
+
+/* INPUTS */
+.modal-box input,
+.modal-box select,
+.modal-box textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* IMAGE PREVIEW */
+.image-preview {
+    width: 160px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+}
+
+/* MODAL BUTTONS */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}

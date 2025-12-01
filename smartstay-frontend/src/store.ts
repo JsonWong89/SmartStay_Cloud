@@ -1,27 +1,34 @@
-import { create } from "zustand";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-// ✅ Define the structure of your global state
-interface AuthState {
-  // The currently logged-in user's info
-  user: {
-    fullName: string;
-    email: string;
-    role: string;
-  } | null;
-
-  // --- Actions ---
-  // Save user info after login or register
-  setUser: (user: { fullName: string; email: string; role: string }) => void;
-
-  // Clear user info when logged out
-  clearUser: () => void;
+interface User {
+  userId: string;
+  fullName: string;
+  email: string;
+  role: 'Admin' | 'Manager' | 'Receptionist';
+  hotelId?: number;
+  hotelName?: string;
 }
 
-// ✅ Create Zustand store
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null, // Default: no user logged in
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  setUser: (user: User) => void;
+  logout: () => void;
+}
 
-  setUser: (user) => set({ user }),
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      isAuthenticated: false,
+      setUser: (user) => set({ user, isAuthenticated: true }),
 
-  clearUser: () => set({ user: null }),
-}));
+      logout: () => {
+        set({ user: null, isAuthenticated: false });
+        localStorage.removeItem('auth-storage');
+      },
+    }),
+    { name: 'auth-storage' }
+  )
+);

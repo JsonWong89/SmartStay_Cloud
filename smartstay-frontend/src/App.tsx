@@ -3,7 +3,13 @@ import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Admin from './pages/Admin/Admin';
-import Manager from './pages/Hotel_manager/Manager';
+import Manager from './pages/Hotel_manager/ManagerIndex';
+import ManageRooms from "./pages/Hotel_manager/ManagerManageRooms";
+import ManageBookings from "./pages/Hotel_manager/ManagerManageBookings";
+import ManageStaff from "./pages/Hotel_manager/ManagerManageStaff";
+import ManageReport from "./pages/Hotel_manager/ManagerManageReport";
+import ManagerOverview from "./pages/Hotel_manager/ManageOverview";
+
 import Staff from './pages/Staff/Staff';
 import Customer from './pages/Guest/Guest';
 import Unauthorized from './pages/Unauthorized';
@@ -43,7 +49,14 @@ export default function App() {
           <Route path="/admin" element={<Admin />} />
         </Route>
         <Route element={<ProtectedRoute allow={["ADMIN", "MANAGER"] as any} />}>
-          <Route path="/manager" element={<Manager />} />
+          <Route path="/manager" element={<Manager />}>
+            <Route index element={<ManagerOverview />} />
+            <Route path="overview" element={<ManagerOverview />} />
+            <Route path="rooms" element={<ManageRooms />} />
+            <Route path="bookings" element={<ManageBookings />} />
+            <Route path="staff" element={<ManageStaff />} />
+            <Route path="report" element={<ManageReport />} />
+          </Route>
         </Route>
         <Route element={<ProtectedRoute allow={["ADMIN", "MANAGER", "STAFF"] as any} />}>
           <Route path="/staff" element={<Staff />} />
@@ -54,6 +67,10 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+
+
+
     </div>
   );
 }

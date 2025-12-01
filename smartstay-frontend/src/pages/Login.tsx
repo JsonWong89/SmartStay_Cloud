@@ -14,9 +14,12 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    login(name.trim(), role);
+
+    login(name.trim());
+
+    const user = useAuthStore.getState().user;
     // Route by role
-    switch (role) {
+    switch (user?.role) {
       case 'ADMIN':
         navigate('/admin');
         break;

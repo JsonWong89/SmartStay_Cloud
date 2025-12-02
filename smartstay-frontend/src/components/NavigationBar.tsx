@@ -1,9 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store';
 import { Link, useLocation } from 'react-router-dom';
 import '../styles/NavigationBar.css';
 
 const NavigationBar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { setUser } = useAuthStore();
 
   const navItems = [
     { path: '/admin/manage-managers', label: 'Manage Managers Accounts' },
@@ -33,7 +37,13 @@ const NavigationBar: React.FC = () => {
           ))}
         </ul>
         <div className="nav-user">
-          <button className="logout-btn">Logout</button>
+          <button
+            className="logout-btn"
+            onClick={() => {
+              setUser({ fullName: '', email: '', role: '' });
+              navigate('/login');
+            }}
+          >Logout</button>
         </div>
       </div>
     </nav>

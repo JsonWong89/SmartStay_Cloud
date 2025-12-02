@@ -87,18 +87,28 @@ const LoginPage: React.FC = () => {
       }
 
       // Login successful
+      const role = (user.role || user.Role || '').toLowerCase();
       setUser({ 
         fullName: user.fullName || user.FullName, 
         email: user.email || user.Email, 
         role: user.role || user.Role 
       });
-      
       setMessage("Login successful!");
       setMessageType("success");
 
-      // Redirect to admin dashboard after successful login
+      // Redirect based on role
       setTimeout(() => {
-        navigate("/admin/dashboard");
+        if (role === 'admin') {
+          navigate("/admin/dashboard");
+        } else if (role === 'hotel manager') {
+          navigate("/hotel-manager");
+        } else if (role === 'guest') {
+          navigate("/guest");
+        } else if (role === 'staff') {
+          navigate("/staff");
+        } else {
+          navigate("/"); // fallback
+        }
       }, 1000);
     } catch (err) {
       console.error(err);

@@ -99,7 +99,7 @@ const EditHotelPage: React.FC = () => {
         hotelName: form.hotelName.trim(),
         address: form.address.trim() || null,
         city: form.city.trim() || null,
-        managerID: form.managerID ? Number(form.managerID) : null,
+        managerID: form.managerID || null,
       };
 
       const res = await apiPut(API_ENDPOINTS.HOTELS.BY_ID(id!), payload);

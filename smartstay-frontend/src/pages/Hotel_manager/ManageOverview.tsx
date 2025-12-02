@@ -9,7 +9,7 @@ export default function ManagerOverview() {
     <div className="dashboard-view">
       <h2 className="page-title">Dashboard Overview</h2>
       <p className="page-subtitle">
-        Managing operations for <strong>{user?.hotelID ?? "Your Hotel"}</strong>
+        Managing operations for <strong>{user?.hotelId ?? "Your Hotel"}</strong>
       </p>
 
       <section className="stats-grid">

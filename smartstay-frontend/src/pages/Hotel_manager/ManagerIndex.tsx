@@ -42,6 +42,14 @@ export default function ManagerIndex() {
           <Link to="/manager/report" className={`nav-item ${isActive("report") ? "active" : ""}`}>
             <FiBarChart2 /> Report
           </Link>
+
+          <Link
+            to="/manager/hotelinfo"
+            className={`nav-item ${isActive("hotelinfo") ? "active" : ""}`}
+          >
+            <FiBarChart2 /> Hotel info
+          </Link>
+
         </nav>
 
         <button onClick={logout} className="logout-btn">

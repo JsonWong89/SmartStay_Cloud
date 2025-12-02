@@ -7,8 +7,14 @@ import Manager from './pages/Hotel_manager/ManagerIndex';
 import ManageRooms from "./pages/Hotel_manager/ManagerManageRooms";
 import ManageBookings from "./pages/Hotel_manager/ManagerManageBookings";
 import ManageStaff from "./pages/Hotel_manager/ManagerManageStaff";
-import ManageReport from "./pages/Hotel_manager/ManagerManageReport";
+import ManageReport from "./pages/Hotel_manager/ManagerReportMenu";
 import ManagerOverview from "./pages/Hotel_manager/ManageOverview";
+import ManagerHotelInfo from './pages/Hotel_manager/ManagerHotelInfo';
+import ManagerReport_Revenue from './pages/Hotel_manager/Reports/RevenueReport';
+import ManagerReport_Occupancy from './pages/Hotel_manager/Reports/OccupancyReport';
+import ManagerReport_Room from './pages/Hotel_manager/Reports/RoomTypeReport';
+import ManagerReport_Booking from './pages/Hotel_manager/Reports/BookingStatusReport';
+import ManagerReport_Gender from './pages/Hotel_manager/Reports/GenderReport';
 
 import Staff from './pages/Staff/Staff';
 import Customer from './pages/Guest/Guest';
@@ -56,6 +62,13 @@ export default function App() {
             <Route path="bookings" element={<ManageBookings />} />
             <Route path="staff" element={<ManageStaff />} />
             <Route path="report" element={<ManageReport />} />
+            <Route path="hotelinfo" element={<ManagerHotelInfo />} />
+
+            <Route path="report/revenue" element={<ManagerReport_Revenue />} />
+            <Route path="report/occupancy" element={<ManagerReport_Occupancy />} />
+            <Route path="report/roomtypes" element={<ManagerReport_Room />} />
+            <Route path="report/bookings" element={<ManagerReport_Booking />} />
+            <Route path="report/gender" element={<ManagerReport_Gender />} />
           </Route>
         </Route>
         <Route element={<ProtectedRoute allow={["ADMIN", "MANAGER", "STAFF"] as any} />}>

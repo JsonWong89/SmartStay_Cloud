@@ -337,7 +337,7 @@ const MyReservations: React.FC = () => {
                     {reservation.bookingStatus.toLowerCase() === 'confirmed' && (
                       <div className="mt-3 bg-yellow-50 border-l-4 border-yellow-400 p-3">
                         <p className="text-sm text-yellow-700">
-                          ⏳ <strong>Payment Received:</strong> Your deposit has been paid. Please check in on {reservation.checkInDate} to complete your booking.
+                          ⏳ <strong>Payment Received:</strong> Your deposit has been paid. Please check in on {reservation.checkInDate} to complete your payment.
                         </p>
                       </div>
                     )}

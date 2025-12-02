@@ -99,6 +99,25 @@ const BookingPage: React.FC = () => {
     }
   };
 
+  const uploadDocument = async (file: File, documentType: string, guestId: string) => {
+    const formData = new FormData();
+    formData.append('File', file);
+    formData.append('GuestID', guestId);
+    formData.append('DocumentType', documentType);
+
+    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Failed to upload document' }));
+      throw new Error(errorData.message || 'Failed to upload document');
+    }
+
+    return await response.json();
+  };
+
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -130,10 +149,49 @@ const BookingPage: React.FC = () => {
       return;
     }
 
+    // Validation: No past dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+    
+    if (checkIn < today) {
+      alert('❌ Check-in date cannot be in the past. Please select today or a future date.');
+      return;
+    }
+
+    // Validation: Check-out must be after check-in
+    if (checkOut <= checkIn) {
+      alert('❌ Check-out date must be at least one day after check-in date.');
+      return;
+    }
+
+    // Validation: Max booking window (1 year in advance)
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+    
+    if (checkIn > oneYearFromNow) {
+      alert('❌ Bookings can only be made up to 1 year in advance.');
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Create booking via API
+      // Step 1: Upload ID document
+      console.log('Uploading ID document...');
+      await uploadDocument(idDocument, 'ID', user.id);
+
+      // Step 2: Upload additional document if required
+      if (isLongTermStay && additionalDoc) {
+        console.log('Uploading additional document...');
+        const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' : 
+                       additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' : 
+                       'WorkPermit';
+        await uploadDocument(additionalDoc, docType, user.id);
+      }
+
+      // Step 3: Create booking via API
       const bookingRequest = {
         guestID: user.id,
         roomID: room.id,
@@ -442,6 +500,7 @@ const BookingPage: React.FC = () => {
                     value={checkInDate}
                     onChange={(e) => setCheckInDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
+                    max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     required
                   />
@@ -454,7 +513,8 @@ const BookingPage: React.FC = () => {
                     type="date"
                     value={checkOutDate}
                     onChange={(e) => setCheckOutDate(e.target.value)}
-                    min={checkInDate || new Date().toISOString().split('T')[0]}
+                    min={checkInDate ? new Date(new Date(checkInDate).setDate(new Date(checkInDate).getDate() + 1)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                    max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     required
                   />

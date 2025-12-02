@@ -68,6 +68,16 @@ const GuestNavbar: React.FC = () => {
                 My Bookings
               </button>
               <button
+                onClick={() => navigate('/guest/documents')}
+                className={`font-medium transition ${
+                  isActive('/guest/documents')
+                    ? 'text-blue-600 border-b-2 border-blue-600 pb-1'
+                    : 'text-gray-600 hover:text-blue-600'
+                }`}
+              >
+                Documents
+              </button>
+              <button
                 onClick={() => navigate('/guest/reviews')}
                 className={`font-medium transition ${
                   isActive('/guest/reviews')

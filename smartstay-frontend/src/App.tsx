@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 // ✅ Import Guest pages
 import GuestDashboard from "./pages/Guest/GuestDashboard";
 import RoomSearch from "./pages/Guest/RoomSearch";
+import RoomDetails from "./pages/Guest/RoomDetails";
 import BookingPage from "./pages/Guest/BookingPage";
 import MyReservations from "./pages/Guest/MyReservations";
 import PaymentPage from "./pages/Guest/PaymentPage";
@@ -19,6 +20,7 @@ import ReviewPage from "./pages/Guest/ReviewPage";
 import GuestProfile from "./pages/Guest/GuestProfile";
 import ReceiptPage from "./pages/Guest/ReceiptPage";
 import MyReviewsPage from "./pages/Guest/MyReviewsPage";
+import MyDocuments from "./pages/Guest/MyDocuments";
 
 // ✅ App component
 const App: React.FC = () => {
@@ -40,12 +42,14 @@ const App: React.FC = () => {
       {/* Guest Routes */}
       <Route path="/guest/dashboard" element={<GuestDashboard />} />
       <Route path="/guest/search" element={<RoomSearch />} />
+      <Route path="/guest/room/:roomId" element={<RoomDetails />} />
       <Route path="/guest/booking/:roomId" element={<BookingPage />} />
       <Route path="/guest/reservations" element={<MyReservations />} />
       <Route path="/guest/payment" element={<PaymentPage />} />
       <Route path="/guest/booking-confirmation" element={<BookingConfirmation />} />
       <Route path="/guest/review/:reservationId" element={<ReviewPage />} />
       <Route path="/guest/reviews" element={<MyReviewsPage />} />
+      <Route path="/guest/documents" element={<MyDocuments />} />
       <Route path="/guest/receipt/:bookingId" element={<ReceiptPage />} />
       <Route path="/guest/profile" element={<GuestProfile />} />
 

@@ -10,6 +10,7 @@ interface Room {
   price: number;
   available: boolean;
   imageUrl?: string;
+  city?: string;
 }
 
 const RoomSearch: React.FC = () => {
@@ -23,6 +24,7 @@ const RoomSearch: React.FC = () => {
   const [guests, setGuests] = useState(parseInt(searchParams.get('guests') || '1'));
   const [hotelFilter, setHotelFilter] = useState('');
   const [roomTypeFilter, setRoomTypeFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState(searchParams.get('location') || '');
   const [maxPrice, setMaxPrice] = useState(1000);
 
   // Initialize with empty array
@@ -38,8 +40,14 @@ const RoomSearch: React.FC = () => {
         setLoading(true);
         setError(''); // Clear any previous errors
         
-        console.log('Fetching rooms from backend...');
-        const response = await fetch('https://localhost:7168/api/rooms'); 
+        // Build API URL with location parameter if provided
+        let apiUrl = 'https://localhost:7168/api/rooms';
+        if (cityFilter) {
+          apiUrl += `?location=${encodeURIComponent(cityFilter)}`;
+        }
+        
+        console.log('Fetching rooms from backend:', apiUrl);
+        const response = await fetch(apiUrl); 
         
         console.log('Response status:', response.status);
         
@@ -58,10 +66,9 @@ const RoomSearch: React.FC = () => {
           roomType: r.roomType,
           price: r.price,
           available: r.available,
-          imageUrl: r.imageUrl
+          imageUrl: r.imageUrl,
+          city: r.city
         }));
-
-        console.log('Mapped rooms:', mappedRooms);
 
         console.log('Mapped rooms:', mappedRooms);
         setRooms(mappedRooms);
@@ -75,7 +82,7 @@ const RoomSearch: React.FC = () => {
     };
 
     fetchRooms();
-  }, []); // Empty dependency array = run once on load
+  }, [cityFilter]); // Re-fetch when cityFilter changes
 
   useEffect(() => {
     filterRooms();
@@ -96,6 +103,9 @@ const RoomSearch: React.FC = () => {
         console.log(`Room ${room.id} filtered out by hotel name`);
         return false;
       }
+      
+      // City filter is now handled by backend API
+      // No need to filter by city here anymore
       
       // Filter by room type
       if (roomTypeFilter && !room.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase())) {
@@ -133,6 +143,10 @@ const RoomSearch: React.FC = () => {
       return;
     }
     navigate(`/guest/booking/${roomId}?checkIn=${checkInDate}&checkOut=${checkOutDate}&guests=${guests}`);
+  };
+
+  const handleViewDetails = (roomId: number) => {
+    navigate(`/guest/room/${roomId}`);
   };
 
   return (
@@ -188,6 +202,18 @@ const RoomSearch: React.FC = () => {
               </div>
 
               <hr className="my-4" />
+
+              {/* City Filter */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Kuala Lumpur, Penang"
+                  value={cityFilter}
+                  onChange={(e) => setCityFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
               {/* Hotel Filter */}
               <div className="mb-4">
@@ -302,6 +328,7 @@ const RoomSearch: React.FC = () => {
                           <div>
                             <h3 className="text-xl font-bold text-gray-800">{room.roomType}</h3>
                             <p className="text-gray-600">{room.hotelName}</p>
+                            {room.city && <p className="text-sm text-gray-500">📍 {room.city}</p>}
                           </div>
                           <div className="text-right">
                             <p className="text-3xl font-bold text-blue-600">${room.price}</p>
@@ -319,6 +346,7 @@ const RoomSearch: React.FC = () => {
                             Book Now
                           </button>
                           <button
+                            onClick={() => handleViewDetails(room.id)}
                             className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md transition"
                           >
                             View Details

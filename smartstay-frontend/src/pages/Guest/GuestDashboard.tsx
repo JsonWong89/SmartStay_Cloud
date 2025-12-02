@@ -30,6 +30,7 @@ const GuestDashboard: React.FC = () => {
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guests, setGuests] = useState(1);
+  const [location, setLocation] = useState('');
   const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +66,8 @@ const GuestDashboard: React.FC = () => {
         const response = await fetch(`${API_BASE_URL}/hotels`);
         if (response.ok) {
           const data = await response.json();
-          // Get first 3 hotels for featured section
-          setHotels(data.slice(0, 3));
+          // Get all hotels for featured section
+          setHotels(data);
         } else {
           // Fallback to mock data if API endpoint doesn't exist yet
           setHotels([
@@ -133,151 +134,205 @@ const GuestDashboard: React.FC = () => {
     fetchHotels();
   }, []);
 
-  const quickLinks = [
-    { title: 'Search Rooms', icon: '🔍', path: '/guest/search', color: 'bg-gradient-to-br from-blue-500 to-blue-600', description: 'Find your perfect room' },
-    { title: 'My Reservations', icon: '📋', path: '/guest/reservations', color: 'bg-gradient-to-br from-blue-600 to-blue-700', description: 'View your bookings' },
-    { title: 'My Profile', icon: '👤', path: '/guest/profile', color: 'bg-gradient-to-br from-sky-500 to-blue-500', description: 'Manage your account' },
-    { title: 'Reviews', icon: '⭐', path: '/guest/reviews', color: 'bg-gradient-to-br from-blue-700 to-indigo-700', description: 'Share your experience' },
-  ];
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/guest/search?checkIn=${checkInDate}&checkOut=${checkOutDate}&guests=${guests}`);
+    const params = new URLSearchParams();
+    if (checkInDate) params.append('checkIn', checkInDate);
+    if (location) params.append('location', location);
+    params.append('guests', guests.toString());
+    navigate(`/guest/search?${params.toString()}`);
   };
+
+  const popularDestinations = [
+    { name: 'Kuala Lumpur', image: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400' },
+    { name: 'Penang', image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=400' },
+    { name: 'Johor Bahru', image: 'https://images.unsplash.com/photo-1687861717577-8ff74dd61a47?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+    { name: 'Melaka', image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <GuestNavbar />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section with Search */}
-        <div className="bg-gradient-to-r from-sky-500 to-blue-600 rounded-2xl shadow-xl p-8 md:p-12 mb-8 text-white">
-          <h2 className="text-4xl md:text-5xl font-bold mb-3">Find Your Perfect Stay</h2>
-          <p className="text-lg md:text-xl mb-8 text-blue-50">Discover amazing hotels and book your ideal room with ease</p>
+      {/* Hero Section with Background Image */}
+      <div className="relative h-[500px] bg-cover bg-center" style={{backgroundImage: "url('https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1920&q=80')"}}>
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
+        
+        {/* Hero Content */}
+        <div className="relative h-full flex flex-col items-center justify-center text-white px-4">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4 text-center">Find Your Perfect Stay</h1>
+          <p className="text-xl md:text-2xl mb-8 text-center">Discover amazing hotels to make glass memories</p>
           
-          <form onSubmit={handleSearch} className="bg-white rounded-xl p-6 shadow-lg text-gray-800">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Check-in Date</label>
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="w-full max-w-4xl">
+            <div className="bg-white rounded-xl shadow-2xl p-4 flex flex-wrap md:flex-nowrap gap-4 items-center">
+              <div className="flex items-center flex-1 min-w-[200px] px-4 py-2 border-r border-gray-200">
+                <span className="text-gray-400 mr-2">📍</span>
+                <input
+                  type="text"
+                  placeholder="City in Malaysia"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full outline-none text-gray-800"
+                />
+              </div>
+              
+              <div className="flex items-center flex-1 min-w-[150px] px-4 py-2 border-r border-gray-200">
+                <span className="text-gray-400 mr-2">📅</span>
                 <input
                   type="date"
                   value={checkInDate}
                   onChange={(e) => setCheckInDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
+                  placeholder="Dates"
+                  className="w-full outline-none text-gray-800"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Check-out Date</label>
-                <input
-                  type="date"
-                  value={checkOutDate}
-                  onChange={(e) => setCheckOutDate(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Guests</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="10"
+              
+              <div className="flex items-center flex-1 min-w-[120px] px-4 py-2">
+                <span className="text-gray-400 mr-2">👥</span>
+                <select
                   value={guests}
                   onChange={(e) => setGuests(parseInt(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                  className="w-full outline-none text-gray-800 bg-transparent"
                 >
-                  🔍 Search Rooms
-                </button>
+                  {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                    <option key={num} value={num}>{num} Guest{num > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
               </div>
+              
+              <button
+                type="submit"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-md hover:shadow-lg whitespace-nowrap"
+              >
+                Search
+              </button>
             </div>
           </form>
         </div>
+      </div>
 
-        {/* Quick Links */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-6">Quick Actions</h3>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Popular Cities */}
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">Popular Cities in Malaysia</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {quickLinks.map((link) => (
-              <button
-                key={link.title}
-                onClick={() => navigate(link.path)}
-                className={`${link.color} text-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 relative overflow-hidden group`}
+            {popularDestinations.map((destination) => (
+              <div
+                key={destination.name}
+                className="relative h-48 rounded-2xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300"
+                onClick={() => navigate(`/guest/search?location=${destination.name}`)}
               >
-                {/* Hover Effect Overlay */}
-                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                
-                {/* Content */}
-                <div className="relative z-10">
-                  <div className="text-5xl mb-3 transform group-hover:scale-110 transition-transform duration-300">{link.icon}</div>
-                  <h4 className="font-bold text-lg mb-1">{link.title}</h4>
-                  <p className="text-xs text-blue-100 opacity-90">{link.description}</p>
-                </div>
-              </button>
+                <img
+                  src={destination.image}
+                  alt={destination.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                <h3 className="absolute bottom-4 left-4 text-white text-2xl font-bold">{destination.name}</h3>
+              </div>
             ))}
           </div>
         </div>
 
         {/* Featured Hotels Section */}
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Featured Hotels</h3>
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-gray-900">Featured Hotels</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  const container = document.getElementById('hotels-container');
+                  if (container) container.scrollBy({ left: -400, behavior: 'smooth' });
+                }}
+                className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition"
+              >
+                <span className="text-xl">←</span>
+              </button>
+              <button
+                onClick={() => {
+                  const container = document.getElementById('hotels-container');
+                  if (container) container.scrollBy({ left: 400, behavior: 'smooth' });
+                }}
+                className="p-2 rounded-full bg-white shadow-md hover:shadow-lg transition"
+              >
+                <span className="text-xl">→</span>
+              </button>
+            </div>
+          </div>
           {hotelsLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-lg text-gray-600">Loading hotels...</span>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
           ) : hotels.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="bg-white rounded-2xl shadow-md p-8 text-center">
               <p className="text-gray-600">No hotels available at the moment</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div 
+              id="hotels-container"
+              className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
+              style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+            >
               {hotels.map((hotel) => (
-                <div key={hotel.hotelID} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
-                  {hotel.imageUrl ? (
-                    <img
-                      src={hotel.imageUrl}
-                      alt={hotel.hotelName}
-                      className="h-48 w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={`h-48 bg-gradient-to-br from-blue-400 to-purple-500 items-center justify-center text-white text-6xl ${
-                      hotel.imageUrl ? 'hidden' : 'flex'
-                    }`}
-                  >
-                    🏨
+                <div 
+                  key={hotel.hotelID} 
+                  className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group snap-start"
+                >
+                  <div className="relative h-56 overflow-hidden">
+                    {hotel.imageUrl ? (
+                      <img
+                        src={hotel.imageUrl}
+                        alt={hotel.hotelName}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`h-56 bg-gradient-to-br from-blue-400 to-blue-500 items-center justify-center text-white text-6xl ${
+                        hotel.imageUrl ? 'hidden' : 'flex'
+                      }`}
+                    >
+                      🏨
+                    </div>
+                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-xl font-bold text-yellow-600 shadow-lg flex items-center gap-1">
+                      <span className="text-yellow-500">⭐</span>
+                      <span>{hotel.rating || '4.8'}</span>
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <h4 className="text-xl font-semibold mb-1">{hotel.hotelName}</h4>
-                    <p className="text-sm text-gray-500 mb-2">📍 {hotel.location}</p>
-                    {hotel.rating && (
-                      <div className="flex items-center mb-2">
-                        <span className="text-yellow-500">{'⭐'.repeat(Math.round(hotel.rating))}</span>
-                        <span className="text-sm text-gray-600 ml-1">({hotel.rating})</span>
-                      </div>
-                    )}
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                  
+                  <div className="p-6">
+                    <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-blue-600 transition">{hotel.hotelName}</h3>
+                    <div className="flex items-center text-gray-500 text-sm mb-3">
+                      <span className="mr-1">📍</span>
+                      <span>{hotel.location}</span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                       {hotel.description || 'Premium accommodations with modern amenities'}
                     </p>
-                    <button
-                      onClick={() => navigate('/guest/search')}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm transition"
-                    >
-                      View Rooms
-                    </button>
+                    
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                      <div>
+                        <span className="text-gray-500 text-xs block">Starting from</span>
+                        <p className="text-2xl font-bold text-blue-600">$199<span className="text-sm font-normal text-gray-500">/night</span></p>
+                      </div>
+                      <button
+                        onClick={() => navigate('/guest/search')}
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                      >
+                        View
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -286,32 +341,32 @@ const GuestDashboard: React.FC = () => {
         </div>
 
         {/* Recent Bookings */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-2xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-2xl font-bold text-gray-800">Recent Bookings</h3>
+            <h2 className="text-2xl font-bold text-gray-900">Recent Bookings</h2>
             <button
               onClick={() => navigate('/guest/reservations')}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1"
             >
-              View All →
+              View All <span>→</span>
             </button>
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
               <span className="ml-3 text-gray-600">Loading bookings...</span>
             </div>
           ) : recentBookings.length === 0 ? (
-            <div className="border-l-4 border-blue-500 pl-4 py-2">
-              <p className="text-gray-700">No recent bookings</p>
-              <p className="text-sm text-gray-500">Start searching for your next stay!</p>
+            <div className="border-l-4 border-blue-500 pl-4 py-4 bg-blue-50 rounded-r-lg">
+              <p className="text-gray-700 font-medium">No recent bookings</p>
+              <p className="text-sm text-gray-500 mt-1">Start searching for your next stay!</p>
             </div>
           ) : (
             <div className="space-y-3">
               {recentBookings.map((booking) => (
                 <div
                   key={booking.bookingID}
-                  className="border-l-4 border-blue-500 pl-4 py-3 bg-gray-50 rounded-r-md hover:bg-gray-100 transition cursor-pointer"
+                  className="border-l-4 border-blue-500 pl-4 py-3 bg-gray-50 rounded-r-lg hover:bg-blue-50 transition cursor-pointer"
                   onClick={() => navigate('/guest/reservations')}
                 >
                   <div className="flex justify-between items-start">
@@ -325,8 +380,10 @@ const GuestDashboard: React.FC = () => {
                     <div className="text-right">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         booking.bookingStatus === 'Confirmed' ? 'bg-green-100 text-green-800' :
-                        booking.bookingStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
+                        booking.bookingStatus === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                        booking.bookingStatus === 'CheckedIn' ? 'bg-blue-100 text-blue-800' :
+                        booking.bookingStatus === 'CheckedOut' ? 'bg-gray-100 text-gray-800' :
+                        'bg-yellow-100 text-yellow-800'
                       }`}>
                         {booking.bookingStatus}
                       </span>

@@ -4,6 +4,7 @@ export interface Guest {
   email: string;
   phoneNumber: string;
   address: string;
+  gender: string;
 }
 
 export interface Room {

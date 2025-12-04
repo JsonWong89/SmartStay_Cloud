@@ -25,7 +25,9 @@ export default function ReservationManagement() {
     try {
       setLoading(true);
       setError(null);
-      const res = await bookingsAPI.getAllBookings({ hotelId: user?.hotelId || 0 });
+      const res = await bookingsAPI.getAllBookings({
+        hotelId: user?.hotelId || 0,
+      });
       if (res.success && res.data) {
         const mapped: Booking[] = res.data.map((b: any) => ({
           bookingId: b.bookingId,
@@ -35,6 +37,7 @@ export default function ReservationManagement() {
             email: b.guest.email,
             phoneNumber: b.guest.phoneNumber,
             address: b.guest.address || "-",
+            gender: b.guest.gender,
           },
           room: {
             roomNumber: b.room.roomNumber,
@@ -77,6 +80,7 @@ export default function ReservationManagement() {
             email: b.guest.email,
             phoneNumber: b.guest.phoneNumber,
             address: b.guest.address || "-",
+            gender: b.guest.gender,
           },
           room: {
             roomNumber: b.room.roomNumber,
@@ -124,6 +128,15 @@ export default function ReservationManagement() {
   ) => {
     try {
       await bookingsAPI.updateBookingStatus(id, status);
+      if (status === "CheckedIn") {
+        await bookingsAPI.sendCheckIn(id);
+        alert("Check-In successful and email sent to guest.");
+      }
+
+      if (status === "CheckedOut") {
+        await bookingsAPI.sendCheckOut(id);
+        alert("Check-Out successful and email sent to guest.");
+      }
       setBookings((prev) =>
         prev.map((b) =>
           b.bookingId === id ? { ...b, bookingStatus: status } : b

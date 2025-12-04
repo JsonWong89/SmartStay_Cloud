@@ -9,6 +9,16 @@
   scrollbar-width: none;
 }
 
+/* Disable Microsoft Edge built-in reveal button */
+.no-edge-eye::-ms-reveal {
+  display: none !important;
+}
+
+.no-edge-eye::-ms-clear {
+  display: none !important;
+}
+
+
 
 
 

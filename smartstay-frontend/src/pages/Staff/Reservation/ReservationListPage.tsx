@@ -296,7 +296,7 @@ export default function ReservationListPage({
                   Guests
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Financial
+                  Payment
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
                   Status

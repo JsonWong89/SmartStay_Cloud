@@ -13,7 +13,11 @@ import {
   Monitor,
 } from "lucide-react";
 import BookingDetailsPage, { Booking } from "./BookingDetailsPage";
-import { ActivityBadge, StatusBadge, PaymentBadge } from "../../../components/BookingBadges";
+import {
+  ActivityBadge,
+  StatusBadge,
+  PaymentBadge,
+} from "../../../components/BookingBadges";
 
 interface ConfirmAction {
   type: "checkin" | "checkout" | "cancel";
@@ -34,9 +38,9 @@ interface FrontDeskPageProps {
 
 export default function FrontDeskApp() {
   const [activePage, setActivePage] = useState("Front Desk");
-  const [currentView, setCurrentView] = useState<"frontdesk" | "bookingdetails">(
-    "frontdesk"
-  );
+  const [currentView, setCurrentView] = useState<
+    "frontdesk" | "bookingdetails"
+  >("frontdesk");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [activities, setActivities] = useState<Booking[]>([]);
@@ -79,6 +83,7 @@ export default function FrontDeskApp() {
             PhoneNumber: item.phoneNumber,
             ICNumber: "",
             Address: "",
+            Gender: item.gender,
             Payments: [],
           };
         });
@@ -118,7 +123,9 @@ export default function FrontDeskApp() {
                 booking.BookingID,
                 "Cancelled"
               );
-              console.log(`Auto-cancelled no-show: Booking #${booking.BookingID}`);
+              console.log(
+                `Auto-cancelled no-show: Booking #${booking.BookingID}`
+              );
             } catch (err) {
               console.error("Auto-cancel failed:", err);
             }
@@ -188,6 +195,7 @@ export default function FrontDeskApp() {
           PhoneNumber: b.guest.phoneNumber,
           ICNumber: b.guest.icNumber || "",
           Address: b.guest.address || "",
+          Gender: b.guest.gender,
           Payments: b.payments || [],
         };
 
@@ -206,6 +214,15 @@ export default function FrontDeskApp() {
     try {
       const res = await bookingsAPI.updateBookingStatus(id, status);
       if (res.success) {
+        if (status === "CheckedIn") {
+          await bookingsAPI.sendCheckIn(id);
+          alert("Check-In successful and email sent to guest.");
+        }
+
+        if (status === "CheckedOut") {
+          await bookingsAPI.sendCheckOut(id);
+          alert("Check-Out successful and email sent to guest.");
+        }
         loadActivities();
         if (selectedBooking?.BookingID === id) {
           loadBookingDetails(id);
@@ -254,9 +271,7 @@ export default function FrontDeskApp() {
               loadActivities();
             }}
             updateStatus={updateStatus}
-            refreshDetails={() =>
-              loadBookingDetails(selectedBooking.BookingID)
-            }
+            refreshDetails={() => loadBookingDetails(selectedBooking.BookingID)}
           />
         )}
       </div>
@@ -304,7 +319,9 @@ function FrontDeskPage({
 
   const handleAction = (type: "checkin" | "checkout", booking: Booking) => {
     if (type === "checkin" && booking.PaymentStatus !== "Completed") {
-      alert("Payment Required: Full payment must be completed before check-in.");
+      alert(
+        "Payment Required: Full payment must be completed before check-in."
+      );
       return;
     }
     if (type === "checkout" && booking.PaymentStatus !== "Completed") {

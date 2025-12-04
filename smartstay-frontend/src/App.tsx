@@ -5,12 +5,13 @@ import RegisterPage from "./pages/Admin/Register_page";
 import Dashboard from "./pages/Staff/Dashboard";
 import ReservationManagement from "./pages/Staff/Reservation/ReservationManagement";
 import FrontDeskApp from "./pages/Staff/FrontDesk/FrontDesk";
-import BookingDetailsPage from "./pages/Staff/FrontDesk/BookingDetailsPage";
 import WalkInBookingPage from "./pages/Staff/WalkInBookingPage";
 import RoomOperationsPage from "./pages/Staff/RoomOperation/RoomOperationsPage";
 import GuestManagementPage from "./pages/Staff/ManageGuest/GuestManagementPage";
 import ReceiptPage from "./pages/Staff/ReceiptPage";
 import StaffListPage from "./pages/Staff/StaffListPage";
+import StaffProfilePage from "./pages/Staff/StaffProfilePage";
+import ProfilePasswordPage from "./pages/Staff/ProfilePasswordPage";
 
 import LoginPage from "./pages/LoginPage";
 // You can later add:
@@ -34,7 +35,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/dashboard"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <Dashboard />
            </ProtectedRoute>
         }
@@ -42,7 +43,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/frontDesk"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <FrontDeskApp />
            </ProtectedRoute> 
         }
@@ -50,7 +51,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/reservation"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <ReservationManagement />
           </ProtectedRoute>
         }
@@ -70,7 +71,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/walk-in-booking"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <WalkInBookingPage />
           </ProtectedRoute>
         }
@@ -78,7 +79,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/room-operation"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <RoomOperationsPage />
           </ProtectedRoute>
         }
@@ -86,7 +87,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/manage-guests"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <GuestManagementPage />
           </ProtectedRoute>
         }
@@ -94,7 +95,7 @@ const App: React.FC = () => {
       <Route
         path="/staff/receipt/:bookingId"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <ReceiptPage />
           </ProtectedRoute>
         }
@@ -102,11 +103,29 @@ const App: React.FC = () => {
       <Route
         path="/staff/staff-list"
         element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <StaffListPage />
           </ProtectedRoute>
         }
       />
+
+      <Route
+        path="/staff/profile"
+        element={
+          <ProtectedRoute allowedRoles={["Receptionist"]}>  
+            <StaffProfilePage />
+          </ProtectedRoute>
+        }
+      /> 
+
+      <Route
+        path="/staff/profile/password"
+        element={
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
+            <ProfilePasswordPage />
+          </ProtectedRoute>
+        }
+      /> 
 
       {/* Login Page (optional, will use later) */}
       <Route path="/login" element={<LoginPage />} />

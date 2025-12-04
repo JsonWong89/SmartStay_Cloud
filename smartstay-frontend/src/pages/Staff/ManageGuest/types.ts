@@ -5,6 +5,7 @@ export interface Guest {
   email: string;
   phoneNumber: string;
   address: string;
+  gender: string;
   createdAt: string;
   totalBookings: number;
   totalSpent?: number;

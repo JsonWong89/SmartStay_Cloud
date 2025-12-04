@@ -92,7 +92,6 @@ const ReceiptPage: React.FC = () => {
     if (!receiptRef.current || !booking) return;
     setDownloading(true);
 
-    // FIX 2: Add `as const` to satisfy html2pdf strict types
     const opt = {
       margin: 0.5,
       filename: `SmartStay-Receipt-B${booking.bookingId}.pdf`,

@@ -16,7 +16,7 @@ import {
   FiUser,
   FiLogOut,
 } from "react-icons/fi";
-import { useAuthStore } from "../store"; // adjust the path if needed
+import { useAuthStore } from "../store"; 
 
 interface SidebarProps {
   activePage: string;

@@ -14,6 +14,8 @@ import {
   Banknote,
   CheckCircle,
   XCircle,
+  Mars,
+  Venus,
 } from "lucide-react";
 import StripeCardForm from "../../../components/StripeCardForm";
 import { StatusBadge, ActivityBadge, PaymentBadge } from "../../../components/BookingBadges";
@@ -39,6 +41,7 @@ export interface Booking {
   PhoneNumber: string;
   ICNumber: string;
   Address: string;
+  Gender: string;
   AmountPaid: number;
   Payments?: Array<{
     paymentId: number;
@@ -178,13 +181,33 @@ export default function BookingDetailsPage({
                   {booking.PhoneNumber}
                 </p>
               </div>
-              <div className="sm:col-span-2">
+              <div>
+                <p className="text-gray-500 mb-1">Address</p>
+                <p className="font-medium text-gray-900 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  {booking.Address}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-1">Gender</p>
+
+                <p className="font-medium text-gray-900 flex items-center gap-2">
+                  {booking.Gender === "Male" ? (
+                    <Mars className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Venus className="h-4 w-4 text-gray-400" />
+                  )}
+
+                  {booking.Gender}
+                </p>
+              </div>
+              {/* <div className="sm:col-span-2">
                 <p className="text-gray-500 mb-1">Address</p>
                 <p className="font-medium text-gray-900 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
                   {booking.Address || "-"}
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -419,7 +442,7 @@ export default function BookingDetailsPage({
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && confirmAction && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               {confirmAction === "checkin"

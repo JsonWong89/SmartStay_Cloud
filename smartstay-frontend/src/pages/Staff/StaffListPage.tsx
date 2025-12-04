@@ -1,8 +1,8 @@
-// src/pages/StaffListPage.tsx
 import React, { useState, useEffect } from "react";
 import {
   Users, Search, Download,
-  Mail, Phone, Calendar, Building2, Briefcase, User
+  Mail, Phone, Calendar, Building2, Briefcase, User,
+  VenusAndMars
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import { staffAPI } from "../../services/api";
@@ -16,6 +16,7 @@ interface Staff {
   position: string;
   contactNumber: string;
   email: string;
+  gender: string;
   hireDate: string;
 }
 
@@ -160,6 +161,7 @@ export default function StaffListPage() {
                     <tr className="border-b bg-gray-50">
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Team Member</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Position</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Gender</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Joined</th>
                     </tr>
@@ -182,6 +184,12 @@ export default function StaffListPage() {
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
                             <Briefcase size={12} className="mr-1" />
                             {staff.position}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                            <VenusAndMars size={12} className="mr-1" />
+                            {staff.gender}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm">

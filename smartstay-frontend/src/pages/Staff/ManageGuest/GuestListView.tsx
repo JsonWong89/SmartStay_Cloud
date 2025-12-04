@@ -11,7 +11,7 @@ import {
   TrendingUp,
   User,
 } from "lucide-react";
-import { StatCard } from "./GuestWidgets";
+import { StatCard } from "../../../components/GuestWidgets";
 import { Guest } from "./types";
 
 interface Props {

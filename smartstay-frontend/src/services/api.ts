@@ -115,6 +115,51 @@ export const bookingsAPI = {
     });
   },
 
+  sendConfirmationEmail: async (bookingId: number) => {
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data: {
+        email: string;
+        guestName: string;
+        bookingId: number;
+      };
+    }>(`/api/bookings/${bookingId}/send-confirmation`, {
+      method: 'POST',
+    });
+  },
+
+  // Check-In Email
+  sendCheckIn: async (bookingId: number) => {
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data?: {
+        email: string;
+        guestName: string;
+        bookingId: number;
+      };
+    }>(`/api/bookings/${bookingId}/send-checkin-email`, {
+      method: "POST",
+    });
+  },
+
+  // Check-Out Email
+  sendCheckOut: async (bookingId: number) => {
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data?: {
+        email: string;
+        guestName: string;
+        bookingId: number;
+      };
+    }>(`/api/bookings/${bookingId}/send-checkout-email`, {
+      method: "POST",
+    });
+  },
+
+
   // Get today's front desk activities
   getTodayActivities: async (hotelId?: number) => {
     const params = hotelId ? `?hotelId=${hotelId}` : '';
@@ -152,6 +197,7 @@ export const bookingsAPI = {
           phoneNumber: string;
           icNumber: string;
           address: string;
+          gender: string;
         };
         room: {
           roomId: number;
@@ -197,44 +243,6 @@ export const bookingsAPI = {
       body: JSON.stringify({ status }),
     });
   },
-
-  // Get all bookings with optional filters
-//     getAllBookings: async (params?: {
-//     hotelId?: number;
-//     status?: string;
-//     dateFrom?: string | null;
-//     dateTo?: string | null;
-//     searchQuery?: string;
-//   }) => {
-//     const query = new URLSearchParams();
-//     if (params?.hotelId) query.append('hotelId', params.hotelId.toString());
-//     if (params?.status && params.status !== 'all') query.append('status', params.status);
-//     if (params?.dateFrom) query.append('dateFrom', params.dateFrom);
-//     if (params?.dateTo) query.append('dateTo', params.dateTo);
-//     if (params?.searchQuery) query.append('searchQuery', params.searchQuery);
-
-//     return apiCall<{
-//       success: boolean;
-//       data: Array<{
-//         bookingId: number;
-//         guestId: string;
-//         hotelId: number;
-//         guest: { fullName: string; email: string; phoneNumber: string; icNumber: string; address: string };
-//         hotel: { hotelId: number; hotelName: string; address: string; city: string };
-//         room: { roomId: number; roomNumber: string; roomType: string; pricePerNight: number };
-//         checkInDate: string;
-//         checkOutDate: string;
-//         totalGuests: number;
-//         totalAmount: number;
-//         depositAmount: number;
-//         bookingStatus: string;
-//         createdAt: string;
-//         numberOfNights: number;
-//         totalPaid: number;
-//         pendingAmount: number;
-//       }>;
-//     }>(`/api/bookings${query.toString() ? `?${query}` : ''}`);
-//   },
     getAllBookings: async (params?: {
     hotelId?: number;
     guestId?: string;
@@ -466,6 +474,7 @@ export const guestsAPI = {
     Email: string;
     PhoneNumber: string;
     Address?: string;
+    Gender: string;
   }) => {
     return apiCall<{
       success: boolean;
@@ -508,6 +517,7 @@ export const guestsAPI = {
         email: string;
         phoneNumber: string;
         address: string;
+        gender: string;
         cognitoId: string | null;
         createdAt: string;
         totalBookings: number;
@@ -532,6 +542,7 @@ export const guestsAPI = {
         email: string;
         phoneNumber: string;
         address: string | null;
+        gender: string;
         createdAt: string;
         cognitoId?: string | null;
       };
@@ -546,6 +557,7 @@ export const guestsAPI = {
       FullName?: string;
       PhoneNumber?: string;
       Address?: string;
+      Gender?: string;
     }
   ) => {
     return apiCall<{
@@ -585,6 +597,7 @@ export interface RoomGuest {
   icNumber: string;
   email: string;
   phoneNumber: string;
+  gender: string;
 }
 
 export interface RoomCurrentBooking {
@@ -681,6 +694,7 @@ export const staffAPI = {
         position: string;
         contactNumber: string;
         email: string;
+        gender: string;
         hireDate: string;
       }>;
     }>(endpoint);
@@ -696,6 +710,7 @@ export const staffAPI = {
     position: string;
     contactNumber: string;
     email: string;
+    gender: string;
     hireDate?: string;
   }) => {
     return apiCall<any>('/api/Staff', {
@@ -709,6 +724,7 @@ export const staffAPI = {
     position: string;
     contactNumber: string;
     email: string;
+    gender: string;
   }>) => {
     return apiCall<any>(`/api/Staff/${id}`, {
       method: 'PUT',
@@ -721,4 +737,95 @@ export const staffAPI = {
   },
 };
 
-export default { dashboardAPI, bookingsAPI, paymentsAPI, guestsAPI, roomsAPI, staffAPI, reviewsAPI, documentsAPI };
+// Users API
+export const usersAPI = {
+  getCurrentUser: async (userId: string) => {
+    return apiCall<{
+      success: boolean;
+      data: {
+        userId: string;
+        fullName: string;
+        email: string;
+        role: string;
+        hotelId: number | null;
+        hotel: {
+          hotelId: number;
+          hotelName: string;
+          address: string;
+          city: string;
+        } | null;
+        gender: string;
+        createdAt: string;
+      };
+    }>(`/api/users/${userId}`);
+  },
+
+  // GET /api/users → Get all system users (with filters)
+  getAllUsers: async (filters?: {
+    role?: string;
+    hotelId?: number;
+    searchQuery?: string;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.role && filters.role !== 'all') params.append('role', filters.role);
+    if (filters?.hotelId) params.append('hotelId', filters.hotelId.toString());
+    if (filters?.searchQuery) params.append('searchQuery', filters.searchQuery);
+
+    const query = params.toString();
+    return apiCall<{
+      success: boolean;
+      data: Array<{
+        userId: string;
+        fullName: string;
+        email: string;
+        role: string;
+        hotelId: number | null;
+        hotelName: string | null;
+        gender: string;
+        createdAt: string;
+      }>;
+    }>(`/api/users${query ? `?${query}` : ''}`);
+  },
+
+
+  updateProfile: async (userId: string, data: {
+    FullName?: string;
+    Email?: string;
+    Role?: string;
+    HotelID?: number | null;
+  }) => {
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data: {
+        userId: string;
+        fullName: string;
+        email: string;
+        role: string;
+        hotelId: number | null;
+      };
+    }>(`/api/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  changePassword: async (userId: string, payload: {
+    CurrentPassword: string;
+    NewPassword: string;
+  }) => {
+    return apiCall<{
+      success: boolean;
+      message: string;
+    }>(`/api/users/${userId}/change-password`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+
+
+
+};
+
+export default { dashboardAPI, bookingsAPI, paymentsAPI, guestsAPI, roomsAPI, staffAPI, reviewsAPI, documentsAPI, usersAPI };

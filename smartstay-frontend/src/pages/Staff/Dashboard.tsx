@@ -129,17 +129,7 @@ export default function StaffDashboard() {
   const [roomStatusData, setRoomStatusData] = useState<RoomStatusData[]>([]);
   const [bookingStatusData, setBookingStatusData] = useState<BookingStatusData[]>([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-
-  //Get user info from localStorage
-  // const getUserInfo = () => {
-  //   const userStr = localStorage.getItem("user");
-  //   if (userStr) {
-  //     return JSON.parse(userStr);
-  //   }
-  //   return null;
-  // };
-
-  // const user = getUserInfo();
+  
   const user = useAuthStore((state) => state.user);
 
   const hotelId = user?.role === "Admin" ? undefined : user?.hotelId;

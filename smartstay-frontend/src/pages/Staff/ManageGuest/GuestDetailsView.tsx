@@ -23,9 +23,11 @@ import {
   Plus,
   User,
   Star,
-  Eye
+  Eye,
+  VenusAndMars,
+  IdCard
 } from "lucide-react";
-import { BookingStatusBadge } from "./GuestWidgets";
+import { BookingStatusBadge } from "../../../components/GuestWidgets";
 import { Guest } from "./types";
 
 interface Props {
@@ -173,8 +175,8 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-300">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Phone className="h-5 w-5 text-purple-600" />
-              Contact Information
+              <IdCard className="h-5 w-5 text-purple-600" />
+              Guest Information
             </h3>
             <div className="space-y-4">
               <div>
@@ -203,6 +205,13 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
                 <div className="flex items-start gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
                   <p className="font-medium text-gray-900">{guest.address || "Not provided"}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Gender</p>
+                <div className="flex items-start gap-2 text-sm">
+                  <VenusAndMars className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                  <p className="font-medium text-gray-900">{guest.gender || "Not provided"}</p>
                 </div>
               </div>
             </div>

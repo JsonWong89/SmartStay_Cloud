@@ -21,6 +21,9 @@ import {
   Send,
   Printer,
   Banknote,
+  Mars,
+  Venus,
+  
 } from "lucide-react";
 import { Booking, Payment } from "./types";
 import { BookingStatusBadge, RoomStatusBadge } from "../../../components/ReservationBadges";
@@ -96,36 +99,6 @@ export default function ReservationDetailsPage({
     setConfirmAction(null);
   };
 
-  const sendConfirmationEmail = async () => {
-    try {
-      const res = await fetch(
-        "http://localhost:5000/api/email/booking-receipt",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: booking.guest.email,
-            booking: {
-              BookingID: booking.bookingId,
-              GuestName: booking.guest.fullName,
-              RoomNumber: booking.room.roomNumber,
-              RoomType: booking.room.roomType,
-              CheckInDate: booking.checkInDate,
-              CheckOutDate: booking.checkOutDate,
-              TotalAmount: booking.totalAmount,
-              DepositAmount: booking.depositAmount,
-              PhoneNumber: booking.guest.phoneNumber,
-            },
-          }),
-        }
-      );
-      if (res.ok) alert("Confirmation email sent!");
-      else alert("Failed to send email");
-    } catch {
-      alert("Error sending email");
-    }
-  };
-
   return (
     <main className="p-6 max-w-7xl mx-auto">
       <button
@@ -146,18 +119,6 @@ export default function ReservationDetailsPage({
           </div>
           <div className="flex gap-3 flex-wrap">
             <BookingStatusBadge status={booking.bookingStatus} />
-            <button
-              onClick={sendConfirmationEmail}
-              className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center gap-2"
-            >
-              <Send size={18} /> Send Email
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white font-medium transition flex items-center gap-2"
-            >
-              <Printer size={18} /> Print
-            </button>
           </div>
         </div>
       </div>
@@ -196,11 +157,24 @@ export default function ReservationDetailsPage({
                   {booking.guest.phoneNumber}
                 </p>
               </div>
-              <div className="sm:col-span-2">
+              <div>
                 <p className="text-gray-500 mb-1">Address</p>
                 <p className="font-medium text-gray-900 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
                   {booking.guest.address}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 mb-1">Gender</p>
+
+                <p className="font-medium text-gray-900 flex items-center gap-2">
+                  {booking.guest.gender === "Male" ? (
+                    <Mars className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Venus className="h-4 w-4 text-gray-400" />
+                  )}
+
+                  {booking.guest.gender}
                 </p>
               </div>
             </div>

@@ -2,10 +2,15 @@ import React from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store";
 import {
-  FiGrid, FiBriefcase, FiLogOut, FiHome, FiCalendar, FiBarChart2
+  FiGrid,
+  FiBriefcase,
+  FiLogOut,
+  FiHome,
+  FiCalendar,
+  FiBarChart2
 } from "react-icons/fi";
 
-import "./ManagerDashboard.css";
+import "../../styles/dashboard.css";
 
 export default function ManagerIndex() {
   const user = useAuthStore((s) => s.user);
@@ -16,30 +21,48 @@ export default function ManagerIndex() {
 
   return (
     <div className="dashboard-container">
+      
       {/* Sidebar */}
       <aside className="sidebar">
+
         <div className="brand">
           <FiHome /> SmartStay
         </div>
 
         <nav className="nav-links">
-          <Link to="/manager/overview" className={`nav-item ${isActive("overview") ? "active" : ""}`}>
+
+          <Link
+            to="/manager/overview"
+            className={`nav-item ${isActive("overview") ? "active" : ""}`}
+          >
             <FiGrid /> Dashboard
           </Link>
 
-          <Link to="/manager/rooms" className={`nav-item ${isActive("rooms") ? "active" : ""}`}>
+          <Link
+            to="/manager/rooms"
+            className={`nav-item ${isActive("rooms") ? "active" : ""}`}
+          >
             <FiHome /> Rooms
           </Link>
 
-          <Link to="/manager/bookings" className={`nav-item ${isActive("bookings") ? "active" : ""}`}>
+          <Link
+            to="/manager/bookings"
+            className={`nav-item ${isActive("bookings") ? "active" : ""}`}
+          >
             <FiCalendar /> Bookings
           </Link>
 
-          <Link to="/manager/staff" className={`nav-item ${isActive("staff") ? "active" : ""}`}>
+          <Link
+            to="/manager/staff"
+            className={`nav-item ${isActive("staff") ? "active" : ""}`}
+          >
             <FiBriefcase /> Staff
           </Link>
 
-          <Link to="/manager/report" className={`nav-item ${isActive("report") ? "active" : ""}`}>
+          <Link
+            to="/manager/report"
+            className={`nav-item ${isActive("report") ? "active" : ""}`}
+          >
             <FiBarChart2 /> Report
           </Link>
 
@@ -47,7 +70,7 @@ export default function ManagerIndex() {
             to="/manager/hotelinfo"
             className={`nav-item ${isActive("hotelinfo") ? "active" : ""}`}
           >
-            <FiBarChart2 /> Hotel info
+            <FiBarChart2 /> Hotel Info
           </Link>
 
         </nav>
@@ -55,12 +78,18 @@ export default function ManagerIndex() {
         <button onClick={logout} className="logout-btn">
           <FiLogOut /> Logout
         </button>
+
+        {/* Sidebar footer */}
+        <div className="sidebar-footer">
+          SmartStay © {new Date().getFullYear()}
+        </div>
       </aside>
 
-      {/* Content */}
+      {/* Main Content */}
       <main className="main-content">
         <Outlet />
       </main>
+
     </div>
   );
 }

@@ -1,22 +1,20 @@
 // src/pages/Hotel_manager/Reports/GenderReport.tsx
 import React, { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import axios from "axios";
 import { Chart, registerables } from "chart.js";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../../store";
+import "../../../styles/reports.css";
 
 Chart.register(...registerables);
 
-// One gender bucket (Male / Female / Unknown, etc.)
 interface GenderBucket {
   gender: string;
   count: number;
 }
 
-// Shape returned by your API:
-// GET /api/reports/{hotelId}/gender
 interface GenderReportResponse {
   guests: GenderBucket[];
   staff: GenderBucket[];
@@ -29,145 +27,134 @@ export default function GenderReport() {
   const [data, setData] = useState<GenderReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // container for PDF / print
-  const reportRef = useRef<HTMLDivElement | null>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null);
 
-  // chart refs
-  const pieCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const barCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const pieChartInstance = useRef<Chart | null>(null);
-  const barChartInstance = useRef<Chart | null>(null);
+  const pieRef = useRef<HTMLCanvasElement | null>(null);
+  const barRef = useRef<HTMLCanvasElement | null>(null);
+  const pieInstance = useRef<Chart | null>(null);
+  const barInstance = useRef<Chart | null>(null);
 
-  // ─────────────────────────────
-  // Fetch data
-  // ─────────────────────────────
+
+
   useEffect(() => {
     if (!user?.hotelId) return;
-
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get<GenderReportResponse>(
-          `https://localhost:7168/api/reports/${user.hotelId}/gender`
-        );
-        setData(res.data);
-        buildCharts(res.data);
-      } catch (err) {
-        console.error("GENDER REPORT ERROR:", err);
-      }
-      setLoading(false);
-    };
-
     fetchData();
-
-    // cleanup old charts when hotel changes / component unmounts
-    return () => {
-      if (pieChartInstance.current) pieChartInstance.current.destroy();
-      if (barChartInstance.current) barChartInstance.current.destroy();
-    };
   }, [user?.hotelId]);
 
-  // ─────────────────────────────
-  // Helpers
-  // ─────────────────────────────
-  function sumBuckets(buckets: GenderBucket[]): number {
-    return buckets.reduce((acc, b) => acc + b.count, 0);
+  async function fetchData() {
+    setLoading(true);
+    try {
+      const res = await axios.get<GenderReportResponse>(
+        `https://localhost:7168/api/reports/${user?.hotelId}/gender`
+      );
+      setData(res.data);
+
+      // Delay chart creation until layout is ready
+      requestAnimationFrame(() => buildCharts(res.data));
+    } catch (err) {
+      console.error("GENDER REPORT ERROR:", err);
+    }
+    setLoading(false);
   }
 
-  function sumGender(buckets: GenderBucket[], gender: string): number {
-    return buckets
-      .filter((b) => b.gender.toLowerCase() === gender.toLowerCase())
-      .reduce((acc, b) => acc + b.count, 0);
+  function sumBuckets(list: GenderBucket[]) {
+    return list.reduce((s, x) => s + x.count, 0);
   }
 
-  function pct(part: number, total: number): string {
+  function sumGender(list: GenderBucket[], gender: string) {
+    return (
+      list
+        .filter((x) => x.gender.toLowerCase() === gender.toLowerCase())
+        .reduce((s, x) => s + x.count, 0)
+    );
+  }
+
+  function pct(part: number, total: number) {
     if (!total) return "0.0";
     return ((part / total) * 100).toFixed(1);
   }
 
   function buildCharts(report: GenderReportResponse) {
-    // destroy previous instances
-    if (pieChartInstance.current) pieChartInstance.current.destroy();
-    if (barChartInstance.current) barChartInstance.current.destroy();
+    if (pieInstance.current) pieInstance.current.destroy();
+    if (barInstance.current) barInstance.current.destroy();
 
-    const guestTotal = sumBuckets(report.guests);
-    const staffTotal = sumBuckets(report.staff);
-    const recTotal = sumBuckets(report.receptionists);
+    const guestT = sumBuckets(report.guests);
+    const staffT = sumBuckets(report.staff);
+    const recT = sumBuckets(report.receptionists);
 
-    // Overall gender counts (all roles)
-    const totalAll = guestTotal + staffTotal + recTotal;
     const maleAll =
       sumGender(report.guests, "Male") +
       sumGender(report.staff, "Male") +
       sumGender(report.receptionists, "Male");
+
     const femaleAll =
       sumGender(report.guests, "Female") +
       sumGender(report.staff, "Female") +
       sumGender(report.receptionists, "Female");
+
+    const totalAll = guestT + staffT + recT;
     const otherAll = totalAll - maleAll - femaleAll;
 
-    // PIE CHART – overall gender distribution
-    if (pieCanvasRef.current) {
-      pieChartInstance.current = new Chart(pieCanvasRef.current, {
+    // PIE CHART
+    if (pieRef.current) {
+      pieInstance.current = new Chart(pieRef.current, {
         type: "pie",
         data: {
           labels: ["Male", "Female", "Other"],
           datasets: [
             {
-              label: "All Roles",
               data: [maleAll, femaleAll, otherAll],
+              backgroundColor: ["#60a5fa", "#f472b6", "#a3a3a3"],
+              borderWidth: 2,
             },
           ],
+        },
+        options: {
+          plugins: { legend: { position: "bottom" } },
         },
       });
     }
 
-    // BAR CHART – gender per role
-    if (barCanvasRef.current) {
-      const roles = ["Guests", "Staff", "Receptionists"];
-      const maleByRole = [
-        sumGender(report.guests, "Male"),
-        sumGender(report.staff, "Male"),
-        sumGender(report.receptionists, "Male"),
-      ];
-      const femaleByRole = [
-        sumGender(report.guests, "Female"),
-        sumGender(report.staff, "Female"),
-        sumGender(report.receptionists, "Female"),
-      ];
-
-      barChartInstance.current = new Chart(barCanvasRef.current, {
+    // BAR CHART
+    if (barRef.current) {
+      barInstance.current = new Chart(barRef.current, {
         type: "bar",
         data: {
-          labels: roles,
+          labels: ["Guests", "Staff", "Receptionists"],
           datasets: [
             {
               label: "Male",
-              data: maleByRole,
+              backgroundColor: "#60a5fa",
+              data: [
+                sumGender(report.guests, "Male"),
+                sumGender(report.staff, "Male"),
+                sumGender(report.receptionists, "Male"),
+              ],
             },
             {
               label: "Female",
-              data: femaleByRole,
+              backgroundColor: "#f472b6",
+              data: [
+                sumGender(report.guests, "Female"),
+                sumGender(report.staff, "Female"),
+                sumGender(report.receptionists, "Female"),
+              ],
             },
           ],
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: {
-              position: "top",
-            },
-          },
+          plugins: { legend: { position: "top" } },
         },
       });
     }
   }
 
-  // Derived KPI values (safe defaults)
-  const guestTotal = data ? sumBuckets(data.guests) : 0;
-  const staffTotal = data ? sumBuckets(data.staff) : 0;
-  const recTotal = data ? sumBuckets(data.receptionists) : 0;
-  const totalAll = guestTotal + staffTotal + recTotal;
+  // KPI CALCULATIONS
+  const gT = data ? sumBuckets(data.guests) : 0;
+  const sT = data ? sumBuckets(data.staff) : 0;
+  const rT = data ? sumBuckets(data.receptionists) : 0;
+  const totalAll = gT + sT + rT;
 
   const maleGuests = data ? sumGender(data.guests, "Male") : 0;
   const femaleGuests = data ? sumGender(data.guests, "Female") : 0;
@@ -182,138 +169,118 @@ export default function GenderReport() {
   const femaleAll = femaleGuests + femaleStaff + femaleRec;
   const otherAll = totalAll - maleAll - femaleAll;
 
-  // ─────────────────────────────
-  // PDF & Print
-  // ─────────────────────────────
-  const handleExportPdf = async () => {
-    if (!reportRef.current) return;
+  const exportPdf = async () => {
+    if (!pageRef.current) return;
 
-    const canvas = await html2canvas(
-      reportRef.current as HTMLElement,
-      { scale: 2 } as any // cast to any to avoid TS complaining about 'scale'
-    );
+    const element = pageRef.current;
 
-    const imgData = canvas.toDataURL("image/png");
+    // Increase quality by rendering at higher resolution
+    const canvas = await html2canvas(element, {
+      scale: 3,              // ← MOST IMPORTANT (High DPI)
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    } as any);
+
+    // Convert to image
+    const imgData = canvas.toDataURL("image/png", 1.0);
+
+    // Create PDF
     const pdf = new jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pageWidth - 20;
+
+    const imgWidth = pageWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-    pdf.save("GenderReport.pdf");
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    // Add the first page
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // If content is longer than 1 page, add more pages
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save("Report.pdf");
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
 
-  // ─────────────────────────────
-  // Render
-  // ─────────────────────────────
-  if (loading || !data) {
+
+
+
+  if (loading || !data)
     return (
       <div className="report-page">
         <h2>🧑 Gender Overview</h2>
-        <p>Loading gender statistics...</p>
+        <p>Loading...</p>
       </div>
     );
-  }
 
   return (
-    <div className="report-page" ref={reportRef}>
-      <div className="report-header">
-        <h2>🧑 Gender Overview Report</h2>
+    <div ref={pageRef} className="report-page">
 
-        <div className="report-actions">
-          <button className="export-btn" onClick={handleExportPdf}>
+      {/* HEADER */}
+      <div className="report-header">
+        <h2 className="report-title flex items-center gap-2">
+          <span style={{ fontSize: "28px" }}>🧑</span>
+          Gender Overview Report
+        </h2>
+
+        <div className="report-btn-group">
+          <button className="report-btn export" onClick={exportPdf}>
             📄 Export PDF
           </button>
-          <button className="export-btn" onClick={handlePrint}>
-            🖨 Print
-          </button>
-          <Link to="/manager/report" className="back-btn">
+          <Link className="report-btn back" to="/manager/report">
             ← Back to Reports
           </Link>
         </div>
       </div>
 
-      {/* Overall KPIs */}
-      <div className="kpi-container">
-        <div className="kpi-card">
-          <h4>Total People (All Roles)</h4>
-          <p>{totalAll}</p>
+      {/* KPI GRID */}
+      <div className="report-kpi-grid">
+        <div className="report-kpi-card kpi-blue">
+          <p className="kpi-label">Total People</p>
+          <p className="kpi-value">{totalAll}</p>
         </div>
-        <div className="kpi-card">
-          <h4>Male</h4>
-          <p>
+
+        <div className="report-kpi-card kpi-green">
+          <p className="kpi-label">Male</p>
+          <p className="kpi-value">
             {maleAll} ({pct(maleAll, totalAll)}%)
           </p>
         </div>
-        <div className="kpi-card">
-          <h4>Female</h4>
-          <p>
+
+        <div className="report-kpi-card kpi-blue">
+          <p className="kpi-label">Female</p>
+          <p className="kpi-value">
             {femaleAll} ({pct(femaleAll, totalAll)}%)
           </p>
         </div>
-        <div className="kpi-card">
-          <h4>Other / Unknown</h4>
-          <p>
+
+        <div className="report-kpi-card kpi-green">
+          <p className="kpi-label">Other / Unknown</p>
+          <p className="kpi-value">
             {otherAll} ({pct(otherAll, totalAll)}%)
           </p>
         </div>
       </div>
 
-      {/* Role-specific KPIs */}
-      <div className="kpi-container">
-        <div className="kpi-card">
-          <h4>Guests</h4>
-          <p>Total: {guestTotal}</p>
-          <p>
-            M: {maleGuests} ({pct(maleGuests, guestTotal)}%) / F: {femaleGuests} (
-            {pct(femaleGuests, guestTotal)}%)
-          </p>
-        </div>
-
-        <div className="kpi-card">
-          <h4>Staff</h4>
-          <p>Total: {staffTotal}</p>
-          <p>
-            M: {maleStaff} ({pct(maleStaff, staffTotal)}%) / F: {femaleStaff} (
-            {pct(femaleStaff, staffTotal)}%)
-          </p>
-        </div>
-
-        <div className="kpi-card">
-          <h4>Receptionists</h4>
-          <p>Total: {recTotal}</p>
-          <p>
-            M: {maleRec} ({pct(maleRec, recTotal)}%) / F: {femaleRec} (
-            {pct(femaleRec, recTotal)}%)
-          </p>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="charts-row">
-        <div className="chart-card">
-          <h3>Overall Gender Distribution</h3>
-          <canvas ref={pieCanvasRef} height={200}></canvas>
-        </div>
-
-        <div className="chart-card">
-          <h3>Gender by Role</h3>
-          <canvas ref={barCanvasRef} height={200}></canvas>
-        </div>
-      </div>
-
-      {/* Raw detail tables */}
+      {/* DETAIL TABLES (MOVE ABOVE CHARTS) */}
       <div className="detail-section">
-        <h3>Detailed Breakdown</h3>
+        <h3 className="chart-title">Detailed Breakdown</h3>
 
         <div className="detail-tables">
-          <div>
-            <h4>Guests</h4>
+
+          <div className="detail-card guests">
+            <h4>Guests (Total: {gT} )</h4>
             <table className="rooms-table">
               <thead>
                 <tr>
@@ -332,8 +299,8 @@ export default function GenderReport() {
             </table>
           </div>
 
-          <div>
-            <h4>Staff</h4>
+          <div className="detail-card staff">
+            <h4>Staff (Total: {sT} )</h4>
             <table className="rooms-table">
               <thead>
                 <tr>
@@ -352,8 +319,8 @@ export default function GenderReport() {
             </table>
           </div>
 
-          <div>
-            <h4>Receptionists</h4>
+          <div className="detail-card receptionists">
+            <h4>Receptionists (Total: {rT} )</h4>
             <table className="rooms-table">
               <thead>
                 <tr>
@@ -371,8 +338,23 @@ export default function GenderReport() {
               </tbody>
             </table>
           </div>
+
         </div>
       </div>
+
+      {/* SMALLER CHARTS BELOW DETAIL LISTS */}
+      <div className="charts-row" style={{ marginTop: "20px" }}>
+        <div className="report-chart-card" style={{ maxWidth: "420px" }}>
+          <h3 className="chart-title">Overall Gender Distribution</h3>
+          <canvas ref={pieRef} height={140}></canvas>
+        </div>
+
+        <div className="report-chart-card" style={{ maxWidth: "420px" }}>
+          <h3 className="chart-title">Gender by Role</h3>
+          <canvas ref={barRef} height={140}></canvas>
+        </div>
+      </div>
+
     </div>
   );
 }

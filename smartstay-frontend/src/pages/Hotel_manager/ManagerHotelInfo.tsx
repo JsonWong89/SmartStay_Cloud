@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
 import { FaStar } from "react-icons/fa";
+import "../../styles/hotelDetails.css";
 
 interface Hotel {
   hotelID: number;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
-import "./ManagerDashboard.css";
+import "../../styles/rooms.css";
 
 interface Room {
   roomID: number;
@@ -118,7 +118,7 @@ export default function ManagerManageRooms() {
   }
 
   // ─────────────────────────────
-  // ✏ Edit Room
+  // Edit Room
   // ─────────────────────────────
   async function handleUpdateRoom() {
     if (!selectedRoom) return;
@@ -145,7 +145,7 @@ export default function ManagerManageRooms() {
   }
 
   // ─────────────────────────────
-  // 🗑 Delete Room
+  // Delete Room
   // ─────────────────────────────
   async function handleDeleteRoom(id: number) {
     if (!window.confirm("Delete this room?")) return;

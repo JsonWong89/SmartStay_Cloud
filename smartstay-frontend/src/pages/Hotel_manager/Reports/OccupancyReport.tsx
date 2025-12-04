@@ -31,6 +31,7 @@ export default function OccupancyReport() {
     const res = await axios.get<OccupancyResponse>(
       `https://localhost:7168/api/reports/${user?.hotelId}/occupancy`
     );
+
     setOccupancyRate(res.data.occupancyRate);
 
     if (chartInstance.current) {
@@ -41,10 +42,10 @@ export default function OccupancyReport() {
       chartInstance.current = new Chart(chartRef.current, {
         type: "doughnut",
         data: {
-          labels: ["Occupied (%)", "Available (%)"],
+          labels: ["Occupied", "Available"],
           datasets: [
             {
-              label: "Occupancy",
+              label: "Occupancy Distribution",
               data: [res.data.occupancyRate, 100 - res.data.occupancyRate],
             },
           ],
@@ -58,53 +59,54 @@ export default function OccupancyReport() {
     const canvas = await html2canvas(pageRef.current);
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF("p", "mm", "a4");
+
     const imgWidth = 190;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
     pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
     pdf.save("OccupancyReport.pdf");
   };
 
   return (
-    <div className="report-page" ref={pageRef} style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <h2>🏨 Occupancy Report</h2>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button className="primary-btn" onClick={exportPDF}>
+    <div className="report-page" ref={pageRef}>
+      {/* Header */}
+      <div className="report-header">
+        <h2 className="report-title">🏨 Occupancy Report</h2>
+
+        <div className="report-btn-group">
+          <button className="report-btn export" onClick={exportPDF}>
             📄 Export PDF
           </button>
-          <button className="secondary-btn" onClick={() => navigate("/manager/report")}>
+
+          <button
+            className="report-btn back"
+            onClick={() => navigate("/manager/report")}
+          >
             ← Back to Reports
           </button>
         </div>
       </div>
 
-      <div
-        className="kpi-row"
-        style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}
-      >
-        <div className="kpi-card">
-          <h4>Occupancy Rate</h4>
-          <p className="big-number">{occupancyRate.toFixed(1)}%</p>
+      {/* KPI */}
+      <div className="report-kpi-grid">
+        <div className="report-kpi-card kpi-blue">
+          <p className="kpi-label">Occupancy Rate</p>
+          <p className="kpi-value">{occupancyRate.toFixed(1)}%</p>
         </div>
-        <div className="kpi-card">
-          <h4>Available Rooms</h4>
-          <p className="big-number">
-            {/* we only know percentage now */}
-            {(100 - occupancyRate).toFixed(1)}% of rooms
-          </p>
+
+        <div className="report-kpi-card kpi-green">
+          <p className="kpi-label">Available Rooms (%)</p>
+          <p className="kpi-value">{(100 - occupancyRate).toFixed(1)}%</p>
         </div>
       </div>
 
-      <div className="report-card">
-        <h3>Occupancy Distribution</h3>
-        <canvas ref={chartRef} height={140} />
+      {/* Chart */}
+      <div className="report-chart-card">
+        <h3 className="chart-title">Occupancy Distribution</h3>
+
+        <div className="chart-wrapper">
+          <canvas ref={chartRef} height={150}></canvas>
+        </div>
       </div>
     </div>
   );

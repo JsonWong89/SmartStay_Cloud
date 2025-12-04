@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
-import "./ManagerDashboard.css";
+import "../../styles/staff.css";
 
 interface StaffApi {
   staffID: number;
@@ -75,8 +75,12 @@ export default function ManagerManageStaff() {
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
 
+  const [filterYear, setFilterYear] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+
+
   const [selectedPerson, setSelectedPerson] = useState<StaffRow | null>(null);
-const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [newPerson, setNewPerson] = useState<NewPersonState>({
     source: "Staff",
@@ -145,23 +149,43 @@ const [showPassword, setShowPassword] = useState(false);
   // Filtering
   useEffect(() => {
     let data = [...rows];
+    const s = search.toLowerCase();
 
-    if (search.trim()) {
-      const s = search.toLowerCase();
-      data = data.filter(
-        (p) =>
-          p.fullName.toLowerCase().includes(s) ||
-          p.position.toLowerCase().includes(s) ||
-          p.email.toLowerCase().includes(s)
-      );
+    if (s.trim()) {
+      data = data.filter((p) => {
+        const fields = [
+          p.fullName,
+          p.position,
+          p.email,
+          p.gender,     // 🔥 allow searching Male/Female
+          p.source,
+        ];
+
+        return fields.some((v) =>
+          String(v ?? "").toLowerCase().includes(s)
+        );
+      });
     }
 
+    // Role filter (Staff / Receptionist)
     if (roleFilter) {
       data = data.filter((p) => p.source === roleFilter);
     }
 
+    // DATE FILTER (created / hiredate)
+    if (filterYear || filterMonth) {
+      data = data.filter((p) => {
+        const [year, month] = p.createdDate.split("T")[0].split("-");
+
+        if (filterYear && year !== filterYear) return false;
+        if (filterMonth && month !== filterMonth) return false;
+
+        return true;
+      });
+    }
+
     setFilteredRows(data);
-  }, [rows, search, roleFilter]);
+  }, [rows, search, roleFilter, filterYear, filterMonth]);
 
   // Add person
   async function handleAddPerson() {
@@ -207,51 +231,51 @@ const [showPassword, setShowPassword] = useState(false);
   }
 
   // Update person
-async function handleUpdatePerson() {
-  if (!selectedPerson) return;
+  async function handleUpdatePerson() {
+    if (!selectedPerson) return;
 
-  try {
-    if (selectedPerson.source === "Staff") {
-      // STAFF UPDATE PAYLOAD (match Staff model exactly)
-      const payload = {
-        fullName: selectedPerson.fullName,
-        position: selectedPerson.position,
-        gender: selectedPerson.gender,
-        email: selectedPerson.email,
-        contactNumber: selectedPerson.contactNumber,
-      };
+    try {
+      if (selectedPerson.source === "Staff") {
+        // STAFF UPDATE PAYLOAD (match Staff model exactly)
+        const payload = {
+          fullName: selectedPerson.fullName,
+          position: selectedPerson.position,
+          gender: selectedPerson.gender,
+          email: selectedPerson.email,
+          contactNumber: selectedPerson.contactNumber,
+        };
 
-      await axios.put(
-        `https://localhost:7168/api/users/staff/${selectedPerson.id}`,
-        payload
-      );
-    } 
-    else {
-      // RECEPTIONIST UPDATE PAYLOAD (match User model exactly)
-      const payload = {
-        fullName: selectedPerson.fullName,
-        gender: selectedPerson.gender,
-        email: selectedPerson.email,
-        role: "Receptionist",                // REQUIRED
-        hotelID: selectedPerson.hotelID,     // REQUIRED
-        passwordHash: selectedPerson.passwordHash || "Staff@123"
-      };
+        await axios.put(
+          `https://localhost:7168/api/users/staff/${selectedPerson.id}`,
+          payload
+        );
+      }
+      else {
+        // RECEPTIONIST UPDATE PAYLOAD (match User model exactly)
+        const payload = {
+          fullName: selectedPerson.fullName,
+          gender: selectedPerson.gender,
+          email: selectedPerson.email,
+          role: "Receptionist",                // REQUIRED
+          hotelID: selectedPerson.hotelID,     // REQUIRED
+          passwordHash: selectedPerson.passwordHash || "Staff@123"
+        };
 
-      await axios.put(
-        `https://localhost:7168/api/users/receptionists/${selectedPerson.id}`,
-        payload
-      );
+        await axios.put(
+          `https://localhost:7168/api/users/receptionists/${selectedPerson.id}`,
+          payload
+        );
+      }
+
+      alert("Updated successfully!");
+      setShowEdit(false);
+      fetchStaff();
+
+    } catch (err: any) {
+      console.error("UPDATE ERROR:", err.response?.data || err);
+      alert("Failed to update person.");
     }
-
-    alert("Updated successfully!");
-    setShowEdit(false);
-    fetchStaff();
-
-  } catch (err: any) {
-    console.error("UPDATE ERROR:", err.response?.data || err);
-    alert("Failed to update person.");
   }
-}
 
 
   // Delete person
@@ -303,29 +327,64 @@ async function handleUpdatePerson() {
 
       {/* Search + Filter */}
       <div className="top-controls">
+        {/* Search Bar */}
         <input
           className="search-bar"
-          placeholder="Search staff or receptionist..."
+          placeholder="Search name, position, email, gender..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
+        {/* Role Filter */}
         <select
           className="filter-select"
           value={roleFilter}
-          onChange={(e) =>
-            setRoleFilter(e.target.value as "" | PersonSource)
-          }
+          onChange={(e) => setRoleFilter(e.target.value as any)}
         >
-          <option value="">All</option>
+          <option value="">All Roles</option>
           <option value="Staff">Staff</option>
           <option value="Receptionist">Receptionist</option>
+        </select>
+
+        {/* Year Filter */}
+        <select
+          className="filter-select"
+          value={filterYear}
+          onChange={(e) => setFilterYear(e.target.value)}
+        >
+          <option value="">Year</option>
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+
+        {/* Month Filter */}
+        <select
+          className="filter-select"
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
+        >
+          <option value="">Month</option>
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
         </select>
 
         <button className="btn-add" onClick={() => setShowAdd(true)}>
           ➕ Add Person
         </button>
       </div>
+
 
       {/* TABLE */}
       {!loading && (
@@ -463,7 +522,7 @@ async function handleUpdatePerson() {
       {showEdit && selectedPerson && (
         <div className="modal-overlay">
           <div className="modal-box">
-            
+
             <h3>Edit Person</h3>
 
             <p>ID: {selectedPerson.id}</p>

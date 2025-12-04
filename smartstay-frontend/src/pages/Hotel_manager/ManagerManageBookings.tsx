@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
+import "../../styles/bookings.css";
+import "../../styles/modals.css";
 
 interface Booking {
   bookingID: string;
@@ -21,10 +23,17 @@ export default function ManagerManageBookings() {
   const user = useAuthStore((s) => s.user);
 
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // UI Filters
+  const [search, setSearch] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+
+  // Guest modal
   const [showGuestPopup, setShowGuestPopup] = useState(false);
   const [guestInfo, setGuestInfo] = useState<any>(null);
-
 
   const fetchBookings = async () => {
     if (!user?.hotelId) return;
@@ -34,6 +43,7 @@ export default function ManagerManageBookings() {
         `https://localhost:7168/api/bookings/hotel/${user.hotelId}`
       );
       setBookings(res.data);
+      setFilteredBookings(res.data);
     } catch (err) {
       console.error("BOOKING ERROR:", err);
     }
@@ -45,26 +55,62 @@ export default function ManagerManageBookings() {
     fetchBookings();
   }, [user?.hotelId]);
 
+  // 🔍 FILTER + SEARCH LOGIC
+  useEffect(() => {
+    let data = [...bookings];
+    const s = search.toLowerCase();
 
-  // ACTION BUTTONS (Future Logic)
+    // TEXT SEARCH ACROSS MULTIPLE FIELDS
+    if (s !== "") {
+      data = data.filter((b) => {
+        const fields = [
+          b.bookingID,
+          b.guestID,
+          b.roomType,
+          b.bookingStatus,
+          b.totalAmount,
+        ];
+
+        return fields.some((f) =>
+          String(f ?? "").toLowerCase().includes(s)
+        );
+      });
+    }
+
+    // FILTER YEAR + MONTH
+    if (filterYear || filterMonth) {
+      data = data.filter((b) => {
+        const date = b.createdAt.split("T")[0]; // 2025-11-14
+        const [year, month] = date.split("-");
+
+        if (filterYear && year !== filterYear) return false;
+        if (filterMonth && month !== filterMonth) return false;
+
+        return true;
+      });
+    }
+
+    setFilteredBookings(data);
+  }, [bookings, search, filterYear, filterMonth]);
+
+  // 📌 Update Booking Status
   const updateStatus = async (bookingId: number, newStatus: string) => {
     try {
       await axios.put(
         `https://localhost:7168/api/bookings/${bookingId}/status`,
         newStatus,
-        {
-          headers: { "Content-Type": "application/json" }
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       alert(`Booking updated to ${newStatus}!`);
-      fetchBookings(); // refresh table
+      fetchBookings();
     } catch (err) {
       console.error("STATUS UPDATE ERROR:", err);
       alert("Failed to update booking.");
     }
   };
 
+  // 📌 Guest Popup
   async function openGuestProfile(guestId: string) {
     try {
       const res = await axios.get(
@@ -77,47 +123,85 @@ export default function ManagerManageBookings() {
     }
   }
 
-
-
-
   return (
-    <div className="manager-bookings">
-      <h2>Manage Bookings</h2>
+    <div className="manager-bookings fade-in">
 
+      <h2 className="page-title">Manage Bookings</h2>
+
+      {/* FILTER BAR */}
+      <div className="booking-filters">
+        <input
+          className="search-bar"
+          placeholder="Search booking ID, guest ID, room type, status..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {/* YEAR FILTER */}
+        <select
+          className="filter-select"
+          value={filterYear}
+          onChange={(e) => setFilterYear(e.target.value)}
+        >
+          <option value="">Year</option>
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+
+        {/* MONTH FILTER */}
+        <select
+          className="filter-select"
+          value={filterMonth}
+          onChange={(e) => setFilterMonth(e.target.value)}
+        >
+          <option value="">Month</option>
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+
+      {/* TABLE */}
       {loading ? (
-        <p>Loading...</p>
-      ) : bookings.length === 0 ? (
-        <p>No bookings found.</p>
+        <p>Loading bookings...</p>
+      ) : filteredBookings.length === 0 ? (
+        <p>No bookings match your search/filter.</p>
       ) : (
         <table className="booking-table">
           <thead>
             <tr>
-              <th>RoomID</th>
-              <th>GuestID</th>
+              <th>Booking ID</th>
+              <th>Guest</th>
               <th>Room Type</th>
-              <th>Dates(Duration)</th>
-              <th>Total number of guest</th>
+              <th>Check-In → Check-Out</th>
+              <th>Guests</th>
               <th>Total (RM)</th>
               <th>Status</th>
-              <th>Created_DateTime</th>
-              <th>Action</th>
+              <th>Created</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {bookings.map((b) => (
+            {filteredBookings.map((b) => (
               <tr key={b.bookingID}>
                 <td>{b.bookingID}</td>
+
                 <td>
                   <button
+                    className="guest-link"
                     onClick={() => openGuestProfile(b.guestID)}
-                    style={{
-                      background: "none",
-                      color: "#007bff",
-                      border: "none",
-                      cursor: "pointer",
-                      textDecoration: "underline"
-                    }}
                   >
                     {b.guestID}
                   </button>
@@ -133,20 +217,19 @@ export default function ManagerManageBookings() {
 
                 <td>{b.totalAmount}</td>
 
-                <td>{b.bookingStatus}</td>
-
                 <td>
-                  {new Date(b.createdAt).toLocaleString("en-GB", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit"
-                  }).replace(",", "")}
+                  <span className={`status-badge ${b.bookingStatus.toLowerCase()}`}>
+                    {b.bookingStatus}
+                  </span>
                 </td>
 
                 <td>
+                  {new Date(b.createdAt)
+                    .toLocaleString("en-GB")
+                    .replace(",", "")}
+                </td>
+
+                <td className="action-buttons">
                   <button
                     className="btn btn-confirm"
                     onClick={() => updateStatus(Number(b.bookingID), "Confirmed")}
@@ -174,54 +257,27 @@ export default function ManagerManageBookings() {
                   >
                     Check Out
                   </button>
-
-
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-
-
       )}
-      {showGuestPopup && guestInfo && (
-        <div style={{
-          position: "fixed",
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000
-        }}>
-          <div style={{
-            background: "white",
-            padding: "20px",
-            width: "400px",
-            borderRadius: "10px",
-            boxShadow: "0 0 10px rgba(0,0,0,0.3)"
-          }}>
-            <h3 style={{ textAlign: "center" }}>Guest Profile</h3>
 
-            <p><strong>Guest ID:</strong> {guestInfo.guestID}</p>
+      {/* GUEST POPUP */}
+      {showGuestPopup && guestInfo && (
+        <div className="modal-backdrop">
+          <div className="modal-box">
+            <h3 className="modal-title">Guest Profile</h3>
+
+            <p><strong>ID:</strong> {guestInfo.guestID}</p>
             <p><strong>Name:</strong> {guestInfo.fullName}</p>
             <p><strong>Email:</strong> {guestInfo.email}</p>
             <p><strong>Phone:</strong> {guestInfo.phoneNumber}</p>
             <p><strong>Address:</strong> {guestInfo.address}</p>
 
-
-            <div style={{ textAlign: "center", marginTop: "20px" }}>
-              <button
-                onClick={() => setShowGuestPopup(false)}
-                style={{
-                  padding: "8px 20px",
-                  background: "#007bff",
-                  border: "none",
-                  color: "white",
-                  borderRadius: "5px",
-                  cursor: "pointer"
-                }}
-              >
+            <div className="modal-actions">
+              <button className="btn add" onClick={() => setShowGuestPopup(false)}>
                 Close
               </button>
             </div>

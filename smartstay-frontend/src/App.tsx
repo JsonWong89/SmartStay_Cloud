@@ -7,7 +7,7 @@ import Manager from './pages/Hotel_manager/ManagerIndex';
 import ManageRooms from "./pages/Hotel_manager/ManagerManageRooms";
 import ManageBookings from "./pages/Hotel_manager/ManagerManageBookings";
 import ManageStaff from "./pages/Hotel_manager/ManagerManageStaff";
-import ManageReport from "./pages/Hotel_manager/ManagerReportMenu";
+import ManageReport from "./pages/Hotel_manager/ManagerManageReport";
 import ManagerOverview from "./pages/Hotel_manager/ManageOverview";
 import ManagerHotelInfo from './pages/Hotel_manager/ManagerHotelInfo';
 import ManagerReport_Revenue from './pages/Hotel_manager/Reports/RevenueReport';
@@ -20,6 +20,7 @@ import Staff from './pages/Staff/Staff';
 import Customer from './pages/Guest/Guest';
 import Unauthorized from './pages/Unauthorized';
 import { useAuthStore } from './store';
+import "./styles/modals.css";
 
 export default function App() {
   const user = useAuthStore((s) => s.user);

@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store";
+import "../../../styles/reports.css";
 
 Chart.register(...registerables);
 
@@ -24,22 +25,20 @@ export default function BookingStatusReport() {
   const pageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!user?.hotelId) return;
-    fetchStats();
+    if (user?.hotelId) fetchStats();
   }, [user?.hotelId]);
 
   async function fetchStats() {
     const res = await axios.get<BookingStatusStat[]>(
       `https://localhost:7168/api/reports/${user?.hotelId}/bookings`
     );
+
     setStats(res.data);
 
     const labels = res.data.map((x) => x.status);
     const values = res.data.map((x) => x.count);
 
-    if (chartInstance.current) {
-      chartInstance.current.destroy();
-    }
+    if (chartInstance.current) chartInstance.current.destroy();
 
     if (chartRef.current) {
       chartInstance.current = new Chart(chartRef.current, {
@@ -50,8 +49,15 @@ export default function BookingStatusReport() {
             {
               label: "Bookings by Status",
               data: values,
+              backgroundColor: ["#34d399", "#fbbf24", "#f87171"],
+              borderWidth: 2,
             },
           ],
+        },
+        options: {
+          plugins: {
+            legend: { position: "bottom", labels: { padding: 12 } },
+          },
         },
       });
     }
@@ -59,67 +65,82 @@ export default function BookingStatusReport() {
 
   const exportPDF = async () => {
     if (!pageRef.current) return;
+
     const canvas = await html2canvas(pageRef.current);
-    const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 190;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+
+    const imgData = canvas.toDataURL("image/png");
+    const width = 190;
+    const height = (canvas.height * width) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 10, 10, width, height);
     pdf.save("BookingStatusReport.pdf");
   };
 
+  // KPI Values
   const totalBookings = stats.reduce((sum, s) => sum + s.count, 0);
   const confirmed = stats.find((s) => s.status === "Confirmed")?.count ?? 0;
   const pending = stats.find((s) => s.status === "Pending")?.count ?? 0;
   const cancelled = stats.find((s) => s.status === "Cancelled")?.count ?? 0;
 
   return (
-    <div className="report-page" ref={pageRef} style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <h2>📅 Booking Status Report</h2>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button className="primary-btn" onClick={exportPDF}>
+    <div ref={pageRef} className="report-page fade-in">
+
+      {/* HEADER */}
+      <div className="report-header">
+        <h2 className="report-title flex items-center gap-2">
+          <span style={{ fontSize: "28px" }}>📅</span>
+          Booking Status Report
+        </h2>
+
+        <div className="report-btn-group">
+          <button className="report-btn export" onClick={exportPDF}>
             📄 Export PDF
           </button>
-          <button className="secondary-btn" onClick={() => navigate("/manager/report")}>
+
+          <button
+            className="report-btn back"
+            onClick={() => navigate("/manager/report")}
+          >
             ← Back to Reports
           </button>
         </div>
       </div>
 
-      <div
-        className="kpi-row"
-        style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}
-      >
-        <div className="kpi-card">
-          <h4>Total Bookings</h4>
-          <p className="big-number">{totalBookings}</p>
+      {/* KPI CARDS */}
+      <div className="report-kpi-grid">
+
+        <div className="report-kpi-card kpi-blue">
+          <p className="kpi-label">Total Bookings</p>
+          <p className="kpi-value">{totalBookings}</p>
         </div>
-        <div className="kpi-card">
-          <h4>Confirmed</h4>
-          <p className="big-number">{confirmed}</p>
+
+        <div className="report-kpi-card kpi-green">
+          <p className="kpi-label">Confirmed</p>
+          <p className="kpi-value">{confirmed}</p>
         </div>
-        <div className="kpi-card">
-          <h4>Pending</h4>
-          <p className="big-number">{pending}</p>
+
+        <div className="report-kpi-card kpi-blue">
+          <p className="kpi-label">Pending</p>
+          <p className="kpi-value">{pending}</p>
         </div>
-        <div className="kpi-card">
-          <h4>Cancelled</h4>
-          <p className="big-number">{cancelled}</p>
+
+        <div className="report-kpi-card kpi-green">
+          <p className="kpi-label">Cancelled</p>
+          <p className="kpi-value">{cancelled}</p>
+        </div>
+
+      </div>
+
+      {/* CHART CARD */}
+      <div className="report-chart-card">
+        <h3 className="chart-title">Booking Status Breakdown</h3>
+
+        <div className="chart-wrapper">
+          <canvas ref={chartRef} height={180}></canvas>
         </div>
       </div>
 
-      <div className="report-card">
-        <h3>Status Breakdown</h3>
-        <canvas ref={chartRef} height={140} />
-      </div>
     </div>
   );
 }

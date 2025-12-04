@@ -79,45 +79,52 @@ export default function RevenueReport() {
   };
 
   return (
-    <div className="report-page" ref={pageRef} style={{ padding: 24 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <h2>💰 Revenue Report</h2>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button className="primary-btn" onClick={exportPDF}>
-            📄 Export PDF
-          </button>
-          <button className="secondary-btn" onClick={() => navigate("/manager/report")}>
-            ← Back to Reports
-          </button>
-        </div>
-      </div>
+  <div ref={pageRef} className="report-page fade-in">
 
-      <div
-        className="kpi-row"
-        style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}
-      >
-        <div className="kpi-card">
-          <h4>Total Revenue</h4>
-          <p className="big-number">RM {totalRevenue.toFixed(2)}</p>
-        </div>
+    {/* HEADER */}
+    <div className="report-header">
+      <h2 className="report-title flex items-center gap-2">
+        <span style={{ fontSize: "28px" }}>💰</span>
+        Revenue Report
+      </h2>
 
-        <div className="kpi-card">
-          <h4>Months Recorded</h4>
-          <p className="big-number">{monthlyRevenue.length}</p>
-        </div>
-      </div>
+      <div className="report-btn-group">
+        <button className="report-btn export" onClick={exportPDF}>
+          📄 Export PDF
+        </button>
 
-      <div className="report-card">
-        <h3>Revenue Trend</h3>
-        <canvas ref={chartRef} height={120} />
+        <button
+          className="report-btn back"
+          onClick={() => navigate("/manager/report")}
+        >
+          ← Back to Reports
+        </button>
       </div>
     </div>
-  );
+
+    {/* KPI CARDS */}
+    <div className="report-kpi-grid">
+
+      <div className="report-kpi-card kpi-green">
+        <p className="kpi-label">Total Revenue</p>
+        <p className="kpi-value">RM {totalRevenue.toFixed(2)}</p>
+      </div>
+
+      <div className="report-kpi-card kpi-blue">
+        <p className="kpi-label">Months Recorded</p>
+        <p className="kpi-value">{monthlyRevenue.length}</p>
+      </div>
+    </div>
+
+    {/* CHART */}
+    <div className="report-chart-card">
+      <h3 className="chart-title">Revenue Trend</h3>
+
+      <div className="chart-wrapper canvas">
+        <canvas ref={chartRef} height={180}></canvas>
+      </div>
+    </div>
+
+  </div>
+);
 }

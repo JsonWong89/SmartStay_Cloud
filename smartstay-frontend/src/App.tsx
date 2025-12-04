@@ -58,6 +58,7 @@ const App: React.FC = () => {
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+    
   );
 };
 

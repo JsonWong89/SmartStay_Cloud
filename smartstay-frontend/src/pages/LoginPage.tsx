@@ -1,6 +1,7 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store";
+import { API_ENDPOINTS, apiPost } from "../config/api";
 
 interface FormData {
   email: string;
@@ -49,31 +50,66 @@ const LoginPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch("https://localhost:7168/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // Call proper login endpoint with credentials
+      let user: any = null;
+      try {
+        const response = await apiPost(API_ENDPOINTS.AUTH.LOGIN, {
           email: formData.email,
           password: formData.password,
-        }),
-      });
+        });
+        const contentType = response.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
-      const result = await response.json().catch(() => ({}));
-
-      if (response.ok) {
-        const id = result?.user?.id || result?.id;
-        const fullName = result?.user?.fullName || result?.fullName || formData.email;
-        const role = result?.user?.role || result?.role || "User";
-
-        setUser({ id, fullName, email: formData.email, role });
-        setMessage(result?.message || "Login successful!");
-        setMessageType("success");
-
-        navigate("/guest/dashboard");
-      } else {
-        setMessage(result?.message || "Invalid email or password.");
-        setMessageType("error");
+        if (!response.ok) {
+          const serverMsg = typeof payload === 'string' ? payload.slice(0, 180) : (payload?.message || '');
+          if (response.status === 401) {
+            setMessage('Invalid email or password.');
+          } else {
+            setMessage(`Server responded ${response.status}. ${serverMsg ? 'Details: ' + serverMsg : 'No details.'}`);
+          }
+          setMessageType('error');
+          return;
+        }
+        user = payload;
+      } catch (fetchErr: any) {
+        console.error('Network/Fetch error:', fetchErr);
+        setMessage(`Network error reaching API. ${fetchErr?.message || ''}`);
+        setMessageType('error');
+        return;
       }
+      
+      console.log("Login response:", user); // Debug log
+      
+      if (!user) {
+        setMessage("Invalid email or password.");
+        setMessageType("error");
+        return;
+      }
+
+      // Login successful
+      const role = (user.role || user.Role || '').toLowerCase();
+      setUser({ 
+        fullName: user.fullName || user.FullName, 
+        email: user.email || user.Email, 
+        role: user.role || user.Role 
+      });
+      setMessage("Login successful!");
+      setMessageType("success");
+
+      // Redirect based on role
+      setTimeout(() => {
+        if (role === 'admin') {
+          navigate("/admin/dashboard");
+        } else if (role === 'hotel manager') {
+          navigate("/hotel-manager");
+        } else if (role === 'guest') {
+          navigate("/guest");
+        } else if (role === 'staff') {
+          navigate("/staff");
+        } else {
+          navigate("/"); // fallback
+        }
+      }, 1000);
     } catch (err) {
       console.error(err);
       setMessage("Error logging in. Please ensure the backend is running.");

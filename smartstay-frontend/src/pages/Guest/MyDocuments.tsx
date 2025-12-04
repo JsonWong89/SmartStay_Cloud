@@ -92,7 +92,7 @@ const MyDocuments: React.FC = () => {
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-2xl font-bold text-gray-800">📄 My Documents</h1>
+          <h1 className="text-2xl font-bold text-gray-800">My Documents</h1>
           <p className="text-sm text-gray-600 mt-1">View and manage your uploaded documents</p>
         </div>
       </div>

@@ -268,7 +268,7 @@ const GuestProfile: React.FC = () => {
                 <p className="text-sm text-gray-600">Reviews Written</p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">$2,450</p>
+                <p className="text-2xl font-bold text-purple-600">RM2,450</p>
                 <p className="text-sm text-gray-600">Total Spent</p>
               </div>
             </div>

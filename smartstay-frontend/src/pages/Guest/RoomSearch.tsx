@@ -252,9 +252,9 @@ const RoomSearch: React.FC = () => {
                   onChange={(e) => setMaxPrice(parseInt(e.target.value))}
                   className="w-full"
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>$50</span>
-                  <span>$1000</span>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>RM50</span>
+                  <span>RM1000</span>
                 </div>
               </div>
 

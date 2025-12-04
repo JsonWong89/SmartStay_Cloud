@@ -534,12 +534,12 @@ const BookingPage: React.FC = () => {
 
                 <div>
                   <p className="text-sm text-gray-600">Price per night</p>
-                  <p className="font-semibold text-gray-800">${room.price}</p>
+                  <p className="font-semibold text-gray-800">RM{room.price}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Total Price</p>
-                  <p className="text-2xl font-bold text-blue-600">${totalPrice.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-600">RM{totalPrice.toFixed(2)}</p>
                 </div>
 
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">

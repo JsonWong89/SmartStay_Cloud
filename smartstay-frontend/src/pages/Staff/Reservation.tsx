@@ -226,9 +226,9 @@ export default function Reservation() {
             </thead>
             <tbody>
               {[
-                { no: "#8012301", room: "Single #101", group: "Halal Indonesia", in: "10 July 2024", out: "12 July 2024", paid: "$1184.31", due: "$184.00", status: "Pending" },
-                { no: "#8012302", room: "Twin #201", group: "Musafir Travels", in: "09 July 2024", out: "11 July 2024", paid: "$2184.36", due: "$84.00", status: "Paid" },
-                { no: "#8012303", room: "Single #601", group: "Omative Trip", in: "08 July 2024", out: "10 July 2024", paid: "$1844.30", due: "$584.36", status: "Online" },
+                { no: "#8012301", room: "Single #101", group: "Halal Indonesia", in: "10 July 2024", out: "12 July 2024", paid: "RM1184.31", due: "RM184.00", status: "Pending" },
+                { no: "#8012302", room: "Twin #201", group: "Musafir Travels", in: "09 July 2024", out: "11 July 2024", paid: "RM2184.36", due: "RM84.00", status: "Paid" },
+                { no: "#8012303", room: "Single #601", group: "Omative Trip", in: "08 July 2024", out: "10 July 2024", paid: "RM1844.30", due: "RM584.36", status: "Online" },
               ].map((row, i) => (
                 <tr key={i}>
                   <td style={styles.td}>

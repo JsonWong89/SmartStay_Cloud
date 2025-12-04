@@ -178,7 +178,7 @@ const RoomDetails: React.FC = () => {
                   )}
                 </div>
                 <div className="text-right">
-                  <p className="text-4xl font-bold text-blue-600">${room.price}</p>
+                  <p className="text-4xl font-bold text-blue-600">RM{room.price}</p>
                   <p className="text-gray-500">per night</p>
                   <span
                     className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${
@@ -276,7 +276,7 @@ const RoomDetails: React.FC = () => {
                 <div className="bg-gray-50 rounded-md p-4 mb-4">
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">Price per night:</span>
-                    <span className="font-semibold">${room.price}</span>
+                    <span className="font-semibold">RM{room.price}</span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">Number of nights:</span>

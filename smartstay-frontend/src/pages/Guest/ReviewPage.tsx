@@ -61,8 +61,8 @@ const ReviewPage: React.FC = () => {
       return;
     }
 
-    if (!reviewText.trim() || reviewText.length < 50) {
-      alert('Please write a review with at least 50 characters');
+    if (!reviewText.trim() || reviewText.length < 10) {
+      alert('Please write a review with at least 10 characters');
       return;
     }
 
@@ -126,7 +126,7 @@ const ReviewPage: React.FC = () => {
             onClick={() => setRatingFunc(star)}
             onMouseEnter={() => star === hoveredRating || setHoveredRating(star)}
             onMouseLeave={() => setHoveredRating(0)}
-            className="text-3xl focus:outline-none transition-transform hover:scale-110"
+            className="text-3xl focus:outline-none transition-transform hover:scale-110 w-10 h-10 flex items-center justify-center"
           >
             {star <= (hovered || currentRating) ? '⭐' : '☆'}
           </button>
@@ -143,7 +143,7 @@ const ReviewPage: React.FC = () => {
             key={star}
             type="button"
             onClick={() => setRatingFunc(star)}
-            className="text-xl focus:outline-none transition-transform hover:scale-110"
+            className="text-xl focus:outline-none transition-transform hover:scale-110 w-8 h-8 flex items-center justify-center"
           >
             {star <= currentRating ? '⭐' : '☆'}
           </button>
@@ -287,7 +287,7 @@ const ReviewPage: React.FC = () => {
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Minimum 50 characters ({reviewText.length}/50)
+                Minimum 10 characters ({reviewText.length}/10)
               </p>
             </div>
           </div>

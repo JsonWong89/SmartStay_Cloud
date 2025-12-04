@@ -356,7 +356,7 @@ const RoomsPage: React.FC = () => {
                                       fontSize: '14px',
                                       fontWeight: 700
                                     }}>
-                                      ${room.pricePerNight.toFixed(2)}
+                                      RM{room.pricePerNight.toFixed(2)}
                                     </div>
                                   </td>
                                   <td style={{ textAlign: 'center' }}>

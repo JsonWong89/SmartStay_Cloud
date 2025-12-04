@@ -80,18 +80,22 @@ const LoginPage: React.FC = () => {
       
       console.log("Login response:", user); // Debug log
       
-      if (!user) {
+      // Backend returns { message: "...", user: {...} }
+      const userData = user.user || user;
+      
+      if (!userData) {
         setMessage("Invalid email or password.");
         setMessageType("error");
         return;
       }
 
       // Login successful
-      const role = (user.role || user.Role || '').toLowerCase();
+      const role = (userData.role || userData.Role || '').toLowerCase();
       setUser({ 
-        fullName: user.fullName || user.FullName, 
-        email: user.email || user.Email, 
-        role: user.role || user.Role 
+        id: userData.id || userData.Id,
+        fullName: userData.fullName || userData.FullName, 
+        email: userData.email || userData.Email, 
+        role: userData.role || userData.Role 
       });
       setMessage("Login successful!");
       setMessageType("success");
@@ -103,7 +107,7 @@ const LoginPage: React.FC = () => {
         } else if (role === 'hotel manager') {
           navigate("/hotel-manager");
         } else if (role === 'guest') {
-          navigate("/guest");
+          navigate("/guest/dashboard");
         } else if (role === 'staff') {
           navigate("/staff");
         } else {

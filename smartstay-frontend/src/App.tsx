@@ -11,9 +11,22 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Admin Pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import HotelManagerPage from "./pages/HotelManagerPage";
-import GuestPage from "./pages/GuestPage";
 import StaffPage from "./pages/StaffPage";
 import HotelsPage from "./pages/Admin/HotelsPage";
+
+// Guest Pages
+import GuestDashboard from "./pages/Guest/GuestDashboard";
+import RoomSearch from "./pages/Guest/RoomSearch";
+import RoomDetails from "./pages/Guest/RoomDetails";
+import BookingPage from "./pages/Guest/BookingPage";
+import BookingConfirmation from "./pages/Guest/BookingConfirmation";
+import MyReservations from "./pages/Guest/MyReservations";
+import GuestProfile from "./pages/Guest/GuestProfile";
+import PaymentPage from "./pages/Guest/PaymentPage";
+import ReceiptPage from "./pages/Guest/ReceiptPage";
+import ReviewPage from "./pages/Guest/ReviewPage";
+import MyReviewsPage from "./pages/Guest/MyReviewsPage";
+import MyDocuments from "./pages/Guest/MyDocuments";
 import RoomTypesPage from "./pages/Admin/RoomTypesPage";
 import ReportsPage from "./pages/Admin/ReportsPage";
 import ManageManagersPage from "./pages/Admin/ManageManagersPage";
@@ -52,8 +65,22 @@ const App: React.FC = () => {
 
       {/* Role-based routes - Protected */}
       <Route path="/hotel-manager" element={<ProtectedRoute allowedRoles={['Hotel Manager']}><HotelManagerPage /></ProtectedRoute>} />
-      <Route path="/guest" element={<ProtectedRoute allowedRoles={['Guest']}><GuestPage /></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute allowedRoles={['Staff']}><StaffPage /></ProtectedRoute>} />
+
+      {/* Guest routes - Protected */}
+      <Route path="/guest" element={<ProtectedRoute allowedRoles={['Guest']}><GuestDashboard /></ProtectedRoute>} />
+      <Route path="/guest/dashboard" element={<ProtectedRoute allowedRoles={['Guest']}><GuestDashboard /></ProtectedRoute>} />
+      <Route path="/guest/search" element={<ProtectedRoute allowedRoles={['Guest']}><RoomSearch /></ProtectedRoute>} />
+      <Route path="/guest/room/:roomId" element={<ProtectedRoute allowedRoles={['Guest']}><RoomDetails /></ProtectedRoute>} />
+      <Route path="/guest/booking" element={<ProtectedRoute allowedRoles={['Guest']}><BookingPage /></ProtectedRoute>} />
+      <Route path="/guest/booking-confirmation/:bookingId" element={<ProtectedRoute allowedRoles={['Guest']}><BookingConfirmation /></ProtectedRoute>} />
+      <Route path="/guest/reservations" element={<ProtectedRoute allowedRoles={['Guest']}><MyReservations /></ProtectedRoute>} />
+      <Route path="/guest/profile" element={<ProtectedRoute allowedRoles={['Guest']}><GuestProfile /></ProtectedRoute>} />
+      <Route path="/guest/payment/:bookingId" element={<ProtectedRoute allowedRoles={['Guest']}><PaymentPage /></ProtectedRoute>} />
+      <Route path="/guest/receipt/:bookingId" element={<ProtectedRoute allowedRoles={['Guest']}><ReceiptPage /></ProtectedRoute>} />
+      <Route path="/guest/review/:reservationId" element={<ProtectedRoute allowedRoles={['Guest']}><ReviewPage /></ProtectedRoute>} />
+      <Route path="/guest/reviews" element={<ProtectedRoute allowedRoles={['Guest']}><MyReviewsPage /></ProtectedRoute>} />
+      <Route path="/guest/documents" element={<ProtectedRoute allowedRoles={['Guest']}><MyDocuments /></ProtectedRoute>} />
 
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />

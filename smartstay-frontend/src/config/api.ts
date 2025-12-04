@@ -1,7 +1,7 @@
 // API Configuration - Centralized endpoint management
 // Edit this file to change API URLs across the entire application
 
-const API_BASE_URL = "http://localhost:5163";
+const API_BASE_URL = "https://localhost:7168";
 
 export const API_ENDPOINTS = {
   // Base URL
@@ -9,60 +9,89 @@ export const API_ENDPOINTS = {
   
   // Authentication
   AUTH: {
-    LOGIN: `${API_BASE_URL}/api/login`,
-    REGISTER: `${API_BASE_URL}/api/auth/register`,
-    LOGOUT: `${API_BASE_URL}/api/auth/logout`,
+    LOGIN: `${API_BASE_URL}/api/Auth/login`,
+    REGISTER: `${API_BASE_URL}/api/Auth/register`,
+    LOGOUT: `${API_BASE_URL}/api/Auth/logout`,
   },
   
-  // Users Management
+  // Users Management (Full CRUD)
   USERS: {
-    BASE: `${API_BASE_URL}/api/users`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/users/${id}`,
+    BASE: `${API_BASE_URL}/api/Users`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Users/${id}`,
   },
   
-  // Hotels Management
+  // Hotels Management (Full CRUD)
   HOTELS: {
-    BASE: `${API_BASE_URL}/api/hotels`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/hotels/${id}`,
+    BASE: `${API_BASE_URL}/api/Hotels`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Hotels/${id}`,
+    MANAGERS: `${API_BASE_URL}/api/Hotels/managers`,
   },
   
-  // Rooms Management
+  // Rooms Management (Full CRUD)
   ROOMS: {
-    BASE: `${API_BASE_URL}/api/rooms`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/rooms/${id}`,
-    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/rooms?hotelId=${hotelId}`,
+    BASE: `${API_BASE_URL}/api/Rooms`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Rooms/${id}`,
+    DEBUG: `${API_BASE_URL}/api/Rooms/debug`,
+    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/Rooms?hotelId=${hotelId}`,
   },
   
-  // Rate Plans (Pricing)
-  RATE_PLANS: {
-    BASE: `${API_BASE_URL}/api/rateplans`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/rateplans/${id}`,
-    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/rateplans?hotelId=${hotelId}`,
-  },
-  
-  // Bookings
+  // Bookings (Full CRUD)
   BOOKINGS: {
-    BASE: `${API_BASE_URL}/api/bookings`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/bookings/${id}`,
+    BASE: `${API_BASE_URL}/api/Bookings`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Bookings/${id}`,
+    BY_GUEST: (guestId: string) => `${API_BASE_URL}/api/Bookings/guest/${guestId}`,
+    CANCEL: (id: string) => `${API_BASE_URL}/api/Bookings/${id}/cancel`,
+    SEND_CONFIRMATION: (id: string) => `${API_BASE_URL}/api/Bookings/${id}/send-confirmation`,
+  },
+  
+  // Documents
+  DOCUMENTS: {
+    UPLOAD: `${API_BASE_URL}/api/Documents/upload`,
+    BY_GUEST: (guestId: string) => `${API_BASE_URL}/api/Documents/guest/${guestId}`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Documents/${id}`,
+    UPDATE_STATUS: (id: string) => `${API_BASE_URL}/api/Documents/${id}/status`,
   },
   
   // Hotel Managers
   HOTEL_MANAGERS: {
-    BASE: `${API_BASE_URL}/api/hotelmanagers`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/hotelmanagers/${id}`,
+    BASE: `${API_BASE_URL}/api/HotelManagers`,
+    BY_USER_AND_HOTEL: (userId: string, hotelId: string) => `${API_BASE_URL}/api/HotelManagers/${userId}/${hotelId}`,
   },
   
-  // Daily Metrics
+  // Payments
+  PAYMENTS: {
+    CREATE_INTENT: `${API_BASE_URL}/api/Payments/create-payment-intent`,
+    CONFIRM: `${API_BASE_URL}/api/Payments/confirm`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Payments/${id}`,
+    RECEIPT: (bookingId: string) => `${API_BASE_URL}/api/Payments/booking/${bookingId}/receipt`,
+    BY_GUEST: (guestId: string) => `${API_BASE_URL}/api/Payments/guest/${guestId}`,
+  },
+  
+  // Reviews
+  REVIEWS: {
+    BASE: `${API_BASE_URL}/api/Reviews`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/Reviews/${id}`,
+    BY_BOOKING: (bookingId: string) => `${API_BASE_URL}/api/Reviews/booking/${bookingId}`,
+    BY_GUEST: (guestId: string) => `${API_BASE_URL}/api/Reviews/guest/${guestId}`,
+    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/Reviews/hotel/${hotelId}`,
+  },
+  
+  // Legacy endpoints (kept for backward compatibility - may not exist)
+  RATE_PLANS: {
+    BASE: `${API_BASE_URL}/api/RatePlans`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/RatePlans/${id}`,
+    BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/RatePlans?hotelId=${hotelId}`,
+  },
+  
   DAILY_METRICS: {
-    BASE: `${API_BASE_URL}/api/dailymetrics`,
-    BY_ID: (id: string) => `${API_BASE_URL}/api/dailymetrics/${id}`,
+    BASE: `${API_BASE_URL}/api/DailyMetrics`,
+    BY_ID: (id: string) => `${API_BASE_URL}/api/DailyMetrics/${id}`,
   },
   
-  // Reports
   REPORTS: {
-    DAILY_METRICS: `${API_BASE_URL}/api/reports/daily-metrics`,
-    REVENUE: `${API_BASE_URL}/api/reports/revenue`,
-    BOOKINGS: `${API_BASE_URL}/api/reports/bookings`,
+    DAILY_METRICS: `${API_BASE_URL}/api/Reports/daily-metrics`,
+    REVENUE: `${API_BASE_URL}/api/Reports/revenue`,
+    BOOKINGS: `${API_BASE_URL}/api/Reports/bookings`,
   },
   
   // Monitoring

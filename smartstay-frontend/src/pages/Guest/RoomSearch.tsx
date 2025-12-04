@@ -242,7 +242,7 @@ const RoomSearch: React.FC = () => {
               {/* Price Range */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Max Price: ${maxPrice}
+                  Max Price: RM{maxPrice}
                 </label>
                 <input
                   type="range"
@@ -331,7 +331,7 @@ const RoomSearch: React.FC = () => {
                             {room.city && <p className="text-sm text-gray-500">📍 {room.city}</p>}
                           </div>
                           <div className="text-right">
-                            <p className="text-3xl font-bold text-blue-600">${room.price}</p>
+                            <p className="text-3xl font-bold text-blue-600">RM{room.price}</p>
                             <p className="text-sm text-gray-500">per night</p>
                           </div>
                         </div>

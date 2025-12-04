@@ -2,18 +2,15 @@ import { create } from "zustand";
 
 // ✅ Define the structure of your global state
 interface AuthState {
-  // The currently logged-in user's info
   user: {
+    id?: string; // Changed to string to match backend
     fullName: string;
     email: string;
     role: string;
+    phone?: string; // Add phone number
   } | null;
 
-  // --- Actions ---
-  // Save user info after login or register
-  setUser: (user: { fullName: string; email: string; role: string }) => void;
-
-  // Clear user info when logged out
+  setUser: (user: { id?: string; fullName: string; email: string; role: string; phone?: string }) => void;
   clearUser: () => void;
 }
 

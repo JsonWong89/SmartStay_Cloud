@@ -3,29 +3,60 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 // ✅ Import your pages
 import RegisterPage from "./pages/Admin/Register_page"; // Adjust path if needed
+import Dashboard from "./pages/Staff/Dashboard"; 
+import Reservation from "./pages/Staff/Reservation"; 
+
 import LoginPage from "./pages/LoginPage";
-// You can later add:
-// import HomePage from "./pages/HomePage";
-// import LoginPage from "./pages/LoginPage";
+
+// ✅ Import Guest pages
+import GuestDashboard from "./pages/Guest/GuestDashboard";
+import RoomSearch from "./pages/Guest/RoomSearch";
+import RoomDetails from "./pages/Guest/RoomDetails";
+import BookingPage from "./pages/Guest/BookingPage";
+import MyReservations from "./pages/Guest/MyReservations";
+import PaymentPage from "./pages/Guest/PaymentPage";
+import BookingConfirmation from "./pages/Guest/BookingConfirmation";
+import ReviewPage from "./pages/Guest/ReviewPage";
+import GuestProfile from "./pages/Guest/GuestProfile";
+import ReceiptPage from "./pages/Guest/ReceiptPage";
+import MyReviewsPage from "./pages/Guest/MyReviewsPage";
+import MyDocuments from "./pages/Guest/MyDocuments";
 
 // ✅ App component
 const App: React.FC = () => {
   return (
     <Routes>
-      {/* Default route -> Login */}
-      <Route path="/" element={<LoginPage />} />
-      {/* Explicit login route for direct links */}
+      {/* Default route -> Guest Dashboard */}
+      <Route path="/" element={<GuestDashboard />} />
+      
+      {/* Login Page */}
       <Route path="/login" element={<LoginPage />} />
 
       {/* Admin/Manager Registration */}
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Login Page (optional, will use later) */}
-      <Route path="/login" element={<LoginPage />} />
+      {/* Staff Routes */}
+      <Route path="/staff/dashboard" element={<Dashboard />} />
+      <Route path="/staff/reservation" element={<Reservation />} />
+
+      {/* Guest Routes */}
+      <Route path="/guest/dashboard" element={<GuestDashboard />} />
+      <Route path="/guest/search" element={<RoomSearch />} />
+      <Route path="/guest/room/:roomId" element={<RoomDetails />} />
+      <Route path="/guest/booking/:roomId" element={<BookingPage />} />
+      <Route path="/guest/reservations" element={<MyReservations />} />
+      <Route path="/guest/payment" element={<PaymentPage />} />
+      <Route path="/guest/booking-confirmation" element={<BookingConfirmation />} />
+      <Route path="/guest/review/:reservationId" element={<ReviewPage />} />
+      <Route path="/guest/reviews" element={<MyReviewsPage />} />
+      <Route path="/guest/documents" element={<MyDocuments />} />
+      <Route path="/guest/receipt/:bookingId" element={<ReceiptPage />} />
+      <Route path="/guest/profile" element={<GuestProfile />} />
 
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+    
   );
 };
 

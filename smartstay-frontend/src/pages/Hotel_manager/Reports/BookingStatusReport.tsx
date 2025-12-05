@@ -22,7 +22,6 @@ export default function BookingStatusReport() {
 
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
-  const pageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (user?.hotelId) fetchStats();
@@ -63,17 +62,37 @@ export default function BookingStatusReport() {
     }
   }
 
+  // -----------------------------------
+  //  EXPORT PDF FUNCTION (non-blurry)
+  // -----------------------------------
   const exportPDF = async () => {
-    if (!pageRef.current) return;
+    const element = document.getElementById("export-panel");
+    if (!element) return;
 
-    const canvas = await html2canvas(pageRef.current);
-    const pdf = new jsPDF("p", "mm", "a4");
+    // Fix blur/fade
+    document.body.classList.add("export-mode");
 
-    const imgData = canvas.toDataURL("image/png");
-    const width = 190;
-    const height = (canvas.height * width) / canvas.width;
+    const canvas = await html2canvas(element as any, {
+      scale: 2, // high resolution
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    } as any);
 
-    pdf.addImage(imgData, "PNG", 10, 10, width, height);
+    document.body.classList.remove("export-mode");
+
+    const imgData = canvas.toDataURL("image/png", 1.0);
+
+    const pdf = new jsPDF({
+      orientation: "p",
+      unit: "mm",
+      format: "a4",
+      compress: false,
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
     pdf.save("BookingStatusReport.pdf");
   };
 
@@ -84,7 +103,8 @@ export default function BookingStatusReport() {
   const cancelled = stats.find((s) => s.status === "Cancelled")?.count ?? 0;
 
   return (
-    <div ref={pageRef} className="report-page fade-in">
+    // ⭐ Only screenshot this part ↓↓↓
+    <div id="export-panel" className="report-page fade-in">
 
       {/* HEADER */}
       <div className="report-header">
@@ -132,7 +152,7 @@ export default function BookingStatusReport() {
 
       </div>
 
-      {/* CHART CARD */}
+      {/* CHART */}
       <div className="report-chart-card">
         <h3 className="chart-title">Booking Status Breakdown</h3>
 

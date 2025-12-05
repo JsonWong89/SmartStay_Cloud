@@ -15,6 +15,7 @@ import ManagerReport_Occupancy from './pages/Hotel_manager/Reports/OccupancyRepo
 import ManagerReport_Room from './pages/Hotel_manager/Reports/RoomTypeReport';
 import ManagerReport_Booking from './pages/Hotel_manager/Reports/BookingStatusReport';
 import ManagerReport_Gender from './pages/Hotel_manager/Reports/GenderReport';
+import ManagerProfile from './pages/Hotel_manager/ManageProfile';
 
 import Staff from './pages/Staff/Staff';
 import Customer from './pages/Guest/Guest';
@@ -45,6 +46,9 @@ export default function App() {
             <Route path="staff" element={<ManageStaff />} />
             <Route path="report" element={<ManageReport />} />
             <Route path="hotelinfo" element={<ManagerHotelInfo />} />
+            <Route path="manageProfile" element={<ManagerProfile />} />
+
+
 
             <Route path="report/revenue" element={<ManagerReport_Revenue />} />
             <Route path="report/occupancy" element={<ManagerReport_Occupancy />} />

@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null;
   login: (name: string) => void;
   logout: () => void;
+  setUser: (updated: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -42,6 +43,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null });
     localStorage.removeItem('smartstay_user');
   },
+
+  setUser: (updated) =>
+    set((state) => {
+      const newUser = { ...state.user, ...updated } as User;
+      localStorage.setItem("smartstay_user", JSON.stringify(newUser));
+      return { user: newUser };
+    }),
 }));
 
 // Rehydrate store from localStorage on load (simple demo persistence)

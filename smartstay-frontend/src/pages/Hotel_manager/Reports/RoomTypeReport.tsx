@@ -21,7 +21,6 @@ export default function RoomTypeReport() {
 
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
-  const pageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!user?.hotelId) return;
@@ -48,6 +47,8 @@ export default function RoomTypeReport() {
             {
               label: "Bookings by Room Type",
               data: values,
+              backgroundColor: "#60a5fa",
+              borderColor: "#2563eb",
               borderWidth: 2,
             },
           ],
@@ -64,24 +65,46 @@ export default function RoomTypeReport() {
     }
   }
 
+  // -----------------------------------
+  //  EXPORT PDF FUNCTION (non-blurry)
+  // -----------------------------------
   const exportPDF = async () => {
-    if (!pageRef.current) return;
+    const element = document.getElementById("export-panel");
+    if (!element) return;
 
-    const canvas = await html2canvas(pageRef.current);
-    const imgData = canvas.toDataURL("image/png");
+    // Fix fading / blur
+    document.body.classList.add("export-mode");
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgWidth = 190;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const canvas = await html2canvas(element as any, {
+      scale: 2, // high DPI
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    } as any);
 
-    pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+    document.body.classList.remove("export-mode");
+
+    const imgData = canvas.toDataURL("image/png", 1.0);
+
+    const pdf = new jsPDF({
+      orientation: "p",
+      unit: "mm",
+      format: "a4",
+      compress: false,
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
     pdf.save("RoomTypeReport.pdf");
   };
 
   const totalBookings = stats.reduce((sum, s) => sum + s.count, 0);
 
   return (
-    <div className="report-page" ref={pageRef}>
+    // ⭐ Only screenshot this panel
+    <div id="export-panel" className="report-page">
+
       {/* ===== HEADER ===== */}
       <div className="report-header">
         <h2 className="report-title">🛏️ Room Type Popularity</h2>
@@ -100,7 +123,7 @@ export default function RoomTypeReport() {
         </div>
       </div>
 
-      {/* ===== KPI SECTION ===== */}
+      {/* ===== KPI ===== */}
       <div className="report-kpi-grid">
         <div className="report-kpi-card kpi-blue">
           <p className="kpi-label">Total Bookings</p>
@@ -120,7 +143,7 @@ export default function RoomTypeReport() {
         ))}
       </div>
 
-      {/* ===== CHART CARD ===== */}
+      {/* ===== CHART ===== */}
       <div className="report-chart-card">
         <h3 className="chart-title">Bookings by Room Type</h3>
 
@@ -128,6 +151,7 @@ export default function RoomTypeReport() {
           <canvas ref={chartRef} height={150}></canvas>
         </div>
       </div>
+
     </div>
   );
 }

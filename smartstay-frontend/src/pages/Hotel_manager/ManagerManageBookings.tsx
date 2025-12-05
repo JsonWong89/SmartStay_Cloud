@@ -55,6 +55,15 @@ export default function ManagerManageBookings() {
     fetchBookings();
   }, [user?.hotelId]);
 
+  // 🔢 KPI COUNTS
+  const totalBookings = bookings.length;
+  const checkedInCount = bookings.filter(
+    (b) => b.bookingStatus === "CheckedIn"
+  ).length;
+  const checkedOutCount = bookings.filter(
+    (b) => b.bookingStatus === "CheckedOut"
+  ).length;
+
   // 🔍 FILTER + SEARCH LOGIC
   useEffect(() => {
     let data = [...bookings];
@@ -70,14 +79,11 @@ export default function ManagerManageBookings() {
           b.bookingStatus,
           b.totalAmount,
         ];
-
-        return fields.some((f) =>
-          String(f ?? "").toLowerCase().includes(s)
-        );
+        return fields.some((f) => String(f ?? "").toLowerCase().includes(s));
       });
     }
 
-    // FILTER YEAR + MONTH
+    // FILTER YEAR + MONTH (by createdAt)
     if (filterYear || filterMonth) {
       data = data.filter((b) => {
         const date = b.createdAt.split("T")[0]; // 2025-11-14
@@ -125,8 +131,25 @@ export default function ManagerManageBookings() {
 
   return (
     <div className="manager-bookings fade-in">
-
       <h2 className="page-title">Manage Bookings</h2>
+
+      {/* TOP KPI CARDS (same style as rooms/staff) */}
+      <div className="kpi-row">
+        <div className="kpi-card available">
+          <h4>Total Bookings</h4>
+          <p>{totalBookings}</p>
+        </div>
+
+        <div className="kpi-card occupied">
+          <h4>Checked In</h4>
+          <p>{checkedInCount}</p>
+        </div>
+
+        <div className="kpi-card maintenance">
+          <h4>Checked Out</h4>
+          <p>{checkedOutCount}</p>
+        </div>
+      </div>
 
       {/* FILTER BAR */}
       <div className="booking-filters">
@@ -218,42 +241,50 @@ export default function ManagerManageBookings() {
                 <td>{b.totalAmount}</td>
 
                 <td>
-                  <span className={`status-badge ${b.bookingStatus.toLowerCase()}`}>
+                  <span
+                    className={`status-badge ${b.bookingStatus.toLowerCase()}`}
+                  >
                     {b.bookingStatus}
                   </span>
                 </td>
 
                 <td>
-                  {new Date(b.createdAt)
-                    .toLocaleString("en-GB")
-                    .replace(",", "")}
+                  {new Date(b.createdAt).toLocaleString("en-GB").replace(",", "")}
                 </td>
 
                 <td className="action-buttons">
                   <button
                     className="btn btn-confirm"
-                    onClick={() => updateStatus(Number(b.bookingID), "Confirmed")}
+                    onClick={() =>
+                      updateStatus(Number(b.bookingID), "Confirmed")
+                    }
                   >
                     Confirm
                   </button>
 
                   <button
                     className="btn btn-cancel"
-                    onClick={() => updateStatus(Number(b.bookingID), "Cancelled")}
+                    onClick={() =>
+                      updateStatus(Number(b.bookingID), "Cancelled")
+                    }
                   >
                     Cancel
                   </button>
 
                   <button
                     className="btn btn-checkin"
-                    onClick={() => updateStatus(Number(b.bookingID), "CheckedIn")}
+                    onClick={() =>
+                      updateStatus(Number(b.bookingID), "CheckedIn")
+                    }
                   >
                     Check In
                   </button>
 
                   <button
                     className="btn btn-checkout"
-                    onClick={() => updateStatus(Number(b.bookingID), "CheckedOut")}
+                    onClick={() =>
+                      updateStatus(Number(b.bookingID), "CheckedOut")
+                    }
                   >
                     Check Out
                   </button>
@@ -270,21 +301,33 @@ export default function ManagerManageBookings() {
           <div className="modal-box">
             <h3 className="modal-title">Guest Profile</h3>
 
-            <p><strong>ID:</strong> {guestInfo.guestID}</p>
-            <p><strong>Name:</strong> {guestInfo.fullName}</p>
-            <p><strong>Email:</strong> {guestInfo.email}</p>
-            <p><strong>Phone:</strong> {guestInfo.phoneNumber}</p>
-            <p><strong>Address:</strong> {guestInfo.address}</p>
+            <p>
+              <strong>ID:</strong> {guestInfo.guestID}
+            </p>
+            <p>
+              <strong>Name:</strong> {guestInfo.fullName}
+            </p>
+            <p>
+              <strong>Email:</strong> {guestInfo.email}
+            </p>
+            <p>
+              <strong>Phone:</strong> {guestInfo.phoneNumber}
+            </p>
+            <p>
+              <strong>Address:</strong> {guestInfo.address}
+            </p>
 
             <div className="modal-actions">
-              <button className="btn add" onClick={() => setShowGuestPopup(false)}>
+              <button
+                className="btn add"
+                onClick={() => setShowGuestPopup(false)}
+              >
                 Close
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

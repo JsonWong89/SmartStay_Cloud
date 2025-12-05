@@ -49,7 +49,7 @@ export default function ManagerSidebar({
         {
             section: "SETTINGS",
             items: [
-                { name: "Profile", path: "/manager/profile", icon: <FiUser /> },
+                { name: "Profile", path: "/manager/manageProfile", icon: <FiUser /> },
                 { name: "Logout", path: "/logout", icon: <FiLogOut /> },
             ],
         },

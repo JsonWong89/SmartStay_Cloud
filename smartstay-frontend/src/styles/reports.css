@@ -67,10 +67,10 @@
    KPI GRID
 -------------------------- */
 .report-kpi-grid {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 30px;
 }
 
 .report-kpi-card {
@@ -109,9 +109,12 @@
    CHART CARD
 -------------------------- */
 .report-chart-card {
+  width: 80%;          /* chart spans centered 80% width */
+  max-width: 900px;    /* avoid too large */
+  margin: 0 auto;      /* center align */
+  padding: 20px;
+  border-radius: 14px;
   background: white;
-  border-radius: 16px;
-  padding: 24px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
 }
 
@@ -295,3 +298,23 @@
   flex-wrap: wrap;
 }
 
+#export-panel {
+  background: #ffffff !important;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+#pdf-container {
+  width: 800px;          
+  margin: 0 auto;        
+  padding: 24px;
+  background: #ffffff;
+}
+/* 🔥 Prevent fade, blur, glass, opacity issues during PDF export */
+.export-mode * {
+  background: #ffffff !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}

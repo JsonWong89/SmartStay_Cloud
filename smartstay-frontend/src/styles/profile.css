@@ -1,0 +1,144 @@
+/* ================================
+   PROFILE CONTAINER
+=================================== */
+.profile-container {
+  max-width: 900px;
+  margin: auto;
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.profile-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ================================
+   GRID LAYOUT (Improved spacing)
+=================================== */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* clean 2-column form */
+  gap: 24px 30px;                  /* perfect spacing */
+  margin-bottom: 28px;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+/* ================================
+   INPUT STYLES
+=================================== */
+.profile-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-item label {
+  margin-bottom: 6px;
+}
+
+
+.profile-item input,
+.profile-item select {
+  height: 48px !important;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.profile-item input:focus,
+.profile-item select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 4px rgba(37, 99, 235, 0.3);
+  outline: none;
+}
+
+/* ================================
+   SUCCESS MESSAGE
+=================================== */
+.success-msg {
+  color: #059669;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+/* ================================
+   SAVE BUTTON
+=================================== */
+.save-btn {
+  background: #2563eb;
+  color: white;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.save-btn:hover {
+  background: #1e49c7;
+}
+
+/* ================================
+   PASSWORD SECTION
+=================================== */
+.password-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-box input {
+  width: 100%;
+  height: 48px !important;
+  padding-right: 120px;
+}
+
+/* Eye icon centered */
+.pass-toggle {
+  position: absolute;
+  right: 75px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #444;
+}
+
+/* Change/Cancel button aligned */
+.change-pass-btn {
+  position: absolute;
+  right: 5px;
+  height: 32px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0 12px;
+  background: #2563eb;
+  color: white;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.change-pass-btn.cancel {
+  background: #ef4444;
+}
+
+/* Fix Hotel row taking full width */
+.full-width {
+  grid-column: span 2;
+}

@@ -34,8 +34,6 @@ export default function GenderReport() {
   const pieInstance = useRef<Chart | null>(null);
   const barInstance = useRef<Chart | null>(null);
 
-
-
   useEffect(() => {
     if (!user?.hotelId) return;
     fetchData();
@@ -47,9 +45,9 @@ export default function GenderReport() {
       const res = await axios.get<GenderReportResponse>(
         `https://localhost:7168/api/reports/${user?.hotelId}/gender`
       );
+
       setData(res.data);
 
-      // Delay chart creation until layout is ready
       requestAnimationFrame(() => buildCharts(res.data));
     } catch (err) {
       console.error("GENDER REPORT ERROR:", err);
@@ -109,9 +107,7 @@ export default function GenderReport() {
             },
           ],
         },
-        options: {
-          plugins: { legend: { position: "bottom" } },
-        },
+        options: { plugins: { legend: { position: "bottom" } } },
       });
     }
 
@@ -150,7 +146,47 @@ export default function GenderReport() {
     }
   }
 
-  // KPI CALCULATIONS
+  // -----------------------------------
+  //  EXPORT PDF FUNCTION (non-blur, multipage)
+  // -----------------------------------
+  const exportPdf = async () => {
+    const element = document.getElementById("export-panel");
+    if (!element) return;
+
+    document.body.classList.add("export-mode");
+
+    const canvas = await html2canvas(element as any, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    } as any);
+
+    document.body.classList.remove("export-mode");
+
+    const imgData = canvas.toDataURL("image/png", 1.0);
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, pageWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save("GenderReport.pdf");
+  };
+
+  // KPI calculations
   const gT = data ? sumBuckets(data.guests) : 0;
   const sT = data ? sumBuckets(data.staff) : 0;
   const rT = data ? sumBuckets(data.receptionists) : 0;
@@ -169,53 +205,6 @@ export default function GenderReport() {
   const femaleAll = femaleGuests + femaleStaff + femaleRec;
   const otherAll = totalAll - maleAll - femaleAll;
 
-  const exportPdf = async () => {
-    if (!pageRef.current) return;
-
-    const element = pageRef.current;
-
-    // Increase quality by rendering at higher resolution
-    const canvas = await html2canvas(element, {
-      scale: 3,              // ← MOST IMPORTANT (High DPI)
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-    } as any);
-
-    // Convert to image
-    const imgData = canvas.toDataURL("image/png", 1.0);
-
-    // Create PDF
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    // Add the first page
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    // If content is longer than 1 page, add more pages
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    pdf.save("Report.pdf");
-  };
-
-
-
-
-
   if (loading || !data)
     return (
       <div className="report-page">
@@ -225,7 +214,7 @@ export default function GenderReport() {
     );
 
   return (
-    <div ref={pageRef} className="report-page">
+    <div id="export-panel" ref={pageRef} className="report-page">
 
       {/* HEADER */}
       <div className="report-header">
@@ -273,14 +262,14 @@ export default function GenderReport() {
         </div>
       </div>
 
-      {/* DETAIL TABLES (MOVE ABOVE CHARTS) */}
+      {/* DETAIL TABLES */}
       <div className="detail-section">
         <h3 className="chart-title">Detailed Breakdown</h3>
 
         <div className="detail-tables">
 
           <div className="detail-card guests">
-            <h4>Guests (Total: {gT} )</h4>
+            <h4>Guests (Total: {gT})</h4>
             <table className="rooms-table">
               <thead>
                 <tr>
@@ -300,7 +289,7 @@ export default function GenderReport() {
           </div>
 
           <div className="detail-card staff">
-            <h4>Staff (Total: {sT} )</h4>
+            <h4>Staff (Total: {sT})</h4>
             <table className="rooms-table">
               <thead>
                 <tr>
@@ -320,7 +309,7 @@ export default function GenderReport() {
           </div>
 
           <div className="detail-card receptionists">
-            <h4>Receptionists (Total: {rT} )</h4>
+            <h4>Receptionists (Total: {rT})</h4>
             <table className="rooms-table">
               <thead>
                 <tr>
@@ -342,7 +331,7 @@ export default function GenderReport() {
         </div>
       </div>
 
-      {/* SMALLER CHARTS BELOW DETAIL LISTS */}
+      {/* CHARTS */}
       <div className="charts-row" style={{ marginTop: "20px" }}>
         <div className="report-chart-card" style={{ maxWidth: "420px" }}>
           <h3 className="chart-title">Overall Gender Distribution</h3>

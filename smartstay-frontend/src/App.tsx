@@ -27,25 +27,6 @@ export default function App() {
   const logout = useAuthStore((s) => s.logout);
   return (
     <div>
-      <header style={{ padding: 12, borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-        <nav style={{ display: 'flex', gap: 12 }}>
-          <Link to="/">Home</Link>
-          <Link to="/admin">Admin</Link>
-          <Link to="/manager">Manager</Link>
-          <Link to="/staff">Staff</Link>
-          <Link to="/customer">Customer</Link>
-        </nav>
-        <div>
-          {user ? (
-            <>
-              <span style={{ marginRight: 12 }}>{user.name} ({user.role})</span>
-              <button onClick={logout}>Logout</button>
-            </>
-          ) : (
-            <Link to="/login">Login</Link>
-          )}
-        </div>
-      </header>
 
       <Routes>
         <Route path="/" element={<Navigate to={user ? `/${user.role.toLowerCase()}` : '/login'} replace />} />

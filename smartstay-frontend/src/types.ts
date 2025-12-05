@@ -5,4 +5,6 @@ export interface User {
   name: string;
   role: Role;
   hotelId?: number | null;
+  hotelName: string;
+  fullName:string;
 }

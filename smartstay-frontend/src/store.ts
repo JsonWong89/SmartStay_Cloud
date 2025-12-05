@@ -18,16 +18,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     const res = await axios.get<{
       userId: string;
       name: string;
+      fullName: string;
       role: Role;
       hotelId: number;
+      hotelName: string;
     }>(`https://localhost:7168/api/users/manager/${userId}`);
 
 
     const user: User = {
       id: res.data.userId,
-      name: res.data.name,
+      name: res.data.name,                 // Display name
+      fullName: res.data.fullName,         // <-- FIXED
       role: res.data.role,
-      hotelId: res.data.hotelId   // <-- IMPORTANT
+      hotelId: res.data.hotelId,
+      hotelName: res.data.hotelName        // <-- FIXED
     };
 
     set({ user });

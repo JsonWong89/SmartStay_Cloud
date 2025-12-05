@@ -92,20 +92,40 @@ const ReportsPage: React.FC = () => {
         const bookingsData = await bookingsRes.json();
         if (!Array.isArray(bookingsData)) throw new Error('Bookings is not array');
 
-        const bookingsList: Booking[] = bookingsData.map((b: any) => ({
-          bookingID: b.bookingID ?? b.BookingID ?? 0,
-          hotelID: b.hotelID ?? b.HotelID ?? b.hotelId ?? b.HotelId ?? b.id ?? 0,
-          roomID: b.roomID ?? b.RoomID ?? 0,
-          guestID: b.guestID ?? b.GuestID,
-          bookingStatus: (b.bookingStatus ?? b.BookingStatus ?? 'Pending').toLowerCase(),
-          checkInDate: b.checkInDate ?? b.CheckInDate ?? '',
-          checkOutDate: b.checkOutDate ?? b.CheckOutDate ?? '',
-          totalGuests: b.totalGuests ?? b.TotalGuests ?? 1,
-          depositAmount: b.depositAmount ?? b.DepositAmount ?? 0,
-          totalAmount: b.totalAmount ?? b.TotalAmount ?? 0,
-          createdAt: b.createdAt ?? b.CreatedAt ?? '',
-          updatedAt: b.updatedAt ?? b.UpdatedAt,
-        }));
+        const bookingsList: Booking[] = bookingsData.map((b: any) => {
+          // Handle bookingStatus - could be string, enum number, or object
+          let status = b.bookingStatus ?? b.BookingStatus ?? 'Pending';
+          if (typeof status === 'string') {
+            status = status.toLowerCase();
+          } else if (typeof status === 'number') {
+            // Map enum number to string (if backend uses numeric enum)
+            const statusMap: { [key: number]: string } = {
+              0: 'pending',
+              1: 'confirmed', 
+              2: 'checkedin',
+              3: 'checkedout',
+              4: 'canceled'
+            };
+            status = statusMap[status] ?? 'pending';
+          } else {
+            status = 'pending';
+          }
+          
+          return {
+            bookingID: b.bookingID ?? b.BookingID ?? 0,
+            hotelID: b.hotelID ?? b.HotelID ?? b.hotelId ?? b.HotelId ?? b.id ?? 0,
+            roomID: b.roomID ?? b.RoomID ?? 0,
+            guestID: b.guestID ?? b.GuestID,
+            bookingStatus: status,
+            checkInDate: b.checkInDate ?? b.CheckInDate ?? '',
+            checkOutDate: b.checkOutDate ?? b.CheckOutDate ?? '',
+            totalGuests: b.totalGuests ?? b.TotalGuests ?? 1,
+            depositAmount: b.depositAmount ?? b.DepositAmount ?? 0,
+            totalAmount: b.totalAmount ?? b.TotalAmount ?? 0,
+            createdAt: b.createdAt ?? b.CreatedAt ?? '',
+            updatedAt: b.updatedAt ?? b.UpdatedAt,
+          };
+        });
 
         setBookings(bookingsList);
       } catch (e: any) {

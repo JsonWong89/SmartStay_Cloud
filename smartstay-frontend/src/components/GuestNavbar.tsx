@@ -32,7 +32,7 @@ const GuestNavbar: React.FC = () => {
           <div className="flex items-center gap-8">
             <div 
               className="text-2xl font-bold text-gray-800 cursor-pointer hover:text-gray-600 transition"
-              onClick={() => navigate('/guest/dashboard')}
+              onClick={() => navigate('/')}
             >
               Smart<span className="text-blue-600">Stay</span>
             </div>
@@ -90,47 +90,66 @@ const GuestNavbar: React.FC = () => {
             </div>
           </div>
 
-          {/* User Profile */}
+          {/* User Profile or Auth Buttons */}
           <div className="flex items-center gap-4">
-            <div className="hidden md:block text-right">
-              <div className="text-sm font-medium text-gray-800">{user?.fullName || 'Guest'}</div>
-              <div className="text-xs text-gray-500">Guest Account</div>
-            </div>
-            <div className="relative group">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-sm cursor-pointer ring-2 ring-white shadow-md hover:shadow-lg transition">
-                {getInitials(user?.fullName)}
-              </div>
-              {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <div className="py-1">
-                  <button
-                    onClick={() => navigate('/guest/profile')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    👤 My Profile
-                  </button>
-                  <button
-                    onClick={() => navigate('/guest/reservations')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    📋 My Reservations
-                  </button>
-                  <button
-                    onClick={() => navigate('/guest/reviews')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                  >
-                    ⭐ My Reviews
-                  </button>
-                  <hr className="my-1 border-gray-200" />
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-                  >
-                    🚪 Logout
-                  </button>
+            {user ? (
+              <>
+                <div className="hidden md:block text-right">
+                  <div className="text-sm font-medium text-gray-800">{user?.fullName || 'Guest'}</div>
+                  <div className="text-xs text-gray-500">Guest Account</div>
                 </div>
+                <div className="relative group">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-sm cursor-pointer ring-2 ring-white shadow-md hover:shadow-lg transition">
+                    {getInitials(user?.fullName)}
+                  </div>
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                    <div className="py-1">
+                      <button
+                        onClick={() => navigate('/guest/profile')}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        My Profile
+                      </button>
+                      <button
+                        onClick={() => navigate('/guest/reservations')}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        My Reservations
+                      </button>
+                      <button
+                        onClick={() => navigate('/guest/reviews')}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      >
+                        My Reviews
+                      </button>
+                      <hr className="my-1 border-gray-200" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-md hover:shadow-lg"
+                >
+                  Register
+                </button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

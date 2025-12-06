@@ -2,8 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Auth Pages
-import RegisterPage from "./pages/Admin/Register_page";
-import LoginPage from "./pages/LoginPage";
+import AuthPage from "./pages/AuthPage";
 
 // Protected Route Component
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -41,12 +40,12 @@ import EditRoomPage from "./pages/Admin/EditRoomPage";
 const App: React.FC = () => {
   return (
     <Routes>
-      {/* Default route -> Login */}
-      <Route path="/" element={<LoginPage />} />
+      {/* Default route -> Guest Dashboard (Public) */}
+      <Route path="/" element={<GuestDashboard />} />
       
-      {/* Auth routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      {/* Auth routes - Unified animated page */}
+      <Route path="/login" element={<AuthPage />} />
+      <Route path="/register" element={<AuthPage />} />
 
       {/* Admin routes - Protected */}
       <Route path="/admin" element={<ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>} />

@@ -6,6 +6,7 @@ export interface Guest {
   icNumber: string;
   email: string;
   phoneNumber: string;
+  gender: string
 }
 
 export interface CurrentBooking {

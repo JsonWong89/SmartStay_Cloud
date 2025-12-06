@@ -1,3 +1,4 @@
+// src/pages/staff/WalkInBookingPage.tsx
 import React, { useState, useEffect } from "react";
 import {
   UserPlus,
@@ -37,10 +38,8 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-// Load Stripe
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
-// Types
 interface GuestInfo {
   FullName: string;
   ICNumber: string;
@@ -51,10 +50,6 @@ interface GuestInfo {
 }
 
 interface BookingInfo {
-  RoomID: number;
-  RoomNumber: string;
-  RoomType: string;
-  PricePerNight: number;
   CheckInDate: string;
   CheckOutDate: string;
   TotalGuests: number;
@@ -76,7 +71,6 @@ type AvailableRoom = {
   hotelName: string;
 };
 
-// Main Component
 export default function WalkInBookingPage() {
   const [activePage, setActivePage] = useState("Walk-in Booking");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -93,7 +87,6 @@ export default function WalkInBookingPage() {
   );
 }
 
-// Core Content Component
 function WalkInBookingContent({
   activePage,
   setActivePage,
@@ -123,10 +116,6 @@ function WalkInBookingContent({
   });
 
   const [bookingInfo, setBookingInfo] = useState<BookingInfo>({
-    RoomID: 0,
-    RoomNumber: "",
-    RoomType: "",
-    PricePerNight: 0,
     CheckInDate: "",
     CheckOutDate: "",
     TotalGuests: 1,
@@ -139,8 +128,10 @@ function WalkInBookingContent({
   });
 
   const [availableRooms, setAvailableRooms] = useState<AvailableRoom[]>([]);
+  const [selectedRooms, setSelectedRooms] = useState<AvailableRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { user } = useAuthStore();
   const hotelId = user?.hotelId;
@@ -151,6 +142,7 @@ function WalkInBookingContent({
       fetchAvailableRooms();
     } else {
       setAvailableRooms([]);
+      setSelectedRooms([]);
     }
   }, [bookingInfo.CheckInDate, bookingInfo.CheckOutDate]);
 
@@ -174,23 +166,9 @@ function WalkInBookingContent({
 
   const handleGuestChange = (field: keyof GuestInfo, value: string) => {
     setGuestInfo((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleRoomSelect = (room: AvailableRoom) => {
-    setBookingInfo((prev) => ({
-      ...prev,
-      RoomID: room.roomId,
-      RoomNumber: room.roomNumber,
-      RoomType: room.roomType,
-      PricePerNight: room.pricePerNight,
-    }));
-
-    if (bookingInfo.NumberOfNights > 0) {
-      const total = room.pricePerNight * bookingInfo.NumberOfNights;
-      setPaymentInfo((p) => ({
-        ...p,
-        DepositAmount: Number((total * 0.3).toFixed(2)),
-      }));
+    const errorKey = field.toLowerCase();
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
     }
   };
 
@@ -207,164 +185,207 @@ function WalkInBookingContent({
             (1000 * 60 * 60 * 24)
         );
         updated.NumberOfNights = nights > 0 ? nights : 0;
-
-        if (updated.PricePerNight > 0 && updated.NumberOfNights > 0) {
-          const total = updated.PricePerNight * updated.NumberOfNights;
-          setPaymentInfo((p) => ({
-            ...p,
-            DepositAmount: Number((total * 0.3).toFixed(2)),
-          }));
-        }
       }
       return updated;
     });
+
+    // Recalculate deposit
+    if (bookingInfo.CheckInDate && bookingInfo.CheckOutDate) {
+      const total = selectedRooms.reduce(
+        (sum, room) => sum + room.pricePerNight * bookingInfo.NumberOfNights,
+        0
+      );
+      setPaymentInfo((p) => ({
+        ...p,
+        DepositAmount: Number((total * 0.3).toFixed(2)),
+      }));
+    }
+
+    const errorKey = field.toLowerCase();
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: "" }));
+    }
   };
 
-  const totalAmount = bookingInfo.PricePerNight * bookingInfo.NumberOfNights;
+  const handleGuestsChange = (value: number) => {
+    setBookingInfo((prev) => ({
+      ...prev,
+      TotalGuests: value,
+    }));
+    if (errors.totalguests) {
+      setErrors((prev) => ({ ...prev, totalguests: "" }));
+    }
+  };
+
+  const handleDepositChange = (value: number) => {
+    setPaymentInfo((prev) => ({
+      ...prev,
+      DepositAmount: value,
+    }));
+    if (errors.depositamount) {
+      setErrors((prev) => ({ ...prev, depositamount: "" }));
+    }
+  };
+
+  // Toggle room selection
+  const toggleRoom = (room: AvailableRoom) => {
+    setSelectedRooms((prev) => {
+      const exists = prev.find((r) => r.roomId === room.roomId);
+      if (exists) {
+        return prev.filter((r) => r.roomId !== room.roomId);
+      }
+      return [...prev, room];
+    });
+
+    // Recalculate deposit
+    const total = selectedRooms.reduce(
+      (sum, r) => sum + r.pricePerNight * bookingInfo.NumberOfNights,
+      0
+    ) + room.pricePerNight * bookingInfo.NumberOfNights;
+    setPaymentInfo((p) => ({
+      ...p,
+      DepositAmount: Number((total * 0.3).toFixed(2)),
+    }));
+
+    if (errors.room) {
+      setErrors((prev) => ({ ...prev, room: "" }));
+    }
+  };
+
+  const totalAmount = selectedRooms.reduce(
+    (sum, room) => sum + room.pricePerNight * bookingInfo.NumberOfNights,
+    0
+  );
   const balanceDue = totalAmount - paymentInfo.DepositAmount;
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!guestInfo.FullName.trim()) newErrors.fullname = "Full name is required";
+    if (!guestInfo.ICNumber || !/^\d{12}$/.test(guestInfo.ICNumber)) newErrors.icnumber = "IC Number must be 12 digits";
+    if (!guestInfo.Gender) newErrors.gender = "Gender is required";
+    if (!guestInfo.Email || !/^\S+@\S+\.\S+$/.test(guestInfo.Email)) newErrors.email = "Valid email required";
+    if (!guestInfo.PhoneNumber) newErrors.phonenumber = "Phone number required";
+
+    if (!bookingInfo.CheckInDate) newErrors.checkindate = "Check-in date is required";
+    if (!bookingInfo.CheckOutDate) newErrors.checkoutdate = "Check-out date is required";
+    if (bookingInfo.NumberOfNights <= 0) newErrors.checkoutdate = "Check-out must be after check-in";
+    if (bookingInfo.TotalGuests < 1) newErrors.totalguests = "At least 1 guest is required";
+    if (selectedRooms.length === 0) newErrors.room = "Please select at least one room";
+    if (paymentInfo.DepositAmount <= 0) newErrors.depositamount = "Deposit must be greater than 0";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const checkExistingGuest = async (): Promise<{ exists: boolean; guestId?: string; fullName?: string }> => {
+    if (!guestInfo.ICNumber && !guestInfo.Email) return { exists: false };
+
+    try {
+      const response = await guestsAPI.getAllGuests(hotelId!, {
+        searchQuery: guestInfo.ICNumber || guestInfo.Email,
+      });
+
+      if (response.success && response.data.length > 0) {
+        const matchedGuest = response.data.find((g: any) =>
+          g.icNumber === guestInfo.ICNumber || g.email.toLowerCase() === guestInfo.Email.toLowerCase()
+        );
+
+        if (matchedGuest) {
+          return {
+            exists: true,
+            guestId: matchedGuest.guestId,
+            fullName: matchedGuest.fullName,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn("Could not check existing guest");
+    }
+
+    return { exists: false };
+  };
+
   const handleSubmit = async () => {
-    if (
-      !guestInfo.FullName ||
-      !guestInfo.ICNumber ||
-      !guestInfo.Email ||
-      !guestInfo.PhoneNumber
-    ) {
-      alert("Please fill in all required guest information fields");
-      return;
-    }
-    if (
-      !bookingInfo.RoomID ||
-      !bookingInfo.CheckInDate ||
-      !bookingInfo.CheckOutDate
-    ) {
-      alert("Please select a room and booking dates");
-      return;
-    }
-    if (paymentInfo.DepositAmount <= 0) {
-      alert("Please enter a valid deposit amount");
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
-    try {
-      // 1. Create Guest — NOW INCLUDES GENDER
-      const guestRes = await guestsAPI.createGuest({
-        FullName: guestInfo.FullName,
-        ICNumber: guestInfo.ICNumber,
-        Email: guestInfo.Email,
-        PhoneNumber: guestInfo.PhoneNumber,
-        Address: guestInfo.Address || undefined,
-        Gender: guestInfo.Gender,
-      });
-      if (!guestRes.success)
-        throw new Error(guestRes.message || "Failed to create guest");
-      const guestId = guestRes.data.guestId;
+    let guestId: string;
+    let guestMessage = "";
 
-      // 2. Create Booking
+    try {
+      const { exists, guestId: existingId, fullName } = await checkExistingGuest();
+
+      if (exists && existingId) {
+        guestId = existingId;
+        guestMessage = `Guest already registered! Using existing profile: ${fullName}`;
+        alert(guestMessage);
+      } else {
+        const guestRes = await guestsAPI.createGuest({
+          FullName: guestInfo.FullName,
+          ICNumber: guestInfo.ICNumber,
+          Email: guestInfo.Email,
+          PhoneNumber: guestInfo.PhoneNumber,
+          Address: guestInfo.Address || undefined,
+          Gender: guestInfo.Gender || "Other",
+        });
+
+        if (!guestRes.success) throw new Error(guestRes.message || "Failed to register guest");
+
+        guestId = guestRes.data.guestId;
+        guestMessage = `New guest registered: ${guestRes.data.fullName}`;
+        alert(guestMessage);
+      }
+
+      // Multi-room booking
+      const roomIds = selectedRooms.map(r => r.roomId);
+
       const bookingRes = await bookingsAPI.createBooking({
         GuestID: guestId,
-        RoomID: bookingInfo.RoomID,
+        RoomIDs: roomIds, // Now array!
         CheckInDate: bookingInfo.CheckInDate,
         CheckOutDate: bookingInfo.CheckOutDate,
         TotalGuests: bookingInfo.TotalGuests,
-        DepositPaid: 0,
+        DepositPaid: paymentInfo.DepositAmount,
         PaymentMethod: paymentInfo.PaymentMethod,
       });
-      if (!bookingRes.success)
-        throw new Error(bookingRes.message || "Failed to create booking");
-      const bookingId = bookingRes.data.bookingId;
 
-      // 3. Handle Payment
-      if (paymentInfo.PaymentMethod === "Cash") {
-        await paymentsAPI.processPayment(
-          bookingId,
-          paymentInfo.DepositAmount,
-          "Cash"
-        );
-        alert("Walk-in booking created successfully! Cash deposit recorded.");
-      } else {
-        if (!stripe || !elements) {
-          alert("Stripe is not loaded.");
-          return;
-        }
+      if (!bookingRes.success) throw new Error(bookingRes.message || "Booking failed");
 
-        const cardElement = elements.getElement(CardElement);
-        if (!cardElement) {
-          alert("Card input not ready.");
-          return;
-        }
-
-        const { clientSecret } = await paymentsAPI.createPaymentIntent(
-          bookingId,
-          Math.round(paymentInfo.DepositAmount * 100)
-        );
-
-        const result = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: guestInfo.FullName,
-              email: guestInfo.Email,
-              phone: guestInfo.PhoneNumber,
-            },
-          },
-        });
-
-        if (result.error) {
-          alert("Payment failed: " + result.error.message);
-          return;
-        }
-
-        await paymentsAPI.confirmStripePayment(
-          bookingId,
-          paymentInfo.DepositAmount
-        );
-        alert("Booking & Card Payment Successful!");
-      }
-
-      const booking_Id = bookingRes.data.bookingId;
-      // 4. Send Confirmation Email
-      await bookingsAPI.sendConfirmationEmail(booking_Id);
+      alert(
+        `Success! ${selectedRooms.length} room(s) booked!\n` +
+        `Total: RM ${totalAmount.toFixed(2)}\n` +
+        `Deposit: RM ${paymentInfo.DepositAmount.toFixed(2)}`
+      );
 
       // Reset form
       setGuestInfo({
-        FullName: "",
-        ICNumber: "",
-        Email: "",
-        PhoneNumber: "",
-        Address: "",
-        Gender: "Male",
+        FullName: "", ICNumber: "", Email: "", PhoneNumber: "", Address: "", Gender: ""
       });
       setBookingInfo({
-        RoomID: 0,
-        RoomNumber: "",
-        RoomType: "",
-        PricePerNight: 0,
-        CheckInDate: "",
-        CheckOutDate: "",
-        TotalGuests: 1,
-        NumberOfNights: 0,
+        CheckInDate: "", CheckOutDate: "", TotalGuests: 1, NumberOfNights: 0
       });
+      setSelectedRooms([]);
       setPaymentInfo({ DepositAmount: 0, PaymentMethod: "Cash" });
-      elements?.getElement(CardElement)?.clear?.();
+      elements?.getElement(CardElement)?.clear();
+
     } catch (err: any) {
-      alert("Error: " + (err.message || "Something went wrong"));
+      console.error("Booking error:", err);
+      alert("Error: " + (err.message || "Something went wrong. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const filteredRooms = availableRooms.filter((room) => {
-    const matchesSearch =
+  const filteredRooms = availableRooms
+    .filter((room) =>
       room.roomNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.roomType.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = !selectedType || room.roomType === selectedType;
-    const matchesMinPrice = minPrice === null || room.pricePerNight >= minPrice;
-    const matchesMaxPrice = maxPrice === null || room.pricePerNight <= maxPrice;
-    return matchesSearch && matchesType && matchesMinPrice && matchesMaxPrice;
-  });
+      room.roomType.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .filter((room) => !selectedType || room.roomType === selectedType)
+    .filter((room) => minPrice === null || room.pricePerNight >= minPrice)
+    .filter((room) => maxPrice === null || room.pricePerNight <= maxPrice);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -422,21 +443,22 @@ function WalkInBookingContent({
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <User
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         value={guestInfo.FullName}
-                        onChange={(e) =>
-                          handleGuestChange("FullName", e.target.value)
-                        }
+                        onChange={(e) => handleGuestChange("FullName", e.target.value)}
                         placeholder="Enter guest full name"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none ${errors.fullname ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.fullname && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.fullname}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -444,21 +466,22 @@ function WalkInBookingContent({
                       IC/Passport Number <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <FileText
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         value={guestInfo.ICNumber}
-                        onChange={(e) =>
-                          handleGuestChange("ICNumber", e.target.value)
-                        }
-                        placeholder="e.g., 920318-10-5432"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
+                        onChange={(e) => handleGuestChange("ICNumber", e.target.value.replace(/\D/g, "").slice(0, 12))}
+                        placeholder="e.g., 920318105432"
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none ${errors.icnumber ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.icnumber && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.icnumber}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -466,42 +489,30 @@ function WalkInBookingContent({
                       Gender <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <VenusAndMars
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <VenusAndMars className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                       <select
                         value={guestInfo.Gender}
-                        onChange={(e) =>
-                          handleGuestChange("Gender", e.target.value)
-                        }
-                        className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none bg-white text-gray-900"
+                        onChange={(e) => handleGuestChange("Gender", e.target.value)}
+                        className={`w-full pl-10 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none appearance-none bg-white text-gray-900 ${errors.gender ? "border-red-500" : "border-gray-300"}`}
                         required
                       >
-                        <option value="" disabled selected hidden>
-                          Select gender
-                        </option>
+                        <option value="" disabled>Select gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                         <option value="Other">Other</option>
                       </select>
-                      {/* Little dropdown arrow */}
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <svg
-                          className="w-5 h-5 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </div>
+                    {errors.gender && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.gender}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -509,21 +520,22 @@ function WalkInBookingContent({
                       Phone Number <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Phone
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="tel"
                         value={guestInfo.PhoneNumber}
-                        onChange={(e) =>
-                          handleGuestChange("PhoneNumber", e.target.value)
-                        }
+                        onChange={(e) => handleGuestChange("PhoneNumber", e.target.value)}
                         placeholder="+60123456789"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none ${errors.phonenumber ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.phonenumber && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.phonenumber}
+                      </p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -531,21 +543,22 @@ function WalkInBookingContent({
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Mail
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="email"
                         value={guestInfo.Email}
-                        onChange={(e) =>
-                          handleGuestChange("Email", e.target.value)
-                        }
+                        onChange={(e) => handleGuestChange("Email", e.target.value)}
                         placeholder="guest@email.com"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none ${errors.email ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
 
                   <div className="md:col-span-2">
@@ -553,15 +566,10 @@ function WalkInBookingContent({
                       Address (Optional)
                     </label>
                     <div className="relative">
-                      <MapPin
-                        className="absolute left-3 top-3 text-gray-400"
-                        size={18}
-                      />
+                      <MapPin className="absolute left-3 top-3 text-gray-400" size={18} />
                       <textarea
                         value={guestInfo.Address}
-                        onChange={(e) =>
-                          handleGuestChange("Address", e.target.value)
-                        }
+                        onChange={(e) => handleGuestChange("Address", e.target.value)}
                         placeholder="Enter full address"
                         rows={2}
                         className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none resize-none"
@@ -571,7 +579,6 @@ function WalkInBookingContent({
                 </div>
               </div>
 
-              {/* === REST OF YOUR CODE IS 100% UNCHANGED BELOW === */}
               {/* Booking Dates */}
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-center gap-3 mb-5">
@@ -594,21 +601,22 @@ function WalkInBookingContent({
                       Check-In Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Calendar
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="date"
                         value={bookingInfo.CheckInDate}
-                        onChange={(e) =>
-                          handleDateChange("CheckInDate", e.target.value)
-                        }
+                        onChange={(e) => handleDateChange("CheckInDate", e.target.value)}
                         min={new Date().toISOString().split("T")[0]}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none ${errors.checkindate ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.checkindate && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.checkindate}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -616,24 +624,22 @@ function WalkInBookingContent({
                       Check-Out Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Calendar
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="date"
                         value={bookingInfo.CheckOutDate}
-                        onChange={(e) =>
-                          handleDateChange("CheckOutDate", e.target.value)
-                        }
-                        min={
-                          bookingInfo.CheckInDate ||
-                          new Date().toISOString().split("T")[0]
-                        }
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                        onChange={(e) => handleDateChange("CheckOutDate", e.target.value)}
+                        min={bookingInfo.CheckInDate || new Date().toISOString().split("T")[0]}
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none ${errors.checkoutdate ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.checkoutdate && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.checkoutdate}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -641,25 +647,23 @@ function WalkInBookingContent({
                       Number of Guests <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <Users
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="number"
                         value={bookingInfo.TotalGuests}
-                        onChange={(e) =>
-                          setBookingInfo((prev) => ({
-                            ...prev,
-                            TotalGuests: parseInt(e.target.value) || 1,
-                          }))
-                        }
+                        onChange={(e) => handleGuestsChange(parseInt(e.target.value) || 1)}
                         min="1"
                         max="10"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                        className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none ${errors.totalguests ? "border-red-500" : "border-gray-300"}`}
                         required
                       />
                     </div>
+                    {errors.totalguests && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle size={14} />
+                        {errors.totalguests}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -670,13 +674,9 @@ function WalkInBookingContent({
                         {bookingInfo.NumberOfNights} night(s)
                       </span>{" "}
                       selected
-                      {bookingInfo.PricePerNight > 0 && (
+                      {selectedRooms.length > 0 && (
                         <span>
-                          {" "}
-                          • Total:{" "}
-                          <span className="font-bold">
-                            RM {totalAmount.toFixed(2)}
-                          </span>
+                          {" "}• Total: <span className="font-bold">RM {totalAmount.toFixed(2)}</span>
                         </span>
                       )}
                     </p>
@@ -692,10 +692,10 @@ function WalkInBookingContent({
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">
-                      Available Rooms
+                      Available Rooms ({selectedRooms.length} selected)
                     </h2>
                     <p className="text-xs text-gray-500">
-                      Select a room for the guest
+                      Click to select multiple rooms
                     </p>
                   </div>
                 </div>
@@ -703,10 +703,7 @@ function WalkInBookingContent({
                 <div className="mb-5 p-4 bg-gray-50 rounded-lg space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="relative">
-                      <Search
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                        size={18}
-                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                       <input
                         type="text"
                         placeholder="Search room..."
@@ -722,12 +719,8 @@ function WalkInBookingContent({
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                     >
                       <option value="">All Room Types</option>
-                      {Array.from(
-                        new Set(availableRooms.map((r) => r.roomType))
-                      ).map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
+                      {Array.from(new Set(availableRooms.map((r) => r.roomType))).map((type) => (
+                        <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
 
@@ -736,11 +729,7 @@ function WalkInBookingContent({
                         type="number"
                         placeholder="RM Min"
                         value={minPrice ?? ""}
-                        onChange={(e) =>
-                          setMinPrice(
-                            e.target.value ? parseFloat(e.target.value) : null
-                          )
-                        }
+                        onChange={(e) => setMinPrice(e.target.value ? parseFloat(e.target.value) : null)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                       />
                       <span className="text-gray-500">—</span>
@@ -748,11 +737,7 @@ function WalkInBookingContent({
                         type="number"
                         placeholder="RM Max"
                         value={maxPrice ?? ""}
-                        onChange={(e) =>
-                          setMaxPrice(
-                            e.target.value ? parseFloat(e.target.value) : null
-                          )
-                        }
+                        onChange={(e) => setMaxPrice(e.target.value ? parseFloat(e.target.value) : null)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                       />
                     </div>
@@ -764,7 +749,7 @@ function WalkInBookingContent({
                         setMinPrice(null);
                         setMaxPrice(null);
                       }}
-                      className="px-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-shirt font-medium transition"
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition"
                     >
                       Clear Filters
                     </button>
@@ -775,57 +760,52 @@ function WalkInBookingContent({
                   {loadingRooms ? (
                     <div className="col-span-2 text-center py-8">
                       <Loader2 className="h-12 w-12 animate-spin text-purple-600 mx-auto mb-3" />
-                      <p className="text-gray-500">
-                        Loading available rooms...
-                      </p>
+                      <p className="text-gray-500">Loading available rooms...</p>
                     </div>
                   ) : filteredRooms.length === 0 ? (
                     <div className="col-span-2 text-center py-8">
                       <Bed className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 font-medium">
-                        No rooms match your filters
-                      </p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Try adjusting the filters
-                      </p>
+                      <p className="text-gray-500 font-medium">No rooms match your filters</p>
+                      <p className="text-sm text-gray-400 mt-1">Try adjusting the filters</p>
                     </div>
                   ) : (
-                    filteredRooms.map((room) => (
-                      <div
-                        key={room.roomId}
-                        onClick={() => handleRoomSelect(room)}
-                        className={`p-4 border-2 rounded-xl cursor-pointer transition ${
-                          bookingInfo.RoomID === room.roomId
-                            ? "border-purple-600 bg-purple-50"
-                            : "border-gray-200 hover:border-purple-300 bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h4 className="font-bold text-gray-900">
-                              Room {room.roomNumber}
-                            </h4>
-                            <p className="text-xs text-gray-600">
-                              {room.roomType}
-                            </p>
+                    filteredRooms.map((room) => {
+                      const isSelected = selectedRooms.some(r => r.roomId === room.roomId);
+                      return (
+                        <div
+                          key={room.roomId}
+                          onClick={() => toggleRoom(room)}
+                          className={`p-4 border-2 rounded-xl cursor-pointer transition ${
+                            isSelected
+                              ? "border-purple-600 bg-purple-50"
+                              : "border-gray-200 hover:border-purple-300 bg-white"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <h4 className="font-bold text-gray-900">Room {room.roomNumber}</h4>
+                              <p className="text-xs text-gray-600">{room.roomType}</p>
+                            </div>
+                            {isSelected && <CheckCircle className="h-5 w-5 text-purple-600" />}
                           </div>
-                          {bookingInfo.RoomID === room.roomId && (
-                            <CheckCircle className="h-5 w-5 text-purple-600" />
-                          )}
+                          <p className="text-xs text-gray-600 mb-2">{room.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-gray-900">
+                              RM {room.pricePerNight.toFixed(2)}
+                            </span>
+                            <span className="text-xs text-gray-500">/night</span>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2">
-                          {room.description}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-gray-900">
-                            RM {room.pricePerNight.toFixed(2)}
-                          </span>
-                          <span className="text-xs text-gray-500">/night</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
+                {errors.room && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle size={14} />
+                    {errors.room}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -842,51 +822,50 @@ function WalkInBookingContent({
                   </div>
                 </div>
 
-                {totalAmount > 0 ? (
+                {selectedRooms.length > 0 ? (
                   <>
                     <div className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-lg p-4 mb-4">
                       <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Amount</span>
-                          <span className="font-bold text-gray-900">
-                            RM {totalAmount.toFixed(2)}
-                          </span>
-                        </div>
+                        {selectedRooms.map(room => (
+                          <div key={room.roomId} className="flex justify-between">
+                            <span>Room {room.roomNumber} × {bookingInfo.NumberOfNights} nights</span>
+                            <span>RM {(room.pricePerNight * bookingInfo.NumberOfNights).toFixed(2)}</span>
+                          </div>
+                        ))}
                         <div className="flex justify-between pt-2 border-t border-sky-200">
+                          <span className="text-gray-600">Total Amount</span>
+                          <span className="font-bold text-gray-900">RM {totalAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
                           <span className="text-gray-600">Deposit (30%)</span>
-                          <span className="font-medium text-gray-700">
-                            RM {(totalAmount * 0.3).toFixed(2)}
-                          </span>
+                          <span className="font-medium text-gray-700">RM {(totalAmount * 0.3).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Deposit Amount (RM){" "}
-                        <span className="text-red-500">*</span>
+                        Deposit Amount (RM) <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
-                        <DollarSign
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                          size={18}
-                        />
+                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="number"
                           step="0.01"
                           min="0"
                           max={totalAmount}
                           value={paymentInfo.DepositAmount}
-                          onChange={(e) =>
-                            setPaymentInfo((prev) => ({
-                              ...prev,
-                              DepositAmount: parseFloat(e.target.value) || 0,
-                            }))
-                          }
-                          className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-semibold"
+                          onChange={(e) => handleDepositChange(parseFloat(e.target.value) || 0)}
+                          className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-semibold ${errors.depositamount ? "border-red-500" : "border-gray-300"}`}
                           required
                         />
                       </div>
+                      {errors.depositamount && (
+                        <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                          <AlertCircle size={14} />
+                          {errors.depositamount}
+                        </p>
+                      )}
                     </div>
 
                     <div className="mb-4">
@@ -898,12 +877,7 @@ function WalkInBookingContent({
                           <button
                             key={method}
                             type="button"
-                            onClick={() =>
-                              setPaymentInfo((prev) => ({
-                                ...prev,
-                                PaymentMethod: method as "Cash" | "Card",
-                              }))
-                            }
+                            onClick={() => setPaymentInfo((prev) => ({ ...prev, PaymentMethod: method as "Cash" | "Card" }))}
                             className={`p-2.5 border-2 rounded-lg transition text-sm font-medium ${
                               paymentInfo.PaymentMethod === method
                                 ? "border-amber-600 bg-amber-50 text-amber-900"
@@ -923,13 +897,7 @@ function WalkInBookingContent({
                           <div className="p-4 bg-white rounded-lg border border-gray-300">
                             <CardElement
                               options={{
-                                style: {
-                                  base: {
-                                    fontSize: "16px",
-                                    color: "#1f2937",
-                                    "::placeholder": { color: "#9ca3af" },
-                                  },
-                                },
+                                style: { base: { fontSize: "16px", color: "#1f2937", "::placeholder": { color: "#9ca3af" } } },
                                 hidePostalCode: true,
                               }}
                             />
@@ -966,7 +934,7 @@ function WalkInBookingContent({
                       ) : (
                         <Save size={18} />
                       )}
-                      {isSubmitting ? "Processing..." : "Create Booking"}
+                      {isSubmitting ? "Processing..." : `Create Booking (${selectedRooms.length} room${selectedRooms.length > 1 ? "s" : ""})`}
                     </button>
                   </>
                 ) : (

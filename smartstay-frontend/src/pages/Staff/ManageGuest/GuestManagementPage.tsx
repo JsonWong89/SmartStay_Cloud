@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 
 import GuestListView from "./GuestListView";
 import GuestDetailsView from "./GuestDetailsView";
+import EditGuestView from "./EditGuestView";
 import { Guest } from "./types";
 
 export default function GuestManagementPage() {
@@ -17,13 +18,16 @@ export default function GuestManagementPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "active">("all");
   const [filterMinBookings, setFilterMinBookings] = useState<number | "">("");
   const [showFilters, setShowFilters] = useState(false);
-  const [currentView, setCurrentView] = useState<"list" | "details">("list");
+  const [currentView, setCurrentView] = useState<"list" | "details" | "edit">("list");
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "bookings" | "spent" | "recent">("name");
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
@@ -122,10 +126,38 @@ export default function GuestManagementPage() {
     }
   };
 
-  const handleBackToList = () => {
+  const handleEdit = () => setCurrentView("edit");
+
+const handleSaveEdit = async (updatedData: Partial<Guest>) => {
+  setSaving(true);
+  try {
+    await guestsAPI.updateGuest(selectedGuest!.guestId, hotelId, {
+      FullName: updatedData.fullName,
+      ICNumber: updatedData.icNumber,
+      Email: updatedData.email,
+      PhoneNumber: updatedData.phoneNumber,
+      Address: updatedData.address,
+      Gender: updatedData.gender,
+    });
+    setSelectedGuest(prev => prev ? { ...prev, ...updatedData } : null);
+    setSuccess(true);
+    setTimeout(() => {
+      setCurrentView("details");
+      setSuccess(false);
+    }, 1500);
+  } catch (err: any) {
+    alert(err.message || "Failed to update guest");
+  } finally {
+    setSaving(false);
+  }
+};
+  const handleBack = () => {
+  if (currentView === "edit") setCurrentView("details");
+  else if (currentView === "details") {
     setCurrentView("list");
     setSelectedGuest(null);
-  };
+  }
+};
 
   const handleVerifyDocument = async (docId: number) => {
     if (!confirm("Mark this document as verified?")) return;
@@ -222,7 +254,7 @@ export default function GuestManagementPage() {
       <Sidebar activePage={activePage} setActivePage={() => {}} setSidebarCollapsed={setSidebarCollapsed} />
 
       <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "ml-20" : "ml-[230px]"}`}>
-        {currentView === "list" ? (
+        {currentView === "list" && (
           <GuestListView
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -239,12 +271,25 @@ export default function GuestManagementPage() {
             onViewDetails={handleViewDetails}
             exportToCSV={exportToCSV}
           />
-        ) : (
+        ) }
+
+        {currentView === "details" && selectedGuest && (
           <GuestDetailsView
             guest={selectedGuest!}
-            onBack={handleBackToList}
+            onBack={handleBack}
             onVerifyDocument={handleVerifyDocument}
+            onEdit={handleEdit}
             navigate={navigate}
+          />
+        )}
+
+        {currentView === "edit" && selectedGuest && (
+          <EditGuestView
+            guest={selectedGuest!}
+            onSave={handleSaveEdit}
+            onBack={handleBack}
+            saving={saving}
+            success={success}
           />
         )}
       </div>

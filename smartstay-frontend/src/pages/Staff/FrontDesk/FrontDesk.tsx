@@ -21,7 +21,7 @@ import {
 
 interface ConfirmAction {
   type: "checkin" | "checkout" | "cancel";
-  booking: Booking;
+  bookings: Booking[]; // Changed to array for multi-room
 }
 
 interface FrontDeskPageProps {
@@ -261,6 +261,7 @@ export default function FrontDeskApp() {
         {currentView === "bookingdetails" && selectedBooking && (
           <BookingDetailsPage
             booking={selectedBooking}
+            allBookings={activities}
             goBack={() => {
               setCurrentView("frontdesk");
               setSelectedBooking(null);
@@ -295,42 +296,53 @@ function FrontDeskPage({
     null
   );
 
-  const filteredActivities = activities.filter((activity) => {
+  // Group bookings for display (same guest, same dates)
+  const groupedActivities = React.useMemo(() => {
+    const groups = new Map<string, Booking[]>();
+    activities.forEach((activity) => {
+      if (activity.BookingStatus === "Cancelled") return;
+      const key = `${activity.Email}-${activity.CheckInDate}-${activity.CheckOutDate}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(activity);
+    });
+    return Array.from(groups.values());
+  }, [activities]);
+
+  const filteredActivities = groupedActivities.filter((group) => {
+    const main = group[0];
     const matchesSearch =
-      activity.GuestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.RoomNumber.includes(searchQuery);
+      main.GuestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.some((b) => b.RoomNumber.includes(searchQuery));
     const matchesTab =
       filterTab === "all" ||
-      (filterTab === "checkin" && activity.ActivityType === "Check-In") ||
-      (filterTab === "checkout" && activity.ActivityType === "Check-Out") ||
-      (filterTab === "stayover" && activity.ActivityType === "Stayover");
+      (filterTab === "checkin" && main.ActivityType === "Check-In") ||
+      (filterTab === "checkout" && main.ActivityType === "Check-Out") ||
+      (filterTab === "stayover" && main.ActivityType === "Stayover");
     return matchesSearch && matchesTab;
   });
 
-  const todayCheckIns = activities.filter(
-    (a) => a.ActivityType === "Check-In"
+  const todayCheckIns = groupedActivities.filter(
+    (g) => g[0].ActivityType === "Check-In"
   ).length;
-  const todayCheckOuts = activities.filter(
-    (a) => a.ActivityType === "Check-Out"
+  const todayCheckOuts = groupedActivities.filter(
+    (g) => g[0].ActivityType === "Check-Out"
   ).length;
-  const currentlyStaying = activities.filter(
-    (a) => a.BookingStatus === "CheckedIn"
+  const currentlyStaying = groupedActivities.filter(
+    (g) => g[0].BookingStatus === "CheckedIn"
   ).length;
 
-  const handleAction = (type: "checkin" | "checkout", booking: Booking) => {
-    if (type === "checkin" && booking.PaymentStatus !== "Completed") {
+  const handleAction = (type: "checkin" | "checkout", bookings: Booking[]) => {
+    const totalAmount = bookings.reduce((sum, b) => sum + b.TotalAmount, 0);
+    const totalPaid = bookings.reduce((sum, b) => sum + b.AmountPaid, 0);
+    const pendingAmount = totalAmount - totalPaid;
+
+    if ((type === "checkin" || type === "checkout") && pendingAmount > 0) {
       alert(
-        "Payment Required: Full payment must be completed before check-in."
+        "Payment Required: Full payment must be completed before check-in/check-out."
       );
       return;
     }
-    if (type === "checkout" && booking.PaymentStatus !== "Completed") {
-      alert(
-        "Payment Required: Full payment must be completed before check-out."
-      );
-      return;
-    }
-    setConfirmAction({ type, booking });
+    setConfirmAction({ type, bookings });
     setShowConfirmDialog(true);
   };
 
@@ -338,7 +350,12 @@ function FrontDeskPage({
     if (!confirmAction) return;
     const status: "CheckedIn" | "CheckedOut" =
       confirmAction.type === "checkin" ? "CheckedIn" : "CheckedOut";
-    await updateStatus(confirmAction.booking.BookingID, status);
+    
+    // Update all bookings in the group
+    for (const booking of confirmAction.bookings) {
+      await updateStatus(booking.BookingID, status);
+    }
+    
     setShowConfirmDialog(false);
     setConfirmAction(null);
     refresh();
@@ -440,7 +457,7 @@ function FrontDeskPage({
             <thead>
               <tr className="border-b text-xs uppercase text-gray-600 bg-gray-50">
                 <th className="px-6 py-3 text-left">Guest</th>
-                <th className="px-6 py-3 text-left">Room</th>
+                <th className="px-6 py-3 text-left">Room(s)</th>
                 <th className="px-6 py-3 text-left">Activity</th>
                 <th className="px-6 py-3 text-left">Dates</th>
                 <th className="px-6 py-3 text-left">Total Price</th>
@@ -463,12 +480,17 @@ function FrontDeskPage({
                   </td>
                 </tr>
               ) : (
-                filteredActivities.map((activity) => {
-                  const pendingAmount =
-                    activity.TotalAmount - activity.AmountPaid;
+                filteredActivities.map((group) => {
+                  const main = group[0];
+                  const roomCount = group.length;
+                  const roomList = group.map((b) => b.RoomNumber).join(", ");
+                  const totalAmount = group.reduce((sum, b) => sum + b.TotalAmount, 0);
+                  const totalPaid = group.reduce((sum, b) => sum + b.AmountPaid, 0);
+                  const pendingAmount = totalAmount - totalPaid;
+
                   return (
                     <tr
-                      key={activity.BookingID}
+                      key={group.map((b) => b.BookingID).join("-")}
                       className="text-sm border-b border-gray-300 hover:bg-gray-50"
                     >
                       <td className="px-6 py-4">
@@ -478,10 +500,10 @@ function FrontDeskPage({
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
-                              {activity.GuestName}
+                              {main.GuestName}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {activity.PhoneNumber}
+                              {main.PhoneNumber}
                             </p>
                           </div>
                         </div>
@@ -489,21 +511,21 @@ function FrontDeskPage({
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-gray-900">
-                            Room {activity.RoomNumber}
+                            Room {roomList}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {activity.RoomType}
+                            {roomCount} room{roomCount > 1 ? "s" : ""} • {main.RoomType}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {activity.BookingStatus === "CheckedIn" &&
-                        activity.ActivityType !== "Check-Out" ? (
+                        {main.BookingStatus === "CheckedIn" &&
+                        main.ActivityType !== "Check-Out" ? (
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                             In-House
                           </span>
                         ) : (
-                          <ActivityBadge type={activity.ActivityType} />
+                          <ActivityBadge type={main.ActivityType} />
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -511,13 +533,13 @@ function FrontDeskPage({
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-green-600" />
                             <span className="text-gray-700">
-                              In: {activity.CheckInDate}
+                              In: {main.CheckInDate}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-red-600" />
                             <span className="text-gray-700">
-                              Out: {activity.CheckOutDate}
+                              Out: {main.CheckOutDate}
                             </span>
                           </div>
                         </div>
@@ -525,74 +547,65 @@ function FrontDeskPage({
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-bold text-gray-900">
-                            RM {activity.TotalAmount.toFixed(2)}
+                            RM {totalAmount.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Paid: RM {activity.AmountPaid.toFixed(2)}
+                            Paid: RM {totalPaid.toFixed(2)}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={activity.BookingStatus} />
+                        <StatusBadge status={main.BookingStatus} />
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <PaymentBadge status={activity.PaymentStatus} />
-                          {activity.PaymentStatus === "Pending" &&
-                            pendingAmount > 0 && (
-                              <p className="text-xs text-amber-600 mt-1 font-medium">
-                                Due: RM {pendingAmount.toFixed(2)}
-                              </p>
-                            )}
+                          <PaymentBadge status={pendingAmount > 0 ? "Pending" : "Completed"} />
+                          {pendingAmount > 0 && (
+                            <p className="text-xs text-amber-600 mt-1 font-medium">
+                              Due: RM {pendingAmount.toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2 justify-end">
                           <button
-                            onClick={() => openBookingDetails(activity)}
+                            onClick={() => openBookingDetails(main)}
                             className="p-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white transition"
                             title="View Details"
                           >
                             <Eye size={16} />
                           </button>
-                          {activity.BookingStatus === "Confirmed" &&
-                            activity.ActivityType === "Check-In" && (
+                          {main.BookingStatus === "Confirmed" &&
+                            main.ActivityType === "Check-In" && (
                               <button
-                                onClick={() =>
-                                  handleAction("checkin", activity)
-                                }
+                                onClick={() => handleAction("checkin", group)}
                                 className={`px-3 py-2 rounded-lg text-white text-xs font-medium transition ${
-                                  activity.PaymentStatus === "Completed"
+                                  pendingAmount === 0
                                     ? "bg-green-600 hover:bg-green-700"
                                     : "bg-gray-400 cursor-not-allowed opacity-70"
                                 }`}
-                                disabled={
-                                  activity.PaymentStatus !== "Completed"
-                                }
+                                disabled={pendingAmount > 0}
                               >
                                 Check-In
                               </button>
                             )}
-                          {activity.BookingStatus === "CheckedIn" &&
-                            activity.ActivityType === "Check-Out" && (
+                          {main.BookingStatus === "CheckedIn" &&
+                            main.ActivityType === "Check-Out" && (
                               <button
-                                onClick={() =>
-                                  handleAction("checkout", activity)
-                                }
+                                onClick={() => handleAction("checkout", group)}
                                 className={`px-3 py-2 rounded-lg text-white text-xs font-medium transition ${
-                                  activity.PaymentStatus === "Completed"
+                                  pendingAmount === 0
                                     ? "bg-blue-600 hover:bg-blue-700"
                                     : "bg-gray-400 cursor-not-allowed opacity-70"
                                 }`}
-                                disabled={
-                                  activity.PaymentStatus !== "Completed"
-                                }
+                                disabled={pendingAmount > 0}
                               >
                                 Check-Out
                               </button>
                             )}
-                          {activity.BookingStatus === "CheckedIn" &&
-                            activity.ActivityType === "Stayover" && (
+                          {main.BookingStatus === "CheckedIn" &&
+                            main.ActivityType === "Stayover" && (
                               <span className="px-3 py-2 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium">
                                 In-House
                               </span>
@@ -619,8 +632,10 @@ function FrontDeskPage({
             <p className="text-gray-600 mb-6">
               Complete{" "}
               {confirmAction.type === "checkin" ? "check-in" : "check-out"} for{" "}
-              {confirmAction.booking.GuestName} in Room{" "}
-              {confirmAction.booking.RoomNumber}?
+              {confirmAction.bookings[0].GuestName}
+              {confirmAction.bookings.length > 1 
+                ? ` (${confirmAction.bookings.length} rooms: ${confirmAction.bookings.map(b => b.RoomNumber).join(", ")})`
+                : ` in Room ${confirmAction.bookings[0].RoomNumber}`}?
             </p>
             <div className="flex gap-3">
               <button

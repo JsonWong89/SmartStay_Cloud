@@ -17,16 +17,24 @@ async function apiCall<T>(
       },
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`);
+    // Always try to parse JSON — even for errors!
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
     }
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
+    if (!response.ok) {
+      // This captures your backend messages perfectly!
+      const message = data.message || data.error || response.statusText;
+      throw new Error(message);
+    }
+
+    return data as T;
+  } catch (error: any) {
     console.error(`API Error [${endpoint}]:`, error);
-    throw error;
+    throw error; // This will now contain "This email is already used..."
   }
 }
 
@@ -91,29 +99,54 @@ export const dashboardAPI = {
 export const bookingsAPI = {
 
   // Create a new booking
-  createBooking: async (payload: {
-    GuestID: string;
-    RoomID: number;
-    CheckInDate: string;
-    CheckOutDate: string;
-    TotalGuests: number;
-    DepositPaid: number;
-    PaymentMethod: "Cash" | "Card";
-  }) => {
-    return apiCall<{
-      success: boolean;
-      message: string;
-      data: {
-        bookingId: number;
-        bookingStatus: string;
-        totalAmount: number;
-        depositAmount: number;
-      };
-    }>('/api/bookings', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  },
+  // createBooking: async (payload: {
+  //   GuestID: string;
+  //   RoomID: number;
+  //   CheckInDate: string;
+  //   CheckOutDate: string;
+  //   TotalGuests: number;
+  //   DepositPaid: number;
+  //   PaymentMethod: "Cash" | "Card";
+  // }) => {
+  //   return apiCall<{
+  //     success: boolean;
+  //     message: string;
+  //     data: {
+  //       bookingId: number;
+  //       bookingStatus: string;
+  //       totalAmount: number;
+  //       depositAmount: number;
+  //     };
+  //   }>('/api/bookings', {
+  //     method: 'POST',
+  //     body: JSON.stringify(payload),
+  //   });
+  // },
+
+ 
+createBooking: async (payload: {
+  GuestID: string;
+  RoomIDs: number[];           
+  CheckInDate: string;
+  CheckOutDate: string;
+  TotalGuests: number;
+  DepositPaid: number;
+  PaymentMethod: "Cash" | "Card";
+}) => {
+  return apiCall<{
+    success: boolean;
+    message: string;
+    data: {
+      bookingIds: number[];
+      totalAmount: number;
+      requiredDeposit: number;
+      confirmed: boolean;
+    };
+  }>('/api/bookings', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+},
 
   sendConfirmationEmail: async (bookingId: number) => {
     return apiCall<{
@@ -312,32 +345,32 @@ export const reviewsAPI = {
     }>(`/api/reviews/guest/${guestId}`);
   },
 
-  submitReview: async (payload: {
-    BookingID: number;
-    GuestID: string;
-    Rating: number;
-    Comment?: string;
-  }) => {
-    return apiCall<{
-      success: boolean;
-      message: string;
-      data: { reviewId: number; rating: number; reviewDate: string };
-    }>('/api/reviews', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
-  },
+  // submitReview: async (payload: {
+  //   BookingID: number;
+  //   GuestID: string;
+  //   Rating: number;
+  //   Comment?: string;
+  // }) => {
+  //   return apiCall<{
+  //     success: boolean;
+  //     message: string;
+  //     data: { reviewId: number; rating: number; reviewDate: string };
+  //   }>('/api/reviews', {
+  //     method: 'POST',
+  //     body: JSON.stringify(payload),
+  //   });
+  // },
 
-  updateReview: async (id: number, payload: { Rating?: number; Comment?: string }) => {
-    return apiCall<any>(`/api/reviews/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    });
-  },
+  // updateReview: async (id: number, payload: { Rating?: number; Comment?: string }) => {
+  //   return apiCall<any>(`/api/reviews/${id}`, {
+  //     method: 'PUT',
+  //     body: JSON.stringify(payload),
+  //   });
+  // },
 
-  deleteReview: async (id: number) => {
-    return apiCall<any>(`/api/reviews/${id}`, { method: 'DELETE' });
-  },
+  // deleteReview: async (id: number) => {
+  //   return apiCall<any>(`/api/reviews/${id}`, { method: 'DELETE' });
+  // },
 };
 
 // Documents API
@@ -555,6 +588,8 @@ export const guestsAPI = {
     hotelId: number,
     data: {
       FullName?: string;
+      ICNumber?: string;
+      Email?: string;
       PhoneNumber?: string;
       Address?: string;
       Gender?: string;
@@ -569,15 +604,15 @@ export const guestsAPI = {
     });
   },
 
-  // Delete guest (only if no active bookings)
-  deleteGuest: async (guestId: string, hotelId: number) => {
-    return apiCall<{
-      success: boolean;
-      message: string;
-    }>(`/api/guests/${guestId}?hotelId=${hotelId}`, {
-      method: 'DELETE',
-    });
-  },
+  // // Delete guest (only if no active bookings)
+  // deleteGuest: async (guestId: string, hotelId: number) => {
+  //   return apiCall<{
+  //     success: boolean;
+  //     message: string;
+  //   }>(`/api/guests/${guestId}?hotelId=${hotelId}`, {
+  //     method: 'DELETE',
+  //   });
+  // },
 };
 
 type AvailableRoom = {
@@ -704,37 +739,37 @@ export const staffAPI = {
     return apiCall<any>(`/api/Staff/${id}`);
   },
 
-  createStaff: async (data: {
-    hotelID: number;
-    fullName: string;
-    position: string;
-    contactNumber: string;
-    email: string;
-    gender: string;
-    hireDate?: string;
-  }) => {
-    return apiCall<any>('/api/Staff', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
+  // createStaff: async (data: {
+  //   hotelID: number;
+  //   fullName: string;
+  //   position: string;
+  //   contactNumber: string;
+  //   email: string;
+  //   gender: string;
+  //   hireDate?: string;
+  // }) => {
+  //   return apiCall<any>('/api/Staff', {
+  //     method: 'POST',
+  //     body: JSON.stringify(data),
+  //   });
+  // },
 
-  updateStaff: async (id: number, data: Partial<{
-    fullName: string;
-    position: string;
-    contactNumber: string;
-    email: string;
-    gender: string;
-  }>) => {
-    return apiCall<any>(`/api/Staff/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
+  // updateStaff: async (id: number, data: Partial<{
+  //   fullName: string;
+  //   position: string;
+  //   contactNumber: string;
+  //   email: string;
+  //   gender: string;
+  // }>) => {
+  //   return apiCall<any>(`/api/Staff/${id}`, {
+  //     method: 'PUT',
+  //     body: JSON.stringify(data),
+  //   });
+  // },
 
-  deleteStaff: async (id: number) => {
-    return apiCall<any>(`/api/Staff/${id}`, { method: 'DELETE' });
-  },
+  // deleteStaff: async (id: number) => {
+  //   return apiCall<any>(`/api/Staff/${id}`, { method: 'DELETE' });
+  // },
 };
 
 // Users API

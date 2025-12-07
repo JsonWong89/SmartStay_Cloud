@@ -22,6 +22,13 @@ export default function RoomTypeReport() {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstance = useRef<Chart | null>(null);
 
+  const roomColors: Record<string, string> = {
+    Deluxe: "#3b82f6",
+    Family: "#f59e0b",
+    Standard: "#10b981",
+    Suite: "#8b5cf6",
+  };
+
   useEffect(() => {
     if (!user?.hotelId) return;
     fetchStats();
@@ -47,11 +54,12 @@ export default function RoomTypeReport() {
             {
               label: "Bookings by Room Type",
               data: values,
-              backgroundColor: "#60a5fa",
-              borderColor: "#2563eb",
+              backgroundColor: labels.map((l) => roomColors[l]),
+              borderColor: labels.map((l) => roomColors[l]),
               borderWidth: 2,
             },
           ],
+
         },
         options: {
           responsive: true,
@@ -125,23 +133,30 @@ export default function RoomTypeReport() {
 
       {/* ===== KPI ===== */}
       <div className="report-kpi-grid">
+
         <div className="report-kpi-card kpi-blue">
           <p className="kpi-label">Total Bookings</p>
           <p className="kpi-value">{totalBookings}</p>
         </div>
 
-        {stats.map((s, index) => (
+        {stats.map((s) => (
           <div
             key={s.roomType}
-            className={`report-kpi-card ${
-              index % 2 === 0 ? "kpi-green" : "kpi-blue"
-            }`}
+            className={`report-kpi-card ${s.roomType === "Deluxe"
+              ? "kpi-deluxe"
+              : s.roomType === "Family"
+                ? "kpi-family"
+                : s.roomType === "Standard"
+                  ? "kpi-standard"
+                  : "kpi-suite"
+              }`}
           >
             <p className="kpi-label">{s.roomType}</p>
             <p className="kpi-value">{s.count}</p>
           </div>
         ))}
       </div>
+
 
       {/* ===== CHART ===== */}
       <div className="report-chart-card">

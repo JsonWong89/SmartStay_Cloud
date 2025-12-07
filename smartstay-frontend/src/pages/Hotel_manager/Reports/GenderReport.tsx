@@ -47,7 +47,6 @@ export default function GenderReport() {
       );
 
       setData(res.data);
-
       requestAnimationFrame(() => buildCharts(res.data));
     } catch (err) {
       console.error("GENDER REPORT ERROR:", err);
@@ -60,11 +59,9 @@ export default function GenderReport() {
   }
 
   function sumGender(list: GenderBucket[], gender: string) {
-    return (
-      list
-        .filter((x) => x.gender.toLowerCase() === gender.toLowerCase())
-        .reduce((s, x) => s + x.count, 0)
-    );
+    return list
+      .filter((x) => x.gender.toLowerCase() === gender.toLowerCase())
+      .reduce((s, x) => s + x.count, 0);
   }
 
   function pct(part: number, total: number) {
@@ -76,10 +73,6 @@ export default function GenderReport() {
     if (pieInstance.current) pieInstance.current.destroy();
     if (barInstance.current) barInstance.current.destroy();
 
-    const guestT = sumBuckets(report.guests);
-    const staffT = sumBuckets(report.staff);
-    const recT = sumBuckets(report.receptionists);
-
     const maleAll =
       sumGender(report.guests, "Male") +
       sumGender(report.staff, "Male") +
@@ -90,28 +83,54 @@ export default function GenderReport() {
       sumGender(report.staff, "Female") +
       sumGender(report.receptionists, "Female");
 
-    const totalAll = guestT + staffT + recT;
-    const otherAll = totalAll - maleAll - femaleAll;
+    const totalPie = maleAll + femaleAll;
 
-    // PIE CHART
+    // Totals per role (for % tooltips in bar chart)
+    const guestsTotal =
+      sumGender(report.guests, "Male") +
+      sumGender(report.guests, "Female");
+    const staffTotal =
+      sumGender(report.staff, "Male") + sumGender(report.staff, "Female");
+    const recTotal =
+      sumGender(report.receptionists, "Male") +
+      sumGender(report.receptionists, "Female");
+    const roleTotals = [guestsTotal, staffTotal, recTotal];
+
+    // PIE CHART – only Male & Female
     if (pieRef.current) {
       pieInstance.current = new Chart(pieRef.current, {
         type: "pie",
         data: {
-          labels: ["Male", "Female", "Other"],
+          labels: ["Male", "Female"],
           datasets: [
             {
-              data: [maleAll, femaleAll, otherAll],
-              backgroundColor: ["#60a5fa", "#f472b6", "#a3a3a3"],
+              data: [maleAll, femaleAll],
+              backgroundColor: ["#34d399", "#f472b6"],
               borderWidth: 2,
             },
           ],
         },
-        options: { plugins: { legend: { position: "bottom" } } },
+        options: {
+          plugins: {
+            legend: { position: "bottom" },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => {
+                  const label = ctx.label || "";
+                  const value = ctx.parsed as number;
+                  const pctVal = totalPie
+                    ? ((value / totalPie) * 100).toFixed(1)
+                    : "0.0";
+                  return `${label}: ${value} (${pctVal}%)`;
+                },
+              },
+            },
+          },
+        },
       });
     }
 
-    // BAR CHART
+    // BAR CHART – only Male & Female
     if (barRef.current) {
       barInstance.current = new Chart(barRef.current, {
         type: "bar",
@@ -120,7 +139,7 @@ export default function GenderReport() {
           datasets: [
             {
               label: "Male",
-              backgroundColor: "#60a5fa",
+              backgroundColor: "#34d399",
               data: [
                 sumGender(report.guests, "Male"),
                 sumGender(report.staff, "Male"),
@@ -140,7 +159,28 @@ export default function GenderReport() {
         },
         options: {
           responsive: true,
-          plugins: { legend: { position: "top" } },
+          plugins: {
+            legend: { position: "top" },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => {
+                  const genderLabel = ctx.dataset.label || "";
+                  const value = ctx.parsed.y as number;
+                  const roleIndex = ctx.dataIndex; // 0 = guest, 1 = staff, 2 = rec
+                  const roleTotal = roleTotals[roleIndex] || 0;
+                  const pctVal = roleTotal
+                    ? ((value / roleTotal) * 100).toFixed(1)
+                    : "0.0";
+                  return `${genderLabel}: ${value} (${pctVal}%)`;
+                },
+              },
+            },
+          },
+          scales: {
+            y: {
+              ticks: { stepSize: 1 },
+            },
+          },
         },
       });
     }
@@ -203,7 +243,6 @@ export default function GenderReport() {
 
   const maleAll = maleGuests + maleStaff + maleRec;
   const femaleAll = femaleGuests + femaleStaff + femaleRec;
-  const otherAll = totalAll - maleAll - femaleAll;
 
   if (loading || !data)
     return (
@@ -233,116 +272,126 @@ export default function GenderReport() {
         </div>
       </div>
 
-      {/* KPI GRID */}
-      <div className="report-kpi-grid">
-        <div className="report-kpi-card kpi-blue">
-          <p className="kpi-label">Total People</p>
-          <p className="kpi-value">{totalAll}</p>
-        </div>
+     {/* === TOP KPI SECTION (Total / Male / Female) === */}
+<div className="gender-kpi-row">
+  <div className="gender-kpi-card kpi-total">
+    <span className="gender-kpi-icon">👥</span>
+    <div>
+      <p className="kpi-label">Total People</p>
+      <p className="kpi-value">{totalAll}</p>
+    </div>
+  </div>
 
-        <div className="report-kpi-card kpi-green">
-          <p className="kpi-label">Male</p>
-          <p className="kpi-value">
-            {maleAll} ({pct(maleAll, totalAll)}%)
-          </p>
-        </div>
+  <div className="gender-kpi-card kpi-male">
+    <span className="gender-kpi-icon">♂️</span>
+    <div>
+      <p className="kpi-label">Male</p>
+      <p className="kpi-value">{maleAll}</p>
+    </div>
+  </div>
 
-        <div className="report-kpi-card kpi-blue">
-          <p className="kpi-label">Female</p>
-          <p className="kpi-value">
-            {femaleAll} ({pct(femaleAll, totalAll)}%)
-          </p>
-        </div>
+  <div className="gender-kpi-card kpi-female">
+    <span className="gender-kpi-icon">♀️</span>
+    <div>
+      <p className="kpi-label">Female</p>
+      <p className="kpi-value">{femaleAll}</p>
+    </div>
+  </div>
+</div>
 
-        <div className="report-kpi-card kpi-green">
-          <p className="kpi-label">Other / Unknown</p>
-          <p className="kpi-value">
-            {otherAll} ({pct(otherAll, totalAll)}%)
-          </p>
-        </div>
-      </div>
 
-      {/* DETAIL TABLES */}
-      <div className="detail-section">
-        <h3 className="chart-title">Detailed Breakdown</h3>
+{/* === CHARTS SIDE-BY-SIDE === */}
+<div className="charts-row">
+  <div className="report-chart-card chart-fixed">
+    <h3 className="chart-title">Overall Gender Distribution</h3>
+    <canvas ref={pieRef} height={140}></canvas>
+  </div>
 
-        <div className="detail-tables">
+  <div className="report-chart-card chart-fixed">
+    <h3 className="chart-title">Gender by Role</h3>
+    <canvas ref={barRef} height={140}></canvas>
+  </div>
+</div>
 
-          <div className="detail-card guests">
-            <h4>Guests (Total: {gT})</h4>
-            <table className="rooms-table">
-              <thead>
-                <tr>
-                  <th>Gender</th>
-                  <th>Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.guests.map((g) => (
-                  <tr key={`g-${g.gender}`}>
-                    <td>{g.gender}</td>
-                    <td>{g.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
 
-          <div className="detail-card staff">
-            <h4>Staff (Total: {sT})</h4>
-            <table className="rooms-table">
-              <thead>
-                <tr>
-                  <th>Gender</th>
-                  <th>Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.staff.map((g) => (
-                  <tr key={`s-${g.gender}`}>
-                    <td>{g.gender}</td>
-                    <td>{g.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+{/* === DETAILED BREAKDOWN (3 cards horizontal) === */}
+<div className="detail-section">
+  <h3 className="chart-title">Detailed Breakdown</h3>
 
-          <div className="detail-card receptionists">
-            <h4>Receptionists (Total: {rT})</h4>
-            <table className="rooms-table">
-              <thead>
-                <tr>
-                  <th>Gender</th>
-                  <th>Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.receptionists.map((g) => (
-                  <tr key={`r-${g.gender}`}>
-                    <td>{g.gender}</td>
-                    <td>{g.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+  <div className="gender-tables">
 
-        </div>
-      </div>
+    {/* Guests */}
+    <div className="detail-card guests">
+      <h4>Guests (Total: {gT})</h4>
+      <table className="rooms-table">
+        <thead>
+          <tr><th>Gender</th><th>Count</th></tr>
+        </thead>
+        <tbody>
+          {data.guests.map((g) => (
+            <tr key={`g-${g.gender}`}>
+              <td className="gender-table-gender">
+                <span className="gender-kpi-icon">
+                  {g.gender.toLowerCase() === "male" ? "♂️" : "♀️"}
+                </span>
+                {g.gender}
+              </td>
+              <td>{g.count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
 
-      {/* CHARTS */}
-      <div className="charts-row" style={{ marginTop: "20px" }}>
-        <div className="report-chart-card" style={{ maxWidth: "420px" }}>
-          <h3 className="chart-title">Overall Gender Distribution</h3>
-          <canvas ref={pieRef} height={140}></canvas>
-        </div>
+    {/* Staff */}
+    <div className="detail-card staff">
+      <h4>Staff (Total: {sT})</h4>
+      <table className="rooms-table">
+        <thead>
+          <tr><th>Gender</th><th>Count</th></tr>
+        </thead>
+        <tbody>
+          {data.staff.map((g) => (
+            <tr key={`s-${g.gender}`}>
+              <td className="gender-table-gender">
+                <span className="gender-kpi-icon">
+                  {g.gender.toLowerCase() === "male" ? "♂️" : "♀️"}
+                </span>
+                {g.gender}
+              </td>
+              <td>{g.count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
 
-        <div className="report-chart-card" style={{ maxWidth: "420px" }}>
-          <h3 className="chart-title">Gender by Role</h3>
-          <canvas ref={barRef} height={140}></canvas>
-        </div>
-      </div>
+    {/* Receptionists */}
+    <div className="detail-card receptionists">
+      <h4>Receptionists (Total: {rT})</h4>
+      <table className="rooms-table">
+        <thead>
+          <tr><th>Gender</th><th>Count</th></tr>
+        </thead>
+        <tbody>
+          {data.receptionists.map((g) => (
+            <tr key={`r-${g.gender}`}>
+              <td className="gender-table-gender">
+                <span className="gender-kpi-icon">
+                  {g.gender.toLowerCase() === "male" ? "♂️" : "♀️"}
+                </span>
+                {g.gender}
+              </td>
+              <td>{g.count}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
 
     </div>
   );

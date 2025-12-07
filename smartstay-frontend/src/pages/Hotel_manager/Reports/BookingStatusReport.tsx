@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Chart, registerables } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";  // ⭐ import plugin
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store";
 import "../../../styles/reports.css";
 
-Chart.register(...registerables);
+Chart.register(...registerables, ChartDataLabels); // ⭐ register plugin
 
 interface BookingStatusStat {
   status: string;
@@ -37,6 +38,13 @@ export default function BookingStatusReport() {
     const labels = res.data.map((x) => x.status);
     const values = res.data.map((x) => x.count);
 
+    const colors: string[] = [
+      "#ef4444", // Cancelled (red)
+      "#facc15", // Completed (yellow)
+      "#10b981", // Confirmed (green)
+      "#8b5cf6", // Pending (purple)
+    ];
+
     if (chartInstance.current) chartInstance.current.destroy();
 
     if (chartRef.current) {
@@ -48,46 +56,49 @@ export default function BookingStatusReport() {
             {
               label: "Bookings by Status",
               data: values,
-              backgroundColor: ["#34d399", "#fbbf24", "#f87171"],
-              borderWidth: 2,
+              backgroundColor: colors,
+              borderColor: "#ffffff",
+              borderWidth: 3,
             },
           ],
         },
         options: {
           plugins: {
-            legend: { position: "bottom", labels: { padding: 12 } },
+            legend: {
+              position: "bottom",
+              labels: { padding: 12 },
+            },
+            datalabels: {
+              color: "#ffffff",
+              font: {
+                weight: "bold",
+                size: 14,
+              },
+              formatter: (value: number) => value, // ⭐ show number inside slice
+            },
           },
         },
       });
     }
   }
 
-  // -----------------------------------
-  //  EXPORT PDF FUNCTION (non-blurry)
-  // -----------------------------------
+  // EXPORT PDF
   const exportPDF = async () => {
     const element = document.getElementById("export-panel");
     if (!element) return;
 
-    // Fix blur/fade
     document.body.classList.add("export-mode");
 
     const canvas = await html2canvas(element as any, {
-      scale: 2, // high resolution
+      scale: 2,
       useCORS: true,
-      backgroundColor: "#ffffff",
+      background: "#ffffff",
     } as any);
 
     document.body.classList.remove("export-mode");
 
     const imgData = canvas.toDataURL("image/png", 1.0);
-
-    const pdf = new jsPDF({
-      orientation: "p",
-      unit: "mm",
-      format: "a4",
-      compress: false,
-    });
+    const pdf = new jsPDF("p", "mm", "a4");
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const imgHeight = (canvas.height * pageWidth) / canvas.width;
@@ -101,9 +112,9 @@ export default function BookingStatusReport() {
   const confirmed = stats.find((s) => s.status === "Confirmed")?.count ?? 0;
   const pending = stats.find((s) => s.status === "Pending")?.count ?? 0;
   const cancelled = stats.find((s) => s.status === "Cancelled")?.count ?? 0;
+  const completed = stats.find((s) => s.status === "Completed")?.count ?? 0;
 
   return (
-    // ⭐ Only screenshot this part ↓↓↓
     <div id="export-panel" className="report-page fade-in">
 
       {/* HEADER */}
@@ -117,12 +128,8 @@ export default function BookingStatusReport() {
           <button className="report-btn export" onClick={exportPDF}>
             📄 Export PDF
           </button>
-
-          <button
-            className="report-btn back"
-            onClick={() => navigate("/manager/report")}
-          >
-            ← Back to Reports
+          <button className="report-btn back" onClick={() => navigate("/manager/report")}>
+            ← Back
           </button>
         </div>
       </div>
@@ -140,22 +147,27 @@ export default function BookingStatusReport() {
           <p className="kpi-value">{confirmed}</p>
         </div>
 
-        <div className="report-kpi-card kpi-blue">
+        <div className="report-kpi-card kpi-yellow">
+          <p className="kpi-label">Completed</p>
+          <p className="kpi-value">{completed}</p>
+        </div>
+
+        <div className="report-kpi-card kpi-purple">
           <p className="kpi-label">Pending</p>
           <p className="kpi-value">{pending}</p>
         </div>
 
-        <div className="report-kpi-card kpi-green">
+        <div className="report-kpi-card kpi-red">
           <p className="kpi-label">Cancelled</p>
           <p className="kpi-value">{cancelled}</p>
         </div>
 
       </div>
 
+
       {/* CHART */}
       <div className="report-chart-card">
         <h3 className="chart-title">Booking Status Breakdown</h3>
-
         <div className="chart-wrapper">
           <canvas ref={chartRef} height={180}></canvas>
         </div>

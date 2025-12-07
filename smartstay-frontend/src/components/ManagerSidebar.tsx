@@ -11,6 +11,7 @@ import {
     FiMenu,
     FiUser,
     FiLogOut,
+    FiX,
 } from "react-icons/fi";
 import { useAuthStore } from "../store";
 
@@ -61,24 +62,22 @@ export default function ManagerSidebar({
                 }`}
         >
             {/* Sidebar Header */}
-            <div className="sidebar-header flex items-center justify-between px-4 py-4">
-
-                {/* SmartStay Logo */}
+            <div className="sidebar-header">
+                {/* Logo only when expanded */}
                 {!collapsed && (
                     <h1 className="text-2xl font-extrabold tracking-wide flex items-center gap-1">
                         <span className="text-white">Smart</span>
-                        <span className="text-[#3AB4FF]">Stay</span>
+                        <span style={{ color: "#3ABFF8" }}>Stay</span>
                     </h1>
                 )}
 
-                {/* Right-Aligned Toggle Button */}
-                <button
-                    className="toggle-btn bg-white/10 hover:bg-white/20 transition p-2 rounded-xl shadow-[0_0_8px_rgba(0,0,0,0.35)] backdrop-blur-sm"
-                    onClick={toggleSidebar}
-                >
-                    <FiMenu className="text-cyan-300 text-2xl" />
+                {/* Toggle always visible */}
+                <button className="toggle-btn" onClick={toggleSidebar}>
+                    <FiMenu size={22} className="toggle-icon" />
                 </button>
+
             </div>
+
 
 
 

@@ -196,7 +196,7 @@ export default function ManagerOverview() {
 
       </div>
 
-      <p className="text-center text-gray-400 text-sm mt-6">
+      <p className="manager-footer-text">
         SmartStay Manager Dashboard © {new Date().getFullYear()}
       </p>
 

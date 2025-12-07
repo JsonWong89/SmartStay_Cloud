@@ -12,6 +12,8 @@ interface Room {
   status: string;
   description: string;
   imageUrl: string;
+  newImage?: File | null;
+
 }
 
 export default function ManagerManageRooms() {
@@ -19,6 +21,7 @@ export default function ManagerManageRooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newPreview, setNewPreview] = useState<string | null>(null);
 
   // UI State
   const [search, setSearch] = useState("");
@@ -109,10 +112,16 @@ export default function ManagerManageRooms() {
 
     try {
       await axios.post("https://localhost:7168/api/rooms", fd);
+
+      alert("Room added successfully!");
+
       setShowAdd(false);
       fetchRooms();
-    } catch (err) {
-      console.log(err);
+    } catch (err: any) {
+      console.log("FULL ERROR:", err.response);
+      console.log("ERROR DATA:", err.response?.data);
+      alert("Update failed: " + JSON.stringify(err.response?.data, null, 2));
+
       alert("Failed to add room.");
     }
   }
@@ -123,26 +132,41 @@ export default function ManagerManageRooms() {
   async function handleUpdateRoom() {
     if (!selectedRoom) return;
 
-    const updated = {
-      RoomID: selectedRoom.roomID,
-      HotelID: selectedRoom.hotelID,
-      RoomNumber: selectedRoom.roomNumber,
-      RoomType: selectedRoom.roomType,
-      PricePerNight: selectedRoom.pricePerNight,
-      Status: selectedRoom.status,
-      Description: selectedRoom.description,
-      ImageURL: selectedRoom.imageUrl,
-    };
+    const fd = new FormData();
+    fd.append("RoomID", String(selectedRoom.roomID));
+    fd.append("HotelID", String(selectedRoom.hotelID));
+    fd.append("RoomNumber", selectedRoom.roomNumber);
+    fd.append("RoomType", selectedRoom.roomType);
+    fd.append("PricePerNight", String(selectedRoom.pricePerNight));
+    fd.append("Status", selectedRoom.status);
+    fd.append("Description", selectedRoom.description);
 
-    await axios.put(
-      `https://localhost:7168/api/rooms/${selectedRoom.roomID}`,
-      updated
-    );
+    // MUST send existing image if no replacement
+    fd.append("ImageURL", selectedRoom.imageUrl);
 
-    setShowEdit(false);
-    setSelectedRoom(null);
-    fetchRooms();
+    if (selectedRoom.newImage) {
+      fd.append("imageFile", selectedRoom.newImage);
+    }
+
+    try {
+      await axios.put(
+        `https://localhost:7168/api/rooms/${selectedRoom.roomID}`,
+        fd
+      );
+      alert("Room updated successfully!");
+
+      setShowEdit(false);
+      setSelectedRoom(null);
+      fetchRooms();
+
+    } catch (err: any) {
+      console.log("ERROR RESPONSE:", err.response);
+      alert("Failed to update room.");
+    }
+
   }
+
+
 
   // ─────────────────────────────
   // Delete Room
@@ -209,7 +233,7 @@ export default function ManagerManageRooms() {
           <thead>
             <tr>
               <th>Image</th>
-              <th>No</th>
+              <th>Room No.</th>
               <th>Type</th>
               <th>Price</th>
               <th>Status</th>
@@ -259,12 +283,16 @@ export default function ManagerManageRooms() {
           <div className="modal-box">
             <h3>Add New Room</h3>
 
+            {/* Room Number */}
+            <label style={{ fontWeight: 600 }}>Room Number</label>
             <input
               placeholder="Room Number"
               value={newRoom.number}
               onChange={(e) => setNewRoom({ ...newRoom, number: e.target.value })}
             />
 
+            {/* Room Type */}
+            <label style={{ fontWeight: 600 }}>Room Type</label>
             <select
               value={newRoom.type}
               onChange={(e) => setNewRoom({ ...newRoom, type: e.target.value })}
@@ -275,6 +303,8 @@ export default function ManagerManageRooms() {
               <option>Family</option>
             </select>
 
+            {/* Price */}
+            <label style={{ fontWeight: 600 }}>Price Per Night (RM)</label>
             <input
               type="number"
               placeholder="Price"
@@ -282,6 +312,8 @@ export default function ManagerManageRooms() {
               onChange={(e) => setNewRoom({ ...newRoom, price: e.target.value })}
             />
 
+            {/* Status */}
+            <label style={{ fontWeight: 600 }}>Status</label>
             <select
               value={newRoom.status}
               onChange={(e) => setNewRoom({ ...newRoom, status: e.target.value })}
@@ -291,14 +323,22 @@ export default function ManagerManageRooms() {
               <option>Maintenance</option>
             </select>
 
+            {/* Description */}
+            <label style={{ fontWeight: 600 }}>Description</label>
             <textarea
               placeholder="Description"
               value={newRoom.description}
               onChange={(e) => setNewRoom({ ...newRoom, description: e.target.value })}
             />
 
-            <input type="file" onChange={(e) => setNewRoom({ ...newRoom, image: e.target.files![0] })} />
+            {/* Image Upload */}
+            <label style={{ fontWeight: 600 }}>Room Image</label>
+            <input
+              type="file"
+              onChange={(e) => setNewRoom({ ...newRoom, image: e.target.files![0] })}
+            />
 
+            {/* Buttons */}
             <div className="modal-actions">
               <button className="btn-add" onClick={handleAddRoom}>Add</button>
               <button className="btn-cancel" onClick={() => setShowAdd(false)}>Cancel</button>
@@ -307,22 +347,67 @@ export default function ManagerManageRooms() {
         </div>
       )}
 
+
       {/* EDIT MODAL */}
       {showEdit && selectedRoom && (
         <div className="modal-overlay">
           <div className="modal-box">
             <h3>Edit Room</h3>
 
+            {/* 📌 Show current image */}
+            <label style={{ fontWeight: 600 }}>Current Image</label>
+            <img
+              src={newPreview || selectedRoom.imageUrl}
+              alt="Room Preview"
+              style={{
+                width: "100%",
+                height: 180,
+                objectFit: "cover",
+                borderRadius: 8,
+                marginBottom: 12,
+                border: "1px solid #ddd",
+              }}
+            />
+
+            {/* 📌 Change image button */}
+            <button
+              className="btn-edit"
+              style={{ marginBottom: 10 }}
+              onClick={() => document.getElementById("editImageInput")?.click()}
+            >
+              Change Image
+            </button>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              id="editImageInput"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setSelectedRoom({ ...selectedRoom, newImage: file });
+                  setNewPreview(URL.createObjectURL(file));
+                }
+              }}
+            />
+
+            {/* Room Number */}
+            <label>Room Number</label>
             <input
               value={selectedRoom.roomNumber}
               onChange={(e) => setSelectedRoom({ ...selectedRoom, roomNumber: e.target.value })}
             />
 
+            {/* Room Type */}
+            <label>Room Type</label>
             <input
               value={selectedRoom.roomType}
               onChange={(e) => setSelectedRoom({ ...selectedRoom, roomType: e.target.value })}
             />
 
+            {/* Price */}
+            <label>Price Per Night</label>
             <input
               type="number"
               value={selectedRoom.pricePerNight}
@@ -331,6 +416,8 @@ export default function ManagerManageRooms() {
               }
             />
 
+            {/* Status */}
+            <label>Status</label>
             <select
               value={selectedRoom.status}
               onChange={(e) => setSelectedRoom({ ...selectedRoom, status: e.target.value })}
@@ -340,14 +427,11 @@ export default function ManagerManageRooms() {
               <option>Maintenance</option>
             </select>
 
+            {/* Description */}
+            <label>Description</label>
             <textarea
               value={selectedRoom.description}
               onChange={(e) => setSelectedRoom({ ...selectedRoom, description: e.target.value })}
-            />
-
-            <input
-              value={selectedRoom.imageUrl}
-              onChange={(e) => setSelectedRoom({ ...selectedRoom, imageUrl: e.target.value })}
             />
 
             <div className="modal-actions">
@@ -357,6 +441,7 @@ export default function ManagerManageRooms() {
           </div>
         </div>
       )}
+
 
     </div>
   );

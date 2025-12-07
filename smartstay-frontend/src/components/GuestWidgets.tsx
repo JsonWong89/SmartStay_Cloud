@@ -19,9 +19,16 @@ export function StatCard({
     amber: "bg-amber-50",
     emerald: "bg-emerald-50",
   };
+  const borderColors: Record<string, string> = {
+    purple: "border-l-purple-600",
+    green: "border-l-green-600",
+    blue: "border-l-blue-600",
+    amber: "border-l-amber-600",
+    emerald: "border-l-emerald-600",
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4">
+    <div className={`bg-white rounded-xl shadow-sm p-4 border-l-8 ${borderColors[color]}`}>
       <div className="flex items-center gap-3">
         <div className={`p-2.5 rounded-lg ${bgColors[color]}`}>{icon}</div>
         <div>

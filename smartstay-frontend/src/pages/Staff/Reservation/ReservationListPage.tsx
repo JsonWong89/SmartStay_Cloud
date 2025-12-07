@@ -391,9 +391,15 @@ const StatCard = ({ title, value, icon, color }: { title: string; value: string 
     emerald: "bg-emerald-50 text-emerald-700",
     amber: "bg-amber-50 text-amber-700",
   };
+  const borderColors: Record<string, string> = {
+    sky: "border-l-sky-600",
+    green: "border-l-green-600",
+    emerald: "border-l-emerald-600",
+    amber: "border-l-amber-600 ",
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
+    <div className={`bg-white rounded-xl shadow-sm p-5 border border-gray-200 border-l-8 ${borderColors[color]}`}>
       <div className="flex items-center gap-2">
         <div className={`p-3 rounded-lg ${colors[color]}`}>{icon}</div>
         <div>

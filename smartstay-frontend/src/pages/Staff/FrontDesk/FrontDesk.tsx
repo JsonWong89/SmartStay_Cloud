@@ -790,8 +790,13 @@ function SummaryCard({
     blue: "bg-blue-50",
     sky: "bg-sky-50",
   };
+  const borderColors = {
+    green: "border-l-green-600",
+    blue: "border-l-blue-600",
+    sky: "border-l-sky-600",
+  };
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm flex items-center gap-4">
+    <div className={`rounded-xl bg-white p-6 shadow-sm flex items-center gap-4 border-l-8 ${borderColors[color]}`}>
       <div className={`p-3 rounded-lg ${bgColors[color]}`}>{icon}</div>
       <div>
         <p className="text-sm text-gray-500">{title}</p>

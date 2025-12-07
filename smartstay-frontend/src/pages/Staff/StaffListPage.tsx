@@ -235,8 +235,15 @@ function StatCard({ title, value, icon, color }: { title: string; value: number;
     amber: "bg-amber-50 text-amber-600",
   }[color];
 
+  const borderColor = {
+    teal: "border-l-teal-600",
+    purple: "border-l-purple-600",
+    blue: "border-l-blue-600",
+    amber: "border-l-amber-600",
+  }[color];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+    <div className={`bg-white rounded-xl shadow-sm p-4 border border-gray-200 border-l-8 ${borderColor}`}>
       <div className="flex items-center gap-3">
         <div className={`p-2.5 rounded-lg ${bgColor}`}>
           {icon}

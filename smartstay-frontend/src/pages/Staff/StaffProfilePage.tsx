@@ -84,7 +84,7 @@ export default function StaffProfilePage() {
         </header>
 
         {/* Profile Header Card */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 mb-8">
+        <div className="bg-white rounded-2xl shadow-2xs border border-gray-200 p-8 mb-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             <div className="h-32 w-32 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
               {getInitials(profile.fullName)}
@@ -109,7 +109,7 @@ export default function StaffProfilePage() {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Personal Information */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="bg-white rounded-2xl shadow-2xs border border-gray-200 p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <User className="h-6 w-6 text-indigo-600" />
                 Personal Information
@@ -138,7 +138,7 @@ export default function StaffProfilePage() {
             </div>
 
             {/* Workplace */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="bg-white rounded-2xl shadow-2xs border border-gray-200 p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                 <Building className="h-6 w-6 text-indigo-600" />
                 Workplace
@@ -161,7 +161,7 @@ export default function StaffProfilePage() {
 
           {/* Right Column - Actions */}
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+            <div className="bg-white rounded-2xl shadow-2xs border border-gray-200 p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Account Actions</h3>
               <div className="space-y-4">
                 <button

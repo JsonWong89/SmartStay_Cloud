@@ -243,14 +243,14 @@ function StatCard({ title, value, icon, color }: { title: string; value: number;
   }[color];
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm p-4 border border-gray-200 border-l-8 ${borderColor}`}>
-      <div className="flex items-center gap-3">
-        <div className={`p-2.5 rounded-lg ${bgColor}`}>
+    <div className={`bg-white rounded-xl shadow-sm p-5 border border-gray-200 border-l-8 ${borderColor}`}>
+      <div className="flex items-center gap-2">
+        <div className={`p-3 rounded-lg ${bgColor}`}>
           {icon}
         </div>
         <div>
-          <p className="text-xs text-gray-500">{title}</p>
-          <p className="text-xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-gray-500">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
         </div>
       </div>
     </div>

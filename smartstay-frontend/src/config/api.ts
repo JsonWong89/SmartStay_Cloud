@@ -94,13 +94,6 @@ export const API_ENDPOINTS = {
     BOOKINGS: `${API_BASE_URL}/api/Reports/bookings`,
   },
   
-  // Monitoring
-  // MONITOR: {
-  //   HEALTH: `${API_BASE_URL}/api/monitor/health`,
-  //   EVENTS: `${API_BASE_URL}/api/systemevents`,
-  //   AUDIT_LOGS: `${API_BASE_URL}/api/auditlogs`,
-  // },
-  
   // System
   SYSTEM: {
     HEALTH: `${API_BASE_URL}/api/health`,

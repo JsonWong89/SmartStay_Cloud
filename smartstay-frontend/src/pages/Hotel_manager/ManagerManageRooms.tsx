@@ -50,7 +50,7 @@ export default function ManagerManageRooms() {
     try {
       // Fetch all rooms and filter by hotelId on frontend
       // Backend doesn't have /api/rooms/hotel/{id} endpoint
-      const res = await axios.get(
+      const res = await axios.get<any[]>(
         `https://localhost:7168/api/rooms`
       );
       

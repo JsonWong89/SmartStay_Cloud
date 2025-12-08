@@ -101,7 +101,7 @@ export default function ManagerManageStaff() {
         axios.get<StaffApi[]>(
           `https://localhost:7168/api/Staff`
         ),
-        axios.get(
+        axios.get<any[]>(
           `https://localhost:7168/api/Users`
         ),
       ]);
@@ -110,12 +110,12 @@ export default function ManagerManageStaff() {
       console.log("Staff response type:", typeof staffRes.data, Array.isArray(staffRes.data));
 
       // Handle if response is wrapped or direct array
-      const staffArray = Array.isArray(staffRes.data) 
+      const staffArray: any[] = Array.isArray(staffRes.data) 
         ? staffRes.data 
-        : (staffRes.data.data && Array.isArray(staffRes.data.data) ? staffRes.data.data : []);
+        : ((staffRes.data as any).data && Array.isArray((staffRes.data as any).data) ? (staffRes.data as any).data : []);
 
       // Filter staff by hotelId
-      const hotelStaff = staffArray.filter(s => s.hotelID === user.hotelId);
+      const hotelStaff = staffArray.filter((s: any) => s.hotelID === user.hotelId);
 
       // Filter receptionists from Users by role and hotelId
       const receptionists = usersRes.data.filter((u: any) => 
@@ -123,7 +123,7 @@ export default function ManagerManageStaff() {
         (u.hotelID || u.HotelID) === user.hotelId
       );
 
-      const staffRows: StaffRow[] = hotelStaff.map((s) => ({
+      const staffRows: StaffRow[] = hotelStaff.map((s: any) => ({
         id: String(s.staffID),
         source: "Staff",
         hotelID: s.hotelID,

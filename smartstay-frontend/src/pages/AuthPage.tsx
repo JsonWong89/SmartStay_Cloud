@@ -134,6 +134,7 @@ const AuthPage: React.FC = () => {
 
       const role = (userData.role || userData.Role || "").toLowerCase();
       setUser({
+        userId: userData.id || userData.Id || userData.userId || userData.UserId || "",
         id: userData.id || userData.Id,
         fullName: userData.fullName || userData.FullName,
         email: userData.email || userData.Email,
@@ -149,8 +150,8 @@ const AuthPage: React.FC = () => {
           navigate("/hotel-manager");
         } else if (role === "guest") {
           navigate("/guest/dashboard");
-        } else if (role === "staff") {
-          navigate("/staff");
+        } else if (role === "receptionist") {
+          navigate("/staff/dashboard");
         } else {
           navigate("/");
         }

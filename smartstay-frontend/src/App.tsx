@@ -12,6 +12,21 @@ import StaffListPage from "./pages/Staff/StaffListPage";
 import StaffProfilePage from "./pages/Staff/StaffProfilePage";
 import ProfilePasswordPage from "./pages/Staff/ProfilePasswordPage";
 
+// Hotel Manager imports
+import Manager from "./pages/Hotel_manager/ManagerIndex";
+import ManageRooms from "./pages/Hotel_manager/ManagerManageRooms";
+import ManageBookings from "./pages/Hotel_manager/ManagerManageBookings";
+import ManageStaff from "./pages/Hotel_manager/ManagerManageStaff";
+import ManageReport from "./pages/Hotel_manager/ManagerManageReport";
+import ManagerOverview from "./pages/Hotel_manager/ManageOverview";
+import ManagerHotelInfo from "./pages/Hotel_manager/ManagerHotelInfo";
+import ManagerReport_Revenue from "./pages/Hotel_manager/Reports/RevenueReport";
+import ManagerReport_Occupancy from "./pages/Hotel_manager/Reports/OccupancyReport";
+import ManagerReport_Room from "./pages/Hotel_manager/Reports/RoomTypeReport";
+import ManagerReport_Booking from "./pages/Hotel_manager/Reports/BookingStatusReport";
+import ManagerReport_Gender from "./pages/Hotel_manager/Reports/GenderReport";
+import ManagerProfile from "./pages/Hotel_manager/ManageProfile";
+
 // Guest imports
 import GuestDashboard from "./pages/Guest/GuestDashboard";
 import RoomSearch from "./pages/Guest/RoomSearch";
@@ -27,6 +42,7 @@ import ReviewPage from "./pages/Guest/ReviewPage";
 import GuestReceiptPage from "./pages/Guest/ReceiptPage";
 
 import AuthPage from "./pages/AuthPage";
+import "./styles/modals.css";
 
 // ✅ App component
 const App: React.FC = () => {
@@ -138,13 +154,37 @@ const App: React.FC = () => {
         }
       />
 
-      {/* Staff */}
+      {/* Hotel Manager Routes */}
+      <Route
+        path="/manager"
+        element={
+          <ProtectedRoute allowedRoles={["Hotel Manager"]}>
+            <Manager />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ManagerOverview />} />
+        <Route path="overview" element={<ManagerOverview />} />
+        <Route path="rooms" element={<ManageRooms />} />
+        <Route path="bookings" element={<ManageBookings />} />
+        <Route path="staff" element={<ManageStaff />} />
+        <Route path="report" element={<ManageReport />} />
+        <Route path="hotelinfo" element={<ManagerHotelInfo />} />
+        <Route path="manageProfile" element={<ManagerProfile />} />
+        <Route path="report/revenue" element={<ManagerReport_Revenue />} />
+        <Route path="report/occupancy" element={<ManagerReport_Occupancy />} />
+        <Route path="report/roomtypes" element={<ManagerReport_Room />} />
+        <Route path="report/bookings" element={<ManagerReport_Booking />} />
+        <Route path="report/gender" element={<ManagerReport_Gender />} />
+      </Route>
+
+      {/* Staff Routes */}
       <Route
         path="/staff/dashboard"
         element={
           <ProtectedRoute allowedRoles={["Receptionist"]}>
             <Dashboard />
-           </ProtectedRoute>
+          </ProtectedRoute>
         }
       />
       <Route
@@ -152,7 +192,7 @@ const App: React.FC = () => {
         element={
           <ProtectedRoute allowedRoles={["Receptionist"]}>
             <FrontDeskApp />
-           </ProtectedRoute> 
+          </ProtectedRoute>
         }
       />
       <Route
@@ -163,18 +203,6 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-      {/* <Route
-        path="/staff/booking"
-        element={
-          <ProtectedRoute allowedRoles={["Admin", "Manager", "Receptionist"]}>
-            <BookingDetailsPage
-              booking={{} as any}
-              goBack={() => {}}
-              updateBooking={() => {}}
-            />
-          </ProtectedRoute>
-        }
-      /> */}
       <Route
         path="/staff/walk-in-booking"
         element={
@@ -215,16 +243,14 @@ const App: React.FC = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/staff/profile"
         element={
-          <ProtectedRoute allowedRoles={["Receptionist"]}>  
+          <ProtectedRoute allowedRoles={["Receptionist"]}>
             <StaffProfilePage />
           </ProtectedRoute>
         }
-      /> 
-
+      />
       <Route
         path="/staff/profile/password"
         element={
@@ -232,7 +258,7 @@ const App: React.FC = () => {
             <ProfilePasswordPage />
           </ProtectedRoute>
         }
-      /> 
+      />
 
       {/* Redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />

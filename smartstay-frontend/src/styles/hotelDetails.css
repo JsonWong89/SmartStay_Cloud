@@ -1,0 +1,55 @@
+.hotel-info-container {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hotel-image-wrapper {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.hotel-image {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+}
+
+.hotel-content {
+  text-align: center;
+  max-width: 600px;
+}
+
+.hotel-title {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.hotel-city {
+  font-size: 20px;
+  color: #777;
+}
+/* Fix hotel page inside manager layout */
+.main-content .hotel-info-container {
+  padding-top: 10px;
+}
+
+.hotel-content {
+  margin-top: 10px;
+}
+
+/* Reduce image height to fit dashboard layout */
+.hotel-image {
+  height: 240px;
+}
+
+/* Better readability inside dashboard */
+.hotel-card {
+  padding: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+}

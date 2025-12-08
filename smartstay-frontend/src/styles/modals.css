@@ -1,0 +1,98 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);   /* darker, no blur */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  background: #fff;
+  padding: 22px;
+  width: 420px;
+  border-radius: 12px;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Title style */
+.modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.modal input,
+.modal select,
+.modal textarea {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  width: 100%;
+}
+
+/* Modal text */
+.modal-box p {
+  font-size: 15px;
+  margin: 6px 0;
+  color: #333;
+}
+
+/* Close button */
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  background: #aaa;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+
+.btn-confirm {
+  background: #4f46e5;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+/* Clean white modal box */
+.modal-box {
+  background: white;
+  width: 420px;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25); /* strong shadow */
+  animation: popIn 0.25s ease-out;
+}
+.modal-actions .close-btn {
+  background: #2563eb;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-actions .close-btn:hover {
+  background: #1e4fc7;
+}
+
+/* Animation */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

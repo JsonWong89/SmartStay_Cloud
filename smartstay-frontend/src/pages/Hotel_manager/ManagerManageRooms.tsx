@@ -41,17 +41,49 @@ export default function ManagerManageRooms() {
   });
 
   const fetchRooms = async () => {
-    if (!user?.hotelId) return;
+    if (!user?.hotelId) {
+      console.log("No hotelId for fetching rooms");
+      return;
+    }
 
     setLoading(true);
     try {
-      const res = await axios.get<Room[]>(
-        `https://localhost:7168/api/rooms/hotel/${user.hotelId}`
+      // Fetch all rooms and filter by hotelId on frontend
+      // Backend doesn't have /api/rooms/hotel/{id} endpoint
+      const res = await axios.get(
+        `https://localhost:7168/api/rooms`
       );
-      setRooms(res.data);
-      setFilteredRooms(res.data);
+      
+      console.log("All rooms response:", res.data);
+      
+      // Log all hotelIDs to see what hotels have rooms
+      const hotelIDs = res.data.map((room: any) => room.hotelID);
+      console.log("All hotel IDs in rooms:", hotelIDs);
+      console.log("User hotelId to match:", user.hotelId, typeof user.hotelId);
+      
+      // Filter rooms by current hotel
+      const hotelRooms = res.data.filter((room: any) => 
+        (room.hotelID || room.HotelID) === user.hotelId
+      );
+      
+      console.log(`Filtered ${hotelRooms.length} rooms for hotel ${user.hotelId}`);
+      
+      // Map to match Room interface
+      const mappedRooms = hotelRooms.map((room: any) => ({
+        roomID: room.roomID || room.id,
+        hotelID: room.hotelID || room.HotelID,
+        roomNumber: room.roomNumber,
+        roomType: room.roomType,
+        pricePerNight: room.pricePerNight || room.price,
+        status: room.status,
+        description: room.description || "",
+        imageUrl: room.imageUrl || room.imageURL || "",
+      }));
+      
+      setRooms(mappedRooms);
+      setFilteredRooms(mappedRooms);
     } catch (err) {
-      console.log("ERROR:", err);
+      console.log("ERROR fetching rooms:", err);
     }
     setLoading(false);
   };
@@ -101,28 +133,36 @@ export default function ManagerManageRooms() {
   // ➕ Add Room
   // ─────────────────────────────
   async function handleAddRoom() {
-    const fd = new FormData();
-    fd.append("HotelID", String(user?.hotelId));
-    fd.append("RoomNumber", newRoom.number);
-    fd.append("RoomType", newRoom.type);
-    fd.append("PricePerNight", newRoom.price);
-    fd.append("Status", newRoom.status);
-    fd.append("Description", newRoom.description);
-    if (newRoom.image) fd.append("imageFile", newRoom.image);
-
     try {
-      await axios.post("https://localhost:7168/api/rooms", fd);
+      // Backend expects Room object, not FormData
+      const payload = {
+        hotelID: user?.hotelId,
+        roomNumber: newRoom.number,
+        roomType: newRoom.type,
+        pricePerNight: parseFloat(newRoom.price),
+        status: newRoom.status,
+        description: newRoom.description,
+        imageURL: "", // You might need image upload handling
+      };
+
+      await axios.post("https://localhost:7168/api/rooms", payload);
 
       alert("Room added successfully!");
 
       setShowAdd(false);
+      setNewRoom({
+        number: "",
+        type: "Deluxe",
+        price: "",
+        status: "Available",
+        description: "",
+        image: null,
+      });
       fetchRooms();
     } catch (err: any) {
       console.log("FULL ERROR:", err.response);
       console.log("ERROR DATA:", err.response?.data);
-      alert("Update failed: " + JSON.stringify(err.response?.data, null, 2));
-
-      alert("Failed to add room.");
+      alert("Failed to add room: " + (err.response?.data?.message || err.message));
     }
   }
 
@@ -132,41 +172,31 @@ export default function ManagerManageRooms() {
   async function handleUpdateRoom() {
     if (!selectedRoom) return;
 
-    const fd = new FormData();
-    fd.append("RoomID", String(selectedRoom.roomID));
-    fd.append("HotelID", String(selectedRoom.hotelID));
-    fd.append("RoomNumber", selectedRoom.roomNumber);
-    fd.append("RoomType", selectedRoom.roomType);
-    fd.append("PricePerNight", String(selectedRoom.pricePerNight));
-    fd.append("Status", selectedRoom.status);
-    fd.append("Description", selectedRoom.description);
-
-    // MUST send existing image if no replacement
-    fd.append("ImageURL", selectedRoom.imageUrl);
-
-    if (selectedRoom.newImage) {
-      fd.append("imageFile", selectedRoom.newImage);
-    }
-
     try {
+      // Backend expects Room object, not FormData
+      const payload = {
+        hotelID: selectedRoom.hotelID,
+        roomNumber: selectedRoom.roomNumber,
+        roomType: selectedRoom.roomType,
+        pricePerNight: selectedRoom.pricePerNight,
+        status: selectedRoom.status,
+        description: selectedRoom.description,
+        imageURL: selectedRoom.imageUrl,
+      };
+
       await axios.put(
         `https://localhost:7168/api/rooms/${selectedRoom.roomID}`,
-        fd
+        payload
       );
+
       alert("Room updated successfully!");
-
       setShowEdit(false);
-      setSelectedRoom(null);
       fetchRooms();
-
     } catch (err: any) {
-      console.log("ERROR RESPONSE:", err.response);
-      alert("Failed to update room.");
+      console.log("UPDATE ERROR:", err.response?.data);
+      alert("Failed to update room: " + (err.response?.data?.message || err.message));
     }
-
   }
-
-
 
   // ─────────────────────────────
   // Delete Room

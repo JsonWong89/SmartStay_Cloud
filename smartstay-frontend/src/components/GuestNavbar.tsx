@@ -107,26 +107,26 @@ const GuestNavbar: React.FC = () => {
                     <div className="py-1">
                       <button
                         onClick={() => navigate('/guest/profile')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition cursor-pointer"
                       >
                         My Profile
                       </button>
                       <button
                         onClick={() => navigate('/guest/reservations')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition cursor-pointer"
                       >
                         My Reservations
                       </button>
                       <button
                         onClick={() => navigate('/guest/reviews')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition cursor-pointer"
                       >
                         My Reviews
                       </button>
                       <hr className="my-1 border-gray-200" />
                       <button
                         onClick={handleLogout}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition cursor-pointer"
                       >
                         Logout
                       </button>

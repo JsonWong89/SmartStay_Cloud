@@ -42,6 +42,21 @@ import ReviewPage from "./pages/Guest/ReviewPage";
 import GuestReceiptPage from "./pages/Guest/ReceiptPage";
 
 import AuthPage from "./pages/AuthPage";
+
+// Admin imports
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import ManageManagersPage from "./pages/Admin/ManageManagersPage";
+import HotelsPage from "./pages/Admin/HotelsPage";
+import RoomTypesPage from "./pages/Admin/RoomTypesPage";
+import RoomsPage from "./pages/Admin/RoomsPage";
+import ReportsPage from "./pages/Admin/ReportsPage";
+import CreateHotelPage from "./pages/Admin/CreateHotelPage";
+import EditHotelPage from "./pages/Admin/EditHotelPage";
+import CreateManagerPage from "./pages/Admin/CreateManagerPage";
+import EditManagerPage from "./pages/Admin/EditManagerPage";
+import CreateRoomPage from "./pages/Admin/CreateRoomPage";
+import EditRoomPage from "./pages/Admin/EditRoomPage";
+
 import "./styles/modals.css";
 
 // ✅ App component
@@ -154,11 +169,109 @@ const App: React.FC = () => {
         }
       />
 
+      {/* Admin Routes */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/manage-managers"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <ManageManagersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/hotels"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <HotelsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/room-types"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <RoomTypesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/rooms"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <RoomsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/hotels/new"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <CreateHotelPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/hotels/edit/:id"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <EditHotelPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/manage-managers/new"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <CreateManagerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/manage-managers/edit/:id"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <EditManagerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/rooms/new"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <CreateRoomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/rooms/edit/:id"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <EditRoomPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Hotel Manager Routes */}
       <Route
         path="/manager"
         element={
-          <ProtectedRoute allowedRoles={["Hotel Manager"]}>
+          <ProtectedRoute allowedRoles={["Manager"]}>
             <Manager />
           </ProtectedRoute>
         }

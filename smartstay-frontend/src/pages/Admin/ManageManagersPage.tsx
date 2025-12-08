@@ -93,7 +93,7 @@ const ManageManagersPage: React.FC = () => {
           throw new Error(`Expected array but got: ${typeof data}`);
         }
         
-        // Filter users with "Hotel Manager" role
+        // Filter users with "Manager" role
         const allUsers: Manager[] = data.map((m: any) => ({
           userID: m.userID ?? m.UserID,
           fullName: m.fullName ?? m.FullName ?? '',

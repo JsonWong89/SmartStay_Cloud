@@ -43,7 +43,7 @@ export default function ManagerProfile() {
 
     async function loadProfile() {
         const res = await axios.get<ManagerProfileResponse>(
-            `https://localhost:7168/api/users/manager/${user?.id}`
+            `https://localhost:7168/api/users/${user?.id}`
         );
 
         setForm({
@@ -68,20 +68,16 @@ export default function ManagerProfile() {
 
         try {
             const payload: any = {
-                fullName: form.fullName,
                 email: form.email,
-                gender: form.gender,
+                fullName: form.fullName,
                 role: "Manager",
                 hotelID: Number(form.hotelId),
+                password: changingPassword && form.password.trim() !== "" ? form.password : undefined,
             };
-
-            if (changingPassword && form.password.trim() !== "") {
-                payload.passwordHash = form.password;
-            }
 
             // 🔵 UPDATE BACKEND
             await axios.put(
-                `https://localhost:7168/api/users/manager/${form.userId}`,
+                `https://localhost:7168/api/users/${form.userId}`,
                 payload
             );
 

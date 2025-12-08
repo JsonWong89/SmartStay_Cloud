@@ -92,7 +92,14 @@ export default function RoomOperationsPage() {
   const roomTypes = Array.from(new Set(rooms.map((r) => r.roomType)));
 
   const handleViewDetails = (room: Room) => {
-    fetchRoomDetails(room.roomId);
+    // Handle multiple possible field names for room ID
+    const roomId = room.roomId || (room as any).id || (room as any).roomID;
+    if (!roomId) {
+      alert("Room ID not found");
+      console.error("Room object:", room);
+      return;
+    }
+    fetchRoomDetails(roomId);
   };
 
   const handleBackToList = () => {

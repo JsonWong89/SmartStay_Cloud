@@ -35,6 +35,16 @@ export default function Sidebar({
 
   const user = useAuthStore((state) => state.user);
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'S';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const handleToggle = () => {
     const newState = !collapsed;
     setCollapsed(newState);
@@ -215,7 +225,9 @@ export default function Sidebar({
         )} */}
 
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600" />
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+            {getInitials(user?.fullName)}
+          </div>
           {!collapsed && (
             <div>
               <p className="text-[14px] font-semibold text-white">

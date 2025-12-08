@@ -114,6 +114,8 @@ const AuthPage: React.FC = () => {
       const contentType = response.headers.get("content-type") || "";
       const payload = contentType.includes("application/json") ? await response.json() : await response.text();
 
+      console.log("Full login response payload:", payload);
+
       if (!response.ok) {
         const serverMsg = typeof payload === "string" ? payload.slice(0, 180) : payload?.message || "";
         if (response.status === 401) {
@@ -132,27 +134,47 @@ const AuthPage: React.FC = () => {
         return;
       }
 
+      console.log("Login response userData:", userData); // Debug log
+      console.log("userData keys:", Object.keys(userData));
+      console.log("userData.hotelId:", userData.hotelId);
+      console.log("userData.HotelId:", userData.HotelId);
+      console.log("userData.hotelID:", userData.hotelID);
+      console.log("userData.HotelID:", userData.HotelID);
+      
       const role = (userData.role || userData.Role || "").toLowerCase();
+      const userRole = userData.role || userData.Role; // Keep original case for store
+      const hotelIdValue = userData.hotelId || userData.HotelId || userData.hotelID || userData.HotelID || undefined;
+      
+      console.log("Extracted hotelId:", hotelIdValue);
+      
       setUser({
-        userId: userData.id || userData.Id || userData.userId || userData.UserId || "",
-        id: userData.id || userData.Id,
+        userId: userData.id || userData.Id || userData.userId || userData.UserId || userData.userID || userData.UserID || "",
+        id: userData.id || userData.Id || userData.userID || userData.UserID,
         fullName: userData.fullName || userData.FullName,
         email: userData.email || userData.Email,
-        role: userData.role || userData.Role,
+        role: userRole, // Use original case
+        hotelId: hotelIdValue,
       });
+      
+      console.log("User stored in state with hotelId:", hotelIdValue);
+      console.log("Navigating user with role:", role); 
+      
       setMessage("Login successful!");
       setMessageType("success");
 
       setTimeout(() => {
         if (role === "admin") {
+          console.log("Redirecting to /admin/dashboard");
           navigate("/admin/dashboard");
-        } else if (role === "hotel manager") {
-          navigate("/hotel-manager");
+        } else if (role === "manager") {
+          console.log("Redirecting to /manager");
+          navigate("/manager");
         } else if (role === "guest") {
           navigate("/guest/dashboard");
         } else if (role === "receptionist") {
           navigate("/staff/dashboard");
         } else {
+          console.warn("Unknown role:", role, "- redirecting to home");
           navigate("/");
         }
       }, 1000);
@@ -518,16 +540,13 @@ const AuthPage: React.FC = () => {
                   : "Your journey to perfect stays begins here"}
               </p>
               <div style={styles.features}>
-                <div style={styles.feature}>
-                  <span style={styles.featureIcon}>🏨</span>
+                <div style={styles.featureBadge}>
                   <span>Premium Hotels</span>
                 </div>
-                <div style={styles.feature}>
-                  <span style={styles.featureIcon}>⭐</span>
+                <div style={styles.featureBadge}>
                   <span>Best Prices</span>
                 </div>
-                <div style={styles.feature}>
-                  <span style={styles.featureIcon}>🔒</span>
+                <div style={styles.featureBadge}>
                   <span>Secure Booking</span>
                 </div>
               </div>
@@ -643,8 +662,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "16px",
     fontWeight: "500",
   },
-  featureIcon: {
-    fontSize: "24px",
+  featureBadge: {
+    padding: "10px 20px",
+    borderRadius: "50px",
+    border: "2px solid rgba(96, 165, 250, 0.5)",
+    fontSize: "15px",
+    fontWeight: "500",
+    backgroundColor: "rgba(96, 165, 250, 0.1)",
+    color: "#fff",
+    transition: "all 0.3s ease",
   },
   formContent: {
     width: "100%",

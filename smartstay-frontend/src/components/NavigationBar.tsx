@@ -11,113 +11,151 @@ import {
   FiLogOut,
   FiUser
 } from 'react-icons/fi';
-import '../styles/NavigationBar.css';
 
 const NavigationBar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, setUser } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
 
   const navItems = [
     { 
       section: 'MAIN',
       items: [
-        { path: '/admin/dashboard', label: 'Dashboard', icon: <FiHome /> }
+        { path: '/admin/dashboard', label: 'Dashboard', icon: <FiHome className="h-5 w-5" /> }
       ]
     },
     { 
       section: 'MANAGEMENT',
       items: [
-        { path: '/admin/manage-managers', label: 'Manage Managers', icon: <FiUsers /> },
-        { path: '/admin/hotels', label: 'Hotels', icon: <FiBriefcase /> },
-        { path: '/admin/rooms', label: 'Rooms & Pricing', icon: <MdBedroomParent /> },
-        { path: '/admin/reports', label: 'System Reports', icon: <FiBarChart2 /> }
+        { path: '/admin/manage-managers', label: 'Manage Managers', icon: <FiUsers className="h-5 w-5" /> },
+        { path: '/admin/hotels', label: 'Hotels', icon: <FiBriefcase className="h-5 w-5" /> },
+        { path: '/admin/rooms', label: 'Rooms & Pricing', icon: <MdBedroomParent className="h-5 w-5" /> },
+        { path: '/admin/reports', label: 'System Reports', icon: <FiBarChart2 className="h-5 w-5" /> }
+      ]
+    },
+    {
+      section: 'SETTINGS',
+      items: [
+        { path: '/logout', label: 'Logout', icon: <FiLogOut className="h-5 w-5" /> }
       ]
     }
   ];
 
   const handleLogout = () => {
-    setUser({ fullName: '', email: '', role: '' });
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (!confirmLogout) return;
+    
+    logout();
     navigate('/login');
   };
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-content">
-        {/* Header */}
-        <div className="sidebar-header">
-          {!collapsed && (
-            <Link to="/admin/dashboard" className="sidebar-brand">
-              <h1>Smart<span>Stay</span></h1>
-            </Link>
-          )}
-          <button 
-            className="sidebar-toggle" 
-            onClick={() => setCollapsed(!collapsed)}
+    <aside
+      className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-gradient-to-b from-blue-950 via-blue-900 to-indigo-950 text-white shadow-[2px_0_6px_rgba(0,0,0,0.05)] transition-all duration-300 ${
+        collapsed ? "w-20" : "w-[230px]"
+      }`}
+    >
+      <div className="flex-1 overflow-y-auto px-5 pt-5">
+        {/* Logo + Toggle */}
+        <div
+          className={`mb-[30px] flex items-center ${
+            collapsed ? "justify-center" : "justify-between"
+          }`}
+        >
+          <h1
+            className={`font-bold text-[18px] ${
+              collapsed ? "hidden" : "block"
+            }`}
           >
-            <FiMenu />
+            Smart<span className="text-blue-600">Stay</span>
+          </h1>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="rounded-md bg-white/10 p-[6px] hover:bg-white/20 transition"
+          >
+            <FiMenu className="h-[18px] w-[18px] text-cyan-300" />
           </button>
         </div>
 
-        {/* Hotel Info */}
+        {/* Subtitle - only when expanded */}
         {!collapsed && (
-          <div className="sidebar-info">
-            <p className="hotel-name">Hotel Management System</p>
-            <p className="user-role">Admin</p>
+          <div className="mb-5">
+            <p className="text-[14px] text-white font-semibold mt-1">
+              Hotel Management System
+            </p>
+            <p className="text-[12px] text-cyan-300 mt-2">Administrator</p>
           </div>
         )}
 
-        {/* Navigation Menu */}
-        <nav className="sidebar-nav">
-          {navItems.map((section) => (
-            <div key={section.section} className="nav-section">
-              {!collapsed && (
-                <p className="section-label">{section.section}</p>
-              )}
-              <div className="nav-items">
-                {section.items.map((item) => (
+        {/* Menu */}
+        {navItems.map((section) => (
+          <div key={section.section} className="mb-6">
+            <p
+              className={`text-[11px] font-normal uppercase tracking-[1px] text-cyan-400 mb-2 ${
+                collapsed ? "hidden" : "block"
+              }`}
+            >
+              {section.section}
+            </p>
+            <div className="space-y-1.5">
+              {section.items.map((item) => {
+                if (item.path === '/logout') {
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={handleLogout}
+                      className={`flex w-full items-center rounded-lg text-[14px] font-medium transition-all ${
+                        collapsed
+                          ? "justify-center py-2.5"
+                          : "gap-2.5 py-2.5 pl-4 pr-4"
+                      } text-gray-200 hover:bg-white/10`}
+                    >
+                      {item.icon}
+                      {!collapsed && <span>{item.label}</span>}
+                    </button>
+                  );
+                }
+                
+                return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                    className={`flex w-full items-center rounded-lg text-[14px] font-medium transition-all ${
+                      collapsed
+                        ? "justify-center py-2.5"
+                        : "gap-2.5 py-2.5 pl-4 pr-4"
+                    } ${
+                      location.pathname === item.path
+                        ? "bg-cyan-500/20 text-cyan-300 font-semibold"
+                        : "text-gray-200 hover:bg-white/10"
+                    }`}
                   >
-                    <span className="nav-icon">{item.icon}</span>
-                    {!collapsed && <span className="nav-label">{item.label}</span>}
+                    {item.icon}
+                    {!collapsed && <span>{item.label}</span>}
                   </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* Settings Section */}
-          <div className="nav-section">
-            {!collapsed && (
-              <p className="section-label">SETTINGS</p>
-            )}
-            <div className="nav-items">
-              <button className="nav-item" onClick={handleLogout}>
-                <span className="nav-icon"><FiLogOut /></span>
-                {!collapsed && <span className="nav-label">Logout</span>}
-              </button>
+                );
+              })}
             </div>
           </div>
-        </nav>
+        ))}
       </div>
 
-      {/* User Profile Footer */}
-      <div className="sidebar-footer">
-        <div className="user-avatar">
-          <div className="avatar-circle">
+      {/* Footer */}
+      <div className="border-t border-white/10 px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
             {(user?.fullName?.[0]?.toUpperCase()) || 'A'}
           </div>
+          {!collapsed && (
+            <div>
+              <p className="text-[14px] font-semibold text-white">
+                {user?.fullName || 'Admin'}
+              </p>
+              <p className="text-[12px] text-cyan-300">{user?.role || 'Administrator'}</p>
+            </div>
+          )}
         </div>
-        {!collapsed && (
-          <div className="user-info">
-            <p className="user-name">{user?.fullName || 'Admin'}</p>
-            <p className="user-role-label">{user?.role || 'Administrator'}</p>
-          </div>
-        )}
       </div>
     </aside>
   );

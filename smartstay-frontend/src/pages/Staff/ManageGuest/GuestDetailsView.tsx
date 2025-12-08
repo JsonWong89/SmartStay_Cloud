@@ -390,7 +390,7 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
                           </span>
                         )}
                         <a
-                          href={doc.fileUrl.startsWith("http") ? `https://localhost:7161${doc.fileUrl}` : doc.fileUrl}
+                          href={doc.fileUrl.startsWith("http") ? `https://localhost:7168${doc.fileUrl}` : doc.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-indigo-600 hover:text-indigo-800"

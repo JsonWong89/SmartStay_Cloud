@@ -22,7 +22,7 @@ const EditManagerPage: React.FC = () => {
   const [form, setForm] = useState<FormState>({
     fullName: '',
     email: '',
-    role: 'Hotel Manager',
+    role: 'Manager',
     hotelId: '',
   });
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -80,7 +80,7 @@ const EditManagerPage: React.FC = () => {
         setForm({
           fullName: data.fullName ?? data.FullName ?? '',
           email: data.email ?? data.Email ?? '',
-          role: data.role ?? data.Role ?? 'Hotel Manager',
+          role: data.role ?? data.Role ?? 'Manager',
           hotelId: hotelIdValue ? hotelIdValue.toString() : '',
         });
       } catch (e: any) {

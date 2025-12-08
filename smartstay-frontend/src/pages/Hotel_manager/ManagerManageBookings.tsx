@@ -36,14 +36,44 @@ export default function ManagerManageBookings() {
   const [guestInfo, setGuestInfo] = useState<any>(null);
 
   const fetchBookings = async () => {
-    if (!user?.hotelId) return;
+    if (!user?.hotelId) {
+      console.log("No hotelId for fetching bookings");
+      return;
+    }
 
     try {
-      const res = await axios.get<Booking[]>(
-        `https://localhost:7168/api/bookings/hotel/${user.hotelId}`
+      // Backend GET /api/bookings returns all bookings
+      const res = await axios.get(
+        `https://localhost:7168/api/bookings`
       );
-      setBookings(res.data);
-      setFilteredBookings(res.data);
+      
+      console.log("All bookings:", res.data);
+      
+      // Filter bookings by current hotel
+      const hotelBookings = res.data.filter((booking: any) => 
+        (booking.hotelID || booking.HotelID) === user.hotelId
+      );
+      
+      console.log(`Filtered ${hotelBookings.length} bookings for hotel ${user.hotelId}`);
+      
+      // Map to match Booking interface
+      const mappedBookings = hotelBookings.map((b: any) => ({
+        bookingID: String(b.bookingID || b.BookingID),
+        guestID: b.guestID || b.GuestID,
+        roomID: b.roomID || b.RoomID,
+        roomType: b.roomType || b.RoomType || "",
+        hotelName: b.hotelName || b.HotelName || "",
+        checkInDate: b.checkInDate || b.CheckInDate,
+        checkOutDate: b.checkOutDate || b.CheckOutDate,
+        totalGuests: b.totalGuests || b.TotalGuests || 0,
+        totalAmount: b.totalAmount || b.TotalAmount || 0,
+        depositAmount: b.depositAmount || b.DepositAmount || 0,
+        bookingStatus: b.bookingStatus || b.BookingStatus || "Pending",
+        createdAt: b.createdAt || b.CreatedAt,
+      }));
+      
+      setBookings(mappedBookings);
+      setFilteredBookings(mappedBookings);
     } catch (err) {
       console.error("BOOKING ERROR:", err);
     }
@@ -102,10 +132,29 @@ export default function ManagerManageBookings() {
   // 📌 Update Booking Status
   const updateStatus = async (bookingId: number, newStatus: string) => {
     try {
+      // Find the booking to get its full data
+      const booking = bookings.find(b => b.bookingID === String(bookingId));
+      if (!booking) {
+        alert("Booking not found");
+        return;
+      }
+      
+      // Backend PUT /api/bookings/{id} expects full Booking object
+      const payload = {
+        guestID: booking.guestID,
+        hotelID: user?.hotelId,
+        roomID: booking.roomID,
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+        totalGuests: booking.totalGuests,
+        totalAmount: booking.totalAmount,
+        depositAmount: booking.depositAmount,
+        bookingStatus: newStatus, // Update status
+      };
+      
       await axios.put(
-        `https://localhost:7168/api/bookings/${bookingId}/status`,
-        newStatus,
-        { headers: { "Content-Type": "application/json" } }
+        `https://localhost:7168/api/bookings/${bookingId}`,
+        payload
       );
 
       alert(`Booking updated to ${newStatus}!`);
@@ -119,13 +168,15 @@ export default function ManagerManageBookings() {
   // 📌 Guest Popup
   async function openGuestProfile(guestId: string) {
     try {
+      // Backend GET /api/Guests/{id}
       const res = await axios.get(
-        `https://localhost:7168/api/bookings/guestinfo/${guestId}`
+        `https://localhost:7168/api/Guests/${guestId}`
       );
       setGuestInfo(res.data);
       setShowGuestPopup(true);
     } catch (err) {
       console.error("Failed to fetch guest:", err);
+      alert("Failed to load guest information");
     }
   }
 

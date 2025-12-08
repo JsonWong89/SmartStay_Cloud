@@ -8,6 +8,7 @@ type FormState = {
   fullName: string;
   email: string;
   password: string;
+  gender: string;
   hotelId: string;
 };
 
@@ -22,6 +23,7 @@ const CreateManagerPage: React.FC = () => {
     fullName: '',
     email: '',
     password: '',
+    gender: '',
     hotelId: '',
   });
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -80,6 +82,11 @@ const CreateManagerPage: React.FC = () => {
       setMessageType('error');
       return;
     }
+    if (!form.gender) {
+      setMessage('Gender is required');
+      setMessageType('error');
+      return;
+    }
     if (form.hotelId && isNaN(Number(form.hotelId))) {
       setMessage('Hotel ID must be a number');
       setMessageType('error');
@@ -89,10 +96,12 @@ const CreateManagerPage: React.FC = () => {
     setSubmitting(true);
     try {
       const payload: any = {
+        userID: '', // Backend will auto-generate this based on role
         fullName: form.fullName,
         email: form.email,
-        passwordHash: form.password, // backend currently expects passwordHash field
-        role: 'Hotel Manager',
+        passwordHash: form.password, // backend will hash it with BCrypt
+        gender: form.gender,
+        role: 'Manager', // Use 'Manager' instead of 'Hotel Manager' to match DB constraint
       };
       if (form.hotelId) payload.hotelId = Number(form.hotelId);
 
@@ -185,6 +194,23 @@ const CreateManagerPage: React.FC = () => {
                   placeholder="••••••••"
                   required
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="gender">Gender</label>
+                <select
+                  id="gender"
+                  name="gender"
+                  value={form.gender}
+                  onChange={handleChange}
+                  className="input"
+                  required
+                >
+                  <option value="">-- Select gender --</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div className="form-group">

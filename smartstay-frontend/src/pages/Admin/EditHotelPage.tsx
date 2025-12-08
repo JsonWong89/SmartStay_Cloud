@@ -57,7 +57,7 @@ const EditHotelPage: React.FC = () => {
         if (managersRes.ok) {
           const data = await managersRes.json();
           const hotelManagers = data
-            .filter((u: any) => (u.role || u.Role) === 'Hotel Manager')
+            .filter((u: any) => (u.role || u.Role) === 'Manager')
             .map((u: any) => ({
               userID: u.userID ?? u.UserID,
               fullName: u.fullName ?? u.FullName,

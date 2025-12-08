@@ -117,14 +117,17 @@ const CreateRoomPage: React.FC = () => {
     }
     try {
       const payload = {
-        hotelId: Number(form.hotelId),
-        roomNumber: form.roomNumber,
-        roomType: form.roomType,
-        pricePerNight: Number(form.pricePerNight),
-        status: form.status,
-        description: form.description || null,
-        imageUrl: form.imageUrl || null,
+        HotelID: Number(form.hotelId),
+        RoomNumber: form.roomNumber,
+        RoomType: form.roomType,
+        PricePerNight: Number(form.pricePerNight),
+        Status: form.status,
+        Description: form.description || "",
+        ImageURL: form.imageUrl || ""
+        // Don't send Hotel property at all
       };
+
+      console.log("Creating room with payload:", payload);
 
       const res = await apiPost(API_ENDPOINTS.ROOMS.BASE, payload);
       const contentType = res.headers.get('content-type') || '';

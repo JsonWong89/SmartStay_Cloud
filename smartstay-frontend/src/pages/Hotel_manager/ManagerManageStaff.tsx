@@ -97,17 +97,33 @@ export default function ManagerManageStaff() {
     setLoading(true);
 
     try {
-      const [staffRes, recRes] = await Promise.all([
+      const [staffRes, usersRes] = await Promise.all([
         axios.get<StaffApi[]>(
-          `https://localhost:7168/api/users/staff/hotel/${user.hotelId}`
+          `https://localhost:7168/api/Staff`
         ),
-        axios.get<ReceptionistApi[]>(
-          `https://localhost:7168/api/users/receptionists/hotel/${user.hotelId}`
+        axios.get(
+          `https://localhost:7168/api/Users`
         ),
       ]);
 
+      console.log("Staff API response:", staffRes.data);
+      console.log("Staff response type:", typeof staffRes.data, Array.isArray(staffRes.data));
 
-      const staffRows: StaffRow[] = staffRes.data.map((s) => ({
+      // Handle if response is wrapped or direct array
+      const staffArray = Array.isArray(staffRes.data) 
+        ? staffRes.data 
+        : (staffRes.data.data && Array.isArray(staffRes.data.data) ? staffRes.data.data : []);
+
+      // Filter staff by hotelId
+      const hotelStaff = staffArray.filter(s => s.hotelID === user.hotelId);
+
+      // Filter receptionists from Users by role and hotelId
+      const receptionists = usersRes.data.filter((u: any) => 
+        (u.role || u.Role) === 'Receptionist' && 
+        (u.hotelID || u.HotelID) === user.hotelId
+      );
+
+      const staffRows: StaffRow[] = hotelStaff.map((s) => ({
         id: String(s.staffID),
         source: "Staff",
         hotelID: s.hotelID,
@@ -119,20 +135,20 @@ export default function ManagerManageStaff() {
         createdDate: s.hiredate,
       }));
 
-      const receptionistRows: StaffRow[] = recRes.data.map((r) => ({
-        id: r.userID,
+      const recRows: StaffRow[] = receptionists.map((r: any) => ({
+        id: String(r.userID || r.UserID),
         source: "Receptionist",
-        hotelID: r.hotelID,
-        fullName: r.fullName,
+        hotelID: r.hotelID || r.HotelID,
+        fullName: r.fullName || r.FullName,
         position: "Receptionist",
-        gender: r.gender,
-        contactNumber: r.contactNumber ?? "",
-        email: r.email,
-        createdDate: r.createddate,
+        gender: r.gender || r.Gender,
+        contactNumber: r.contactNumber || r.ContactNumber || "",
+        email: r.email || r.Email,
+        createdDate: r.createdAt || r.CreatedAt,
         passwordHash: r.passwordHash ?? ""
       }));
 
-      const merged = [...staffRows, ...receptionistRows];
+      const merged = [...staffRows, ...recRows];
       setRows(merged);
       setFilteredRows(merged);
     } catch (err) {
@@ -189,11 +205,25 @@ export default function ManagerManageStaff() {
 
   // Add person
   async function handleAddPerson() {
-    if (!user?.hotelId) return;
+    if (!user?.hotelId) {
+      alert("Error: No hotel ID found. Please log out and log in again.");
+      console.error("User object:", user);
+      return;
+    }
 
     try {
       if (newPerson.source === "Staff") {
-        await axios.post("https://localhost:7168/api/users/staff", {
+        console.log("Adding staff with payload:", {
+          HotelID: user.hotelId,
+          FullName: newPerson.fullName,
+          Gender: newPerson.gender,
+          Email: newPerson.email,
+          Position: newPerson.position,
+          ContactNumber: newPerson.contactNumber,
+          HireDate: new Date().toISOString(),
+        });
+        
+        await axios.post("https://localhost:7168/api/Staff", {
           HotelID: user.hotelId,
           FullName: newPerson.fullName,
           Gender: newPerson.gender,
@@ -205,16 +235,21 @@ export default function ManagerManageStaff() {
 
         alert("Staff added successfully!");
       } else {
+        const payload = {
+          UserID: "", // Empty string for auto-generation
+          FullName: newPerson.fullName,
+          Gender: newPerson.gender,
+          Email: newPerson.email,
+          HotelID: user.hotelId,
+          PasswordHash: "Staff@123", 
+          Role: "Receptionist"
+        };
+        
+        console.log("Adding receptionist with payload:", payload);
+        
         const res: any = await axios.post(
-          "https://localhost:7168/api/users/receptionists",
-          {
-            FullName: newPerson.fullName,
-            Gender: newPerson.gender,
-            Email: newPerson.email,
-            HotelID: user.hotelId,
-            PasswordHash: "Staff@123",
-            Role: "Receptionist"
-          }
+          "https://localhost:7168/api/Users",
+          payload
         );
 
         alert(
@@ -226,7 +261,8 @@ export default function ManagerManageStaff() {
       fetchStaff();
     } catch (err: any) {
       console.error("ADD ERROR:", err.response?.data);
-      alert("Failed to add person.");
+      console.error("ADD ERROR DETAILS:", JSON.stringify(err.response?.data, null, 2));
+      alert("Failed to add person. Check console for details.");
     }
   }
 
@@ -246,23 +282,22 @@ export default function ManagerManageStaff() {
         };
 
         await axios.put(
-          `https://localhost:7168/api/users/staff/${selectedPerson.id}`,
+          `https://localhost:7168/api/Staff/${selectedPerson.id}`,
           payload
         );
       }
       else {
-        // RECEPTIONIST UPDATE PAYLOAD (match User model exactly)
+        // RECEPTIONIST UPDATE PAYLOAD (match CreateUserRequest)
         const payload = {
-          fullName: selectedPerson.fullName,
-          gender: selectedPerson.gender,
           email: selectedPerson.email,
-          role: "Receptionist",                // REQUIRED
-          hotelID: selectedPerson.hotelID,     // REQUIRED
-          passwordHash: selectedPerson.passwordHash || "Staff@123"
+          password: selectedPerson.passwordHash || "Staff@123",
+          fullName: selectedPerson.fullName,
+          role: "Receptionist",
+          hotelID: selectedPerson.hotelID,
         };
 
         await axios.put(
-          `https://localhost:7168/api/users/receptionists/${selectedPerson.id}`,
+          `https://localhost:7168/api/Users/${selectedPerson.id}`,
           payload
         );
       }
@@ -285,11 +320,11 @@ export default function ManagerManageStaff() {
     try {
       if (row.source === "Staff") {
         await axios.delete(
-          `https://localhost:7168/api/users/staff/${row.id}`
+          `https://localhost:7168/api/Staff/${row.id}`
         );
       } else {
         await axios.delete(
-          `https://localhost:7168/api/users/receptionists/${row.id}`
+          `https://localhost:7168/api/Users/${row.id}`
         );
       }
 

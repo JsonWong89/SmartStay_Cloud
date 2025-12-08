@@ -162,26 +162,41 @@ export const bookingsAPI = {
 
   // Get today's front desk activities
   getTodayActivities: async (hotelId?: number) => {
-    const params = hotelId ? `?hotelId=${hotelId}` : '';
-    return apiCall<{
-      success: boolean;
-      data: Array<{
-        bookingId: number;
-        guestName: string;
-        roomNumber: string;
-        roomType: string;
-        checkInDate: string;
-        checkOutDate: string;
-        activityType: 'Check-In' | 'Check-Out' | 'Stayover';
-        bookingStatus: string;
-        totalAmount: number;
-        totalPaid: number;
-        pendingAmount: number;
-        totalGuests: number;
-        email: string;
-        phoneNumber: string;
-      }>;
-    }>(`/api/bookings/frontdesk/today${params}`);
+    // Backend doesn't have /frontdesk/today endpoint, fetch all bookings and filter
+    const response = await apiCall<any>(`/api/bookings`);
+    
+    if (!response || !Array.isArray(response)) {
+      return { success: false, data: [] };
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Filter bookings for today's check-ins/check-outs and by hotelId
+    const todayActivities = response
+      .filter((booking: any) => {
+        const checkIn = booking.checkInDate?.split('T')[0];
+        const checkOut = booking.checkOutDate?.split('T')[0];
+        const matchesHotel = !hotelId || booking.hotelId === hotelId || booking.hotelID === hotelId;
+        return matchesHotel && (checkIn === today || checkOut === today);
+      })
+      .map((booking: any) => ({
+        bookingId: booking.bookingID || booking.bookingId,
+        guestName: booking.guestName || 'Unknown',
+        roomNumber: booking.roomNumber || '',
+        roomType: booking.roomType || '',
+        checkInDate: booking.checkInDate,
+        checkOutDate: booking.checkOutDate,
+        activityType: booking.checkInDate?.split('T')[0] === today ? 'Check-In' : 'Check-Out',
+        bookingStatus: booking.status || booking.bookingStatus,
+        totalAmount: booking.totalAmount || 0,
+        totalPaid: booking.totalPaid || 0,
+        pendingAmount: (booking.totalAmount || 0) - (booking.totalPaid || 0),
+        totalGuests: booking.totalGuests || 1,
+        email: booking.email || '',
+        phoneNumber: booking.phoneNumber || booking.contactNumber || ''
+      }));
+    
+    return { success: true, data: todayActivities };
   },
 
   // Get booking by ID
@@ -643,7 +658,31 @@ export const roomsAPI = {
     if (filters?.searchQuery) params.append('searchQuery', filters.searchQuery);
 
     const queryString = params.toString();
-    return apiCall(`/api/rooms${queryString ? `?${queryString}` : ''}`);
+    const response = await apiCall<any>(`/api/rooms${queryString ? `?${queryString}` : ''}`);
+    
+    // Backend returns array directly, not wrapped in {success, data}
+    if (Array.isArray(response)) {
+      // Filter by hotelId on frontend if provided (backend only filters by status=Available)
+      let rooms = response;
+      if (filters?.hotelId) {
+        rooms = rooms.filter((r: any) => 
+          (r.hotelID || r.hotelId) === filters.hotelId
+        );
+      }
+      
+      // Map response to ensure consistent field names
+      const mappedRooms = rooms.map((r: any) => ({
+        ...r,
+        roomId: r.roomId || r.id || r.roomID,
+        hotelId: r.hotelId || r.hotelID,
+        imageURL: r.imageURL || r.imageUrl
+      }));
+      
+      return { success: true, data: mappedRooms };
+    }
+    
+    // If already wrapped, return as-is
+    return response;
   },
 
   // Get single room by ID (with full guest details)
@@ -740,24 +779,28 @@ export const staffAPI = {
 // Users API
 export const usersAPI = {
   getCurrentUser: async (userId: string) => {
-    return apiCall<{
-      success: boolean;
-      data: {
-        userId: string;
-        fullName: string;
-        email: string;
-        role: string;
-        hotelId: number | null;
-        hotel: {
-          hotelId: number;
-          hotelName: string;
-          address: string;
-          city: string;
-        } | null;
-        gender: string;
-        createdAt: string;
+    const response = await apiCall<any>(`/api/users/${userId}`);
+    
+    // Backend returns PascalCase, map to camelCase
+    if (response && !response.success) {
+      // Direct response from backend, wrap it
+      return {
+        success: true,
+        data: {
+          userId: response.UserID || response.userId || userId,
+          fullName: response.FullName || response.fullName || '',
+          email: response.Email || response.email || '',
+          role: response.Role || response.role || '',
+          hotelId: response.HotelID || response.hotelId || null,
+          hotel: response.Hotel || response.hotel || null,
+          gender: response.Gender || response.gender || '',
+          createdAt: response.CreatedAt || response.createdAt || new Date().toISOString()
+        }
       };
-    }>(`/api/users/${userId}`);
+    }
+    
+    // Already wrapped
+    return response;
   },
 
   // GET /api/users → Get all system users (with filters)

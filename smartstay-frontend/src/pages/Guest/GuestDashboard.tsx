@@ -44,7 +44,7 @@ const GuestDashboard: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/bookings/guest/${user.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/Bookings/guest/${user.id}`);
         if (response.ok) {
           const data = await response.json();
           // Get the 3 most recent bookings
@@ -63,13 +63,14 @@ const GuestDashboard: React.FC = () => {
   useEffect(() => {
     const fetchHotels = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/hotels`);
+        const response = await fetch(`${API_BASE_URL}/api/Hotels`);
         if (response.ok) {
           const data = await response.json();
           // Get all hotels for featured section
           setHotels(data);
         } else {
-          // Fallback to mock data if API endpoint doesn't exist yet
+          console.warn(`Hotels API returned ${response.status}, using mock data`);
+          // Fallback to mock data if API endpoint returns error
           setHotels([
             {
               hotelID: 1,

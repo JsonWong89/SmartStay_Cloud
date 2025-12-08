@@ -1,13 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Hide scrollbar for horizontal carousel */
-.scrollbar-hide::-webkit-scrollbar {
+/* Hide scrollbar but allow scrolling */
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
-.scrollbar-hide {
+.no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Disable Microsoft Edge built-in reveal button */
+.no-edge-eye::-ms-reveal {
+  display: none !important;
+}
+
+.no-edge-eye::-ms-clear {
+  display: none !important;
+}
+
+
+
+
+

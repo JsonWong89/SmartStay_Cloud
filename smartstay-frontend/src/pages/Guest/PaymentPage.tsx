@@ -36,21 +36,36 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
   useEffect(() => {
     // Create PaymentIntent as soon as the page loads
     const createPaymentIntent = async () => {
+      // Validate booking ID exists
+      if (!booking.bookingID) {
+        console.error('No booking ID found:', booking);
+        setError('Invalid booking data. Please try booking again.');
+        return;
+      }
+
       try {
-        const response = await fetch(`${API_BASE_URL}/payments/create-payment-intent`, {
+        console.log('Creating payment intent for booking:', booking.bookingID);
+        const response = await fetch(`${API_BASE_URL}/api/payments/create-payment-intent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            bookingID: booking.bookingID,
-            amount: booking.depositAmount
+            BookingID: booking.bookingID,
+            Amount: booking.depositAmount
           })
         });
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Payment intent error:', errorText);
+          throw new Error(`Failed to create payment intent (HTTP ${response.status})`);
+        }
+
         const data = await response.json();
+        console.log('Payment intent created:', data);
         setClientSecret(data.clientSecret);
       } catch (err) {
         console.error('Error creating payment intent:', err);
-        setError('Failed to initialize payment');
+        setError('Failed to initialize payment. Please try again or contact support.');
       }
     };
 
@@ -86,13 +101,13 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
     } else if (paymentIntent?.status === 'succeeded') {
       // Confirm payment in backend
       try {
-        const response = await fetch(`${API_BASE_URL}/payments/confirm`, {
+        const response = await fetch(`${API_BASE_URL}/api/Payments/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            bookingID: booking.bookingID,
-            amount: booking.depositAmount,
-            paymentMethod: 'CreditCard'  
+            BookingID: booking.bookingID,
+            Amount: booking.depositAmount,
+            PaymentMethod: 'Card'
           })
         });
 

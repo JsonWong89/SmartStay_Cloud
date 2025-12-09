@@ -44,6 +44,16 @@ const AuthPage: React.FC = () => {
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmResetPassword, setConfirmResetPassword] = useState("");
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmResetPassword, setShowConfirmResetPassword] = useState(false);
+
   // Common state
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error" | "">("");
@@ -86,6 +96,97 @@ const AuthPage: React.FC = () => {
 
   const handleRegisterChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setRegisterForm({ ...registerForm, [e.target.name]: e.target.value });
+  };
+
+  const handleForgotPasswordRequest = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setMessage("");
+    setMessageType("");
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Email: forgotPasswordEmail })
+      });
+
+      const data = await response.json().catch(() => ({ message: 'Request sent' }));
+      console.log('Forgot password response:', response.status, data);
+
+      if (response.ok) {
+        setMessage('Reset code sent to your email. Please check your inbox.');
+        setMessageType('success');
+        setShowResetForm(true);
+      } else {
+        console.error('Forgot password error:', data);
+        setMessage(data.message || 'Failed to send reset code. Please try again.');
+        setMessageType('error');
+      }
+    } catch (error) {
+      console.error('Forgot password exception:', error);
+      setMessage('An error occurred. Please try again.');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setMessage("");
+    setMessageType("");
+
+    if (newPassword !== confirmResetPassword) {
+      setMessage('Passwords do not match');
+      setMessageType('error');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setMessage('Password must be at least 8 characters');
+      setMessageType('error');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Email: forgotPasswordEmail,
+          ResetCode: resetCode,
+          NewPassword: newPassword
+        })
+      });
+
+      const data = await response.json().catch(() => ({ message: 'Password reset' }));
+
+      if (response.ok) {
+        setMessage('Password reset successfully! You can now sign in.');
+        setMessageType('success');
+        setTimeout(() => {
+          setShowForgotPassword(false);
+          setShowResetForm(false);
+          setForgotPasswordEmail('');
+          setResetCode('');
+          setNewPassword('');
+          setConfirmResetPassword('');
+          setMessage('');
+          setMessageType('');
+        }, 2000);
+      } else {
+        setMessage(data.message || 'Failed to reset password. Please check your code.');
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('An error occurred. Please try again.');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLoginSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -281,12 +382,133 @@ const AuthPage: React.FC = () => {
           }}
         >
           <div style={styles.formContent}>
-            {isLogin ? (
+            {showForgotPassword ? (
+              // FORGOT PASSWORD FORM
+              <>
+                <div style={styles.formHeader}>
+                  <h1 style={styles.formTitle}>{showResetForm ? 'Reset Password' : 'Forgot Password'}</h1>
+                  <p style={styles.formSubtitle}>
+                    {showResetForm ? 'Enter the code sent to your email' : 'Enter your email to receive a reset code'}
+                  </p>
+                </div>
+
+                {message && (
+                  <div
+                    style={{
+                      ...styles.alert,
+                      ...(messageType === "error" ? styles.alertError : styles.alertSuccess),
+                    }}
+                  >
+                    {message}
+                  </div>
+                )}
+
+                {!showResetForm ? (
+                  <form onSubmit={handleForgotPasswordRequest} style={styles.form}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Email Address</label>
+                      <input
+                        type="email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        placeholder="your.email@example.com"
+                        style={styles.input}
+                        required
+                      />
+                    </div>
+
+                    <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>
+                      {loading ? "Sending..." : "Send Reset Code"}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleResetPassword} style={styles.form}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Reset Code</label>
+                      <input
+                        type="text"
+                        value={resetCode}
+                        onChange={(e) => setResetCode(e.target.value)}
+                        placeholder="Enter 6-digit code"
+                        style={styles.input}
+                        maxLength={6}
+                        required
+                      />
+                    </div>
+
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>New Password</label>
+                      <div style={styles.passwordWrapper}>
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password"
+                          style={styles.input}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          style={styles.eyeButton}
+                        >
+                          {showNewPassword ? "👁️" : "👁️‍🗨️"}
+                        </button>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>Minimum 8 characters</p>
+                    </div>
+
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Confirm Password</label>
+                      <div style={styles.passwordWrapper}>
+                        <input
+                          type={showConfirmResetPassword ? "text" : "password"}
+                          value={confirmResetPassword}
+                          onChange={(e) => setConfirmResetPassword(e.target.value)}
+                          placeholder="Confirm new password"
+                          style={styles.input}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmResetPassword(!showConfirmResetPassword)}
+                          style={styles.eyeButton}
+                        >
+                          {showConfirmResetPassword ? "👁️" : "👁️‍🗨️"}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>
+                      {loading ? "Resetting..." : "Reset Password"}
+                    </button>
+                  </form>
+                )}
+
+                <div style={styles.switchText}>
+                  <button
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setShowResetForm(false);
+                      setForgotPasswordEmail('');
+                      setResetCode('');
+                      setNewPassword('');
+                      setConfirmResetPassword('');
+                      setMessage('');
+                      setMessageType('');
+                    }}
+                    style={styles.switchButton}
+                  >
+                    ← Back to Sign In
+                  </button>
+                </div>
+              </>
+            ) : isLogin ? (
               // LOGIN FORM
               <>
                 <div style={styles.formHeader}>
                   <h1 style={styles.formTitle}>Welcome Back</h1>
-                  <p style={styles.formSubtitle}>Sign in to continue to SmartStay</p>
+                  <p style={styles.formSubtitle}>Sign in to your SmartStay account</p>
                 </div>
 
                 {message && (
@@ -334,6 +556,27 @@ const AuthPage: React.FC = () => {
                         {showLoginPassword ? "👁️" : "👁️‍🗨️"}
                       </button>
                     </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(true);
+                        setMessage('');
+                        setMessageType('');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      Forgot Password?
+                    </button>
                   </div>
 
                   <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>

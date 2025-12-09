@@ -36,12 +36,15 @@ const MyReservations: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/bookings/guest/${user.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/bookings/guest/${user.id}`);
         if (response.ok) {
           const data = await response.json();
-          setReservations(data);
+          console.log('Reservations data:', data);
+          // Handle both wrapped and unwrapped responses
+          const bookings = data.data || data;
+          setReservations(Array.isArray(bookings) ? bookings : []);
         } else {
-          console.error('Failed to fetch reservations');
+          console.error('Failed to fetch reservations:', response.status);
         }
       } catch (error) {
         console.error('Error fetching reservations:', error);
@@ -92,7 +95,7 @@ const MyReservations: React.FC = () => {
     if (confirmed) {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel`, { 
+        const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}/cancel`, { 
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -173,7 +176,7 @@ const MyReservations: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              📋 All Reservations
+              All Reservations
             </button>
             <button
               onClick={() => setFilterStatus('confirmed')}
@@ -183,7 +186,7 @@ const MyReservations: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✓ Confirmed
+              Confirmed
             </button>
             <button
               onClick={() => setFilterStatus('checkedin')}
@@ -193,7 +196,7 @@ const MyReservations: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🏨 Checked In
+              Checked In
             </button>
             <button
               onClick={() => setFilterStatus('checkedout')}
@@ -203,7 +206,7 @@ const MyReservations: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ✅ Checked Out
+              Checked Out
             </button>
             <button
               onClick={() => setFilterStatus('cancelled')}

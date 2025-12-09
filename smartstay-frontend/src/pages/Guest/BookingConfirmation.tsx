@@ -46,7 +46,7 @@ const BookingConfirmation: React.FC = () => {
 
   const sendConfirmationEmail = async (bookingData: BookingConfirmationData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/${bookingData.bookingID}/send-confirmation`, {
+      const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingData.bookingID}/send-confirmation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,16 +182,16 @@ const BookingConfirmation: React.FC = () => {
         </div>
 
         {/* Confirmation Content (for PDF) */}
-        <div id="confirmation-content" className="bg-white rounded-lg shadow-lg p-8">
+        <div id="confirmation-content" className="rounded-lg shadow-lg p-8 confirmation-pdf" style={{ backgroundColor: '#ffffff', padding: '32px' }}>
           {/* Header */}
-          <div className="border-b-2 border-gray-200 pb-6 mb-6">
+          <div className="border-b-2 pb-6 mb-6" style={{ borderColor: '#e5e7eb' }}>
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-2">SmartStay</h2>
-                <p className="text-gray-600">Hotel Management System</p>
+                <h2 className="text-3xl font-bold mb-2" style={{ color: '#1f2937' }}>SmartStay</h2>
+                <p style={{ color: '#4b5563' }}>Hotel Management System</p>
               </div>
               <div className="text-right">
-                <div className="bg-green-100 text-green-800 font-bold px-4 py-2 rounded-lg inline-block">
+                <div className="font-bold px-4 py-2 rounded-lg inline-block" style={{ backgroundColor: '#d1fae5', color: '#065f46' }}>
                   ✓ CONFIRMED
                 </div>
               </div>
@@ -200,11 +200,11 @@ const BookingConfirmation: React.FC = () => {
 
           {/* Booking Details */}
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Booking Confirmation</h3>
+            <h3 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>Booking Confirmation</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Confirmation Number</p>
-                <p className="text-lg font-semibold text-blue-600">
+                <p className="text-sm" style={{ color: '#4b5563' }}>Confirmation Number</p>
+                <p className="text-lg font-semibold" style={{ color: '#2563eb' }}>
                   #{booking.bookingID.toString().padStart(6, '0')}
                 </p>
               </div>
@@ -219,11 +219,11 @@ const BookingConfirmation: React.FC = () => {
 
           {/* Guest Information */}
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Guest Information</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>Guest Information</h3>
+            <div className="rounded-lg p-4" style={{ backgroundColor: '#f9fafb' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Name</p>
+                  <p className="text-sm" style={{ color: '#4b5563' }}>Name</p>
                   <p className="font-semibold">{booking.guestName}</p>
                 </div>
                 <div>
@@ -244,52 +244,52 @@ const BookingConfirmation: React.FC = () => {
 
           {/* Reservation Details */}
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Reservation Details</h3>
-            <div className="bg-blue-50 rounded-lg p-4">
+            <h3 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>Reservation Details</h3>
+            <div className="rounded-lg p-4" style={{ backgroundColor: '#eff6ff' }}>
               <div className="mb-4">
-                <p className="text-sm text-gray-600">Hotel</p>
-                <p className="text-lg font-bold text-blue-800">{booking.hotelName}</p>
+                <p className="text-sm" style={{ color: '#4b5563' }}>Hotel</p>
+                <p className="text-lg font-bold" style={{ color: '#1e40af' }}>{booking.hotelName}</p>
               </div>
               <div className="mb-4">
-                <p className="text-sm text-gray-600">Room Type</p>
+                <p className="text-sm" style={{ color: '#4b5563' }}>Room Type</p>
                 <p className="font-semibold">{booking.roomType}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Check-in</p>
+                  <p className="text-sm" style={{ color: '#4b5563' }}>Check-in</p>
                   <p className="font-semibold">{formatDate(booking.checkInDate)}</p>
-                  <p className="text-xs text-gray-500">After 2:00 PM</p>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>After 2:00 PM</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Check-out</p>
+                  <p className="text-sm" style={{ color: '#4b5563' }}>Check-out</p>
                   <p className="font-semibold">{formatDate(booking.checkOutDate)}</p>
-                  <p className="text-xs text-gray-500">Before 12:00 PM</p>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>Before 12:00 PM</p>
                 </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <p className="text-sm text-gray-600">Total Nights</p>
-                <p className="text-2xl font-bold text-blue-600">{calculateNights()} Nights</p>
+              <div className="mt-4 pt-4 border-t" style={{ borderColor: '#bfdbfe' }}>
+                <p className="text-sm" style={{ color: '#4b5563' }}>Total Nights</p>
+                <p className="text-2xl font-bold" style={{ color: '#2563eb' }}>{calculateNights()} Nights</p>
               </div>
             </div>
           </div>
 
           {/* Payment Summary */}
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Payment Summary</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="text-xl font-bold mb-4" style={{ color: '#1f2937' }}>Payment Summary</h3>
+            <div className="rounded-lg p-4" style={{ backgroundColor: '#f9fafb' }}>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Amount</span>
-                  <span className="font-semibold">${booking.totalAmount.toFixed(2)}</span>
+                  <span style={{ color: '#4b5563' }}>Total Amount</span>
+                  <span className="font-semibold">RM{booking.totalAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-green-600">
+                <div className="flex justify-between" style={{ color: '#16a34a' }}>
                   <span>Deposit Paid</span>
-                  <span className="font-semibold">-${booking.depositAmount.toFixed(2)}</span>
+                  <span className="font-semibold">-RM{booking.depositAmount.toFixed(2)}</span>
                 </div>
-                <div className="border-t-2 border-gray-300 pt-3 flex justify-between text-lg font-bold">
+                <div className="border-t-2 pt-3 flex justify-between text-lg font-bold" style={{ borderColor: '#d1d5db' }}>
                   <span>Balance Due at Check-in</span>
-                  <span className="text-blue-600">
-                    ${(booking.totalAmount - booking.depositAmount).toFixed(2)}
+                  <span style={{ color: '#2563eb' }}>
+                    RM{(booking.totalAmount - booking.depositAmount).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -297,9 +297,9 @@ const BookingConfirmation: React.FC = () => {
           </div>
 
           {/* Important Information */}
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-            <h4 className="font-bold text-yellow-800 mb-2">Important Information</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
+          <div className="border-l-4 p-4 mb-6" style={{ backgroundColor: '#fef3c7', borderColor: '#fbbf24' }}>
+            <h4 className="font-bold mb-2" style={{ color: '#92400e' }}>Important Information</h4>
+            <ul className="text-sm space-y-1" style={{ color: '#78350f' }}>
               <li>• Please bring a valid ID at check-in</li>
               <li>• Deposit is non-refundable</li>
               <li>• Check-in time: 2:00 PM | Check-out time: 12:00 PM</li>
@@ -308,13 +308,23 @@ const BookingConfirmation: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="text-center text-gray-500 text-sm pt-6 border-t border-gray-200">
+          <div className="text-center text-sm pt-6 border-t" style={{ color: '#6b7280', borderColor: '#e5e7eb' }}>
             <p className="mb-2">Thank you for choosing SmartStay!</p>
             <p>For any questions, please contact our support team</p>
             <p className="mt-2">Generated on {new Date().toLocaleDateString()}</p>
           </div>
         </div>
       </div>
+
+      {/* Styles for PDF generation */}
+      <style>{`
+        .confirmation-pdf * {
+          color: inherit !important;
+        }
+        .confirmation-pdf {
+          background-color: #ffffff !important;
+        }
+      `}</style>
     </div>
   );
 };

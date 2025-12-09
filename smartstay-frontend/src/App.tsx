@@ -42,6 +42,7 @@ import ReviewPage from "./pages/Guest/ReviewPage";
 import GuestReceiptPage from "./pages/Guest/ReceiptPage";
 
 import AuthPage from "./pages/AuthPage";
+import RootRedirect from "./components/RootRedirect";
 
 // Admin imports
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -63,8 +64,8 @@ import "./styles/modals.css";
 const App: React.FC = () => {
   return (
     <Routes>
-      {/* Default route -> Public Guest Dashboard (no login required) */}
-      <Route path="/" element={<GuestDashboard />} />
+      {/* Default route -> Redirect based on authentication and role */}
+      <Route path="/" element={<RootRedirect />} />
 
       <Route path="/login" element={<AuthPage />} />
 
@@ -97,7 +98,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/guest/booking"
+        path="/guest/booking/:roomId"
         element={
           <ProtectedRoute allowedRoles={["Guest"]}>
             <BookingPage />

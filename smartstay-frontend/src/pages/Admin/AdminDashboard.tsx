@@ -23,7 +23,7 @@ const AdminDashboard: React.FC = () => {
       title: 'Room Types & Pricing',
       description: 'Configure room types and pricing structures',
       icon: '🛏️',
-      path: '/admin/room-types',
+      path: '/admin/rooms',
       color: '#4facfe',
     },
     {

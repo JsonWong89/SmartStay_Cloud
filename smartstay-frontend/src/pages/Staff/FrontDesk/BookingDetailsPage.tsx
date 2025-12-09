@@ -54,6 +54,7 @@ export interface Booking {
 
 interface BookingDetailsPageProps {
   booking: Booking;
+  allBookings: Booking[];
   goBack: () => void;
   updateBooking: (booking: Booking) => void;
   updateStatus: (
@@ -65,6 +66,7 @@ interface BookingDetailsPageProps {
 
 export default function BookingDetailsPage({
   booking,
+  allBookings,
   goBack,
   updateBooking,
   updateStatus,
@@ -76,17 +78,40 @@ export default function BookingDetailsPage({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"checkin" | "checkout" | "cancel" | null>(null);
 
-  const pendingAmount = booking.TotalAmount - booking.AmountPaid;
+  // Find all related bookings (same guest, same dates)
+  const allRelatedBookings = allBookings.filter(
+    (b) =>
+      b.Email === booking.Email &&
+      b.CheckInDate === booking.CheckInDate &&
+      b.CheckOutDate === booking.CheckOutDate
+  );
+
+  // Only active bookings (non-cancelled) for display and calculations
+  const activeBookings = allRelatedBookings.filter(
+    (b) => b.BookingStatus !== "Cancelled"
+  );
+
+  const roomCount = activeBookings.length;
+  const totalAmount = activeBookings.reduce((sum, b) => sum + b.TotalAmount, 0);
+  const totalPaid = allRelatedBookings.reduce((sum, b) => sum + b.AmountPaid, 0); // Include cancelled for money safety
+  const pendingAmount = totalAmount - totalPaid;
+
+  const mainBooking =
+    activeBookings.find((b) => b.Payments && b.Payments.length > 0) ||
+    activeBookings[0] ||
+    allRelatedBookings[0];
 
   const handleCashPayment = async () => {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0 || amount > pendingAmount) {
-      alert("Invalid amount");
+      alert(`Invalid amount. Max: RM ${pendingAmount.toFixed(2)}`);
       return;
     }
 
     try {
-      const res = await paymentsAPI.processPayment(booking.BookingID, amount, "Cash");
+      // Always pay on the first active booking
+      const paymentBookingId = activeBookings[0].BookingID;
+      const res = await paymentsAPI.processPayment(paymentBookingId, amount, "Cash");
       if (res.success) {
         alert("Cash payment recorded!");
         refreshDetails();
@@ -99,12 +124,8 @@ export default function BookingDetailsPage({
   };
 
   const handleAction = (action: "checkin" | "checkout" | "cancel") => {
-    if (action === "checkin" && booking.PaymentStatus !== "Completed") {
-      alert("Payment Required: Full payment must be completed before check-in.");
-      return;
-    }
-    if (action === "checkout" && booking.PaymentStatus !== "Completed") {
-      alert("Payment Required: Full payment must be completed before check-out.");
+    if ((action === "checkin" || action === "checkout") && pendingAmount > 0) {
+      alert("Payment Required: Full payment must be completed before check-in/check-out.");
       return;
     }
     setConfirmAction(action);
@@ -116,7 +137,12 @@ export default function BookingDetailsPage({
     let status: "CheckedIn" | "CheckedOut" | "Cancelled" = "Cancelled";
     if (confirmAction === "checkin") status = "CheckedIn";
     if (confirmAction === "checkout") status = "CheckedOut";
-    await updateStatus(booking.BookingID, status);
+
+    // Update ALL active bookings with the same status
+    for (const b of activeBookings) {
+      await updateStatus(b.BookingID, status);
+    }
+
     setShowConfirmDialog(false);
     setConfirmAction(null);
     refreshDetails();
@@ -136,15 +162,22 @@ export default function BookingDetailsPage({
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Booking #{booking.BookingID}
+              Booking #{mainBooking.BookingID}
+              {roomCount > 1 && ` +${roomCount - 1}`}
             </h1>
             <p className="text-gray-500 mt-1">
-              {booking.GuestName} • Room {booking.RoomNumber}
+              {mainBooking.GuestName} • Room {mainBooking.RoomNumber}
+              {roomCount > 1 && ` +${roomCount - 1} more`}
             </p>
+            {roomCount > 1 && (
+              <p className="text-sm text-purple-600 font-medium mt-1">
+                Multi-room booking • {roomCount} rooms
+              </p>
+            )}
           </div>
           <div className="flex gap-3">
-            <StatusBadge status={booking.BookingStatus} />
-            <ActivityBadge type={booking.ActivityType} />
+            <StatusBadge status={mainBooking.BookingStatus} />
+            <ActivityBadge type={mainBooking.ActivityType} />
           </div>
         </div>
       </div>
@@ -159,57 +192,77 @@ export default function BookingDetailsPage({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-500 mb-1">Full Name</p>
-                <p className="font-medium text-gray-900">{booking.GuestName}</p>
+                <p className="font-medium text-gray-900">{mainBooking.GuestName}</p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">IC Number</p>
                 <p className="font-medium text-gray-900">
-                  {booking.ICNumber || "-"}
+                  {mainBooking.ICNumber || "-"}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Email</p>
                 <p className="font-medium text-gray-900 flex items-center gap-2">
                   <Mail className="h-4 w-4 text-gray-400" />
-                  {booking.Email}
+                  {mainBooking.Email}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Phone</p>
                 <p className="font-medium text-gray-900 flex items-center gap-2">
                   <Phone className="h-4 w-4 text-gray-400" />
-                  {booking.PhoneNumber}
+                  {mainBooking.PhoneNumber}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Address</p>
                 <p className="font-medium text-gray-900 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
-                  {booking.Address}
+                  {mainBooking.Address}
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Gender</p>
-
                 <p className="font-medium text-gray-900 flex items-center gap-2">
-                  {booking.Gender === "Male" ? (
+                  {mainBooking.Gender === "Male" ? (
                     <Mars className="h-4 w-4 text-gray-400" />
                   ) : (
                     <Venus className="h-4 w-4 text-gray-400" />
                   )}
-
-                  {booking.Gender}
+                  {mainBooking.Gender}
                 </p>
               </div>
-              {/* <div className="sm:col-span-2">
-                <p className="text-gray-500 mb-1">Address</p>
-                <p className="font-medium text-gray-900 flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  {booking.Address || "-"}
-                </p>
-              </div> */}
             </div>
           </div>
+
+          {/* Rooms Booked - NEW SECTION */}
+          {roomCount > 1 && (
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Bed className="h-5 w-5 text-purple-600" /> Rooms Booked ({roomCount})
+              </h3>
+              <div className="space-y-3">
+                {activeBookings.map((b) => (
+                  <div
+                    key={b.BookingID}
+                    className="flex justify-between items-center p-4 rounded-lg border bg-purple-50 border-purple-200"
+                  >
+                    <div className="flex-1">
+                      <p className="font-bold text-purple-900">
+                        Room {b.RoomNumber}
+                      </p>
+                      <p className="text-sm text-purple-700">
+                        {b.RoomType} • RM {b.TotalAmount.toFixed(2)}
+                      </p>
+                      <div className="mt-2 flex gap-2 items-center">
+                        <StatusBadge status={b.BookingStatus} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Booking Information */}
           <div className="bg-white rounded-xl shadow-sm p-6">
@@ -217,31 +270,43 @@ export default function BookingDetailsPage({
               <Bed className="h-5 w-5 text-emerald-600" /> Booking Information
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-500 mb-1">Room Number</p>
-                <p className="font-medium text-gray-900">{booking.RoomNumber}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 mb-1">Room Type</p>
-                <p className="font-medium text-gray-900">{booking.RoomType}</p>
-              </div>
+              {roomCount === 1 && (
+                <>
+                  <div>
+                    <p className="text-gray-500 mb-1">Room Number</p>
+                    <p className="font-medium text-gray-900">{mainBooking.RoomNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 mb-1">Room Type</p>
+                    <p className="font-medium text-gray-900">{mainBooking.RoomType}</p>
+                  </div>
+                </>
+              )}
+              {roomCount > 1 && (
+                <div className="sm:col-span-2">
+                  <p className="text-gray-500 mb-1">Rooms</p>
+                  <p className="font-medium text-gray-900">
+                    {activeBookings.map((b) => `Room ${b.RoomNumber}`).join(", ")}
+                  </p>
+                </div>
+              )}
               <div>
                 <p className="text-gray-500 mb-1">Check-In Date</p>
-                <p className="font-medium text-gray-900">{booking.CheckInDate}</p>
+                <p className="font-medium text-gray-900">{mainBooking.CheckInDate}</p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Check-Out Date</p>
-                <p className="font-medium text-gray-900">{booking.CheckOutDate}</p>
+                <p className="font-medium text-gray-900">{mainBooking.CheckOutDate}</p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Total Guests</p>
                 <p className="font-medium text-gray-900">
-                  {booking.TotalGuests} Guest(s)
+                  {mainBooking.TotalGuests} Guest(s)
                 </p>
               </div>
               <div>
                 <p className="text-gray-500 mb-1">Booking Status</p>
-                <StatusBadge status={booking.BookingStatus} />
+                <StatusBadge status={mainBooking.BookingStatus} />
               </div>
             </div>
           </div>
@@ -254,24 +319,32 @@ export default function BookingDetailsPage({
               <CreditCard className="h-5 w-5 text-purple-600" /> Payment Summary
             </h3>
             <div className="space-y-3 text-sm">
+              {roomCount > 1 && (
+                <div className="flex justify-between pb-3 border-b">
+                  <span className="text-gray-600">Number of Rooms</span>
+                  <span className="font-medium text-gray-900">{roomCount}</span>
+                </div>
+              )}
               <div className="flex justify-between pb-3 border-b">
                 <span className="text-gray-600">Total Amount</span>
                 <span className="font-bold text-gray-900 text-lg">
-                  RM {booking.TotalAmount.toFixed(2)}
+                  RM {totalAmount.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Amount Paid</span>
                 <span className="font-medium text-green-600">
-                  RM {booking.AmountPaid.toFixed(2)}
+                  RM {totalPaid.toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Deposit Amount</span>
-                <span className="font-medium text-gray-700">
-                  RM {booking.DepositAmount.toFixed(2)}
-                </span>
-              </div>
+              {roomCount === 1 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Deposit Amount</span>
+                  <span className="font-medium text-gray-700">
+                    RM {mainBooking.DepositAmount.toFixed(2)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between pt-3 border-t">
                 <span className="font-semibold text-gray-900">Pending Amount</span>
                 <span
@@ -284,8 +357,8 @@ export default function BookingDetailsPage({
               </div>
 
               {pendingAmount > 0 &&
-                booking.BookingStatus === "CheckedIn" &&
-                booking.ActivityType === "Check-Out" && (
+                mainBooking.BookingStatus === "CheckedIn" &&
+                mainBooking.ActivityType === "Check-Out" && (
                   <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-medium text-center">
                     Check-Out is blocked until full payment is received
                   </div>
@@ -293,11 +366,11 @@ export default function BookingDetailsPage({
 
               <div className="pt-3 border-t">
                 <p className="text-gray-600 mb-2">Payment Status</p>
-                <PaymentBadge status={booking.PaymentStatus} />
+                <PaymentBadge status={pendingAmount > 0 ? "Pending" : "Completed"} />
               </div>
             </div>
 
-            {booking.PaymentStatus === "Pending" && pendingAmount > 0 && (
+            {pendingAmount > 0 && mainBooking.BookingStatus !== "Cancelled" && (
               <button
                 onClick={() => setShowPaymentForm(!showPaymentForm)}
                 className="w-full mt-4 px-4 py-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium transition flex items-center justify-center gap-2"
@@ -373,7 +446,7 @@ export default function BookingDetailsPage({
                 {paymentType === "Stripe" && (
                   <Elements stripe={stripePromise}>
                     <StripeCardForm
-                      bookingId={booking.BookingID}
+                      bookingId={activeBookings[0].BookingID}
                       amount={parseFloat(paymentAmount) || pendingAmount}
                       onSuccess={() => {
                         alert("Card payment successful!");
@@ -393,8 +466,8 @@ export default function BookingDetailsPage({
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              {booking.BookingStatus === "Confirmed" &&
-                (booking.PaymentStatus === "Completed" ? (
+              {mainBooking.BookingStatus === "Confirmed" &&
+                (pendingAmount === 0 ? (
                   <button
                     onClick={() => handleAction("checkin")}
                     className="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition flex items-center justify-center gap-2"
@@ -406,9 +479,9 @@ export default function BookingDetailsPage({
                     <XCircle size={18} /> Full Payment Required for Check-In
                   </div>
                 ))}
-              {booking.BookingStatus === "CheckedIn" &&
-                booking.ActivityType === "Check-Out" &&
-                (booking.PaymentStatus === "Completed" ? (
+              {mainBooking.BookingStatus === "CheckedIn" &&
+                mainBooking.ActivityType === "Check-Out" &&
+                (pendingAmount === 0 ? (
                   <button
                     onClick={() => handleAction("checkout")}
                     className="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center justify-center gap-2"
@@ -420,8 +493,8 @@ export default function BookingDetailsPage({
                     <XCircle size={18} /> Full Payment Required for Check-Out
                   </div>
                 ))}
-              {(booking.BookingStatus === "Confirmed" ||
-                booking.BookingStatus === "CheckedIn") && (
+              {(mainBooking.BookingStatus === "Confirmed" ||
+                mainBooking.BookingStatus === "CheckedIn") && (
                 <button
                   onClick={() => handleAction("cancel")}
                   className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition flex items-center justify-center gap-2"
@@ -429,8 +502,8 @@ export default function BookingDetailsPage({
                   <XCircle size={18} /> Cancel Booking
                 </button>
               )}
-              {booking.BookingStatus === "CheckedIn" &&
-                booking.ActivityType === "Stayover" && (
+              {mainBooking.BookingStatus === "CheckedIn" &&
+                mainBooking.ActivityType === "Stayover" && (
                   <div className="px-4 py-3 rounded-lg bg-amber-100 text-amber-700 font-medium text-center">
                     Guest Currently In-House
                   </div>
@@ -453,8 +526,8 @@ export default function BookingDetailsPage({
             </h3>
             <p className="text-gray-600 mb-6">
               {confirmAction === "cancel"
-                ? "This action cannot be undone."
-                : `Complete ${confirmAction} for ${booking.GuestName}?`}
+                ? `This action will cancel ${roomCount > 1 ? `all ${roomCount} rooms` : "this booking"}. This cannot be undone.`
+                : `Complete ${confirmAction} for ${mainBooking.GuestName}${roomCount > 1 ? ` (${roomCount} rooms)` : ""}?`}
             </p>
             <div className="flex gap-3">
               <button

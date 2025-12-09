@@ -8,6 +8,10 @@ type FormState = {
   hotelName: string;
   address: string;
   city: string;
+  description: string;
+  imageUrl: string;
+  phoneNumber: string;
+  email: string;
   managerID: string;
 };
 
@@ -23,6 +27,10 @@ const CreateHotelPage: React.FC = () => {
     hotelName: '',
     address: '',
     city: '',
+    description: '',
+    imageUrl: '',
+    phoneNumber: '',
+    email: '',
     managerID: '',
   });
   const [managers, setManagers] = useState<Manager[]>([]);
@@ -80,6 +88,10 @@ const CreateHotelPage: React.FC = () => {
         HotelName: form.hotelName.trim(),
         Address: form.address.trim() || null,
         City: form.city.trim() || null,
+        Description: form.description.trim() || null,
+        ImageUrl: form.imageUrl.trim() || null,
+        PhoneNumber: form.phoneNumber.trim() || null,
+        Email: form.email.trim() || null,
         ManagerID: form.managerID ? form.managerID : null,
         CreatedAt: new Date().toISOString(),
       };
@@ -184,6 +196,59 @@ const CreateHotelPage: React.FC = () => {
                   onChange={handleChange}
                   className="input"
                   placeholder="123 Main Street, Suite 100"
+                />
+              </div>
+
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="description">Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange as any}
+                  className="input"
+                  placeholder="A brief description of the hotel..."
+                  rows={3}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="phoneNumber">Phone Number</label>
+                <input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  value={form.phoneNumber}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="contact@hotel.com"
+                />
+              </div>
+
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label htmlFor="imageUrl">Image URL</label>
+                <input
+                  id="imageUrl"
+                  name="imageUrl"
+                  type="url"
+                  value={form.imageUrl}
+                  onChange={handleChange}
+                  className="input"
+                  placeholder="https://example.com/hotel-image.jpg"
                 />
               </div>
 

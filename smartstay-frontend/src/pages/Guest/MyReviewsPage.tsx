@@ -30,7 +30,7 @@ const MyReviewsPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/reviews/guest/${user.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/reviews/guest/${user.id}`);
         if (response.ok) {
           const data = await response.json();
           setReviews(data);

@@ -114,11 +114,41 @@ const CreateManagerPage: React.FC = () => {
         throw new Error(data?.message || `Failed to create manager (HTTP ${res.status})`);
       }
 
-      console.log('✅ Manager created successfully');
+      console.log('✅ Manager created successfully', data);
       
-      // Note: The relationship is managed through Users.HotelID only
-      // The Hotels.ManagerID should be updated by the backend automatically
-      // or through a separate backend process to maintain data consistency
+      // Update the hotel's ManagerID if a hotel was selected
+      if (form.hotelId && data.userID) {
+        try {
+          console.log(`🔄 Updating hotel ${form.hotelId} with ManagerID: ${data.userID}`);
+          
+          // Fetch the hotel data first
+          const hotelRes = await apiGet(API_ENDPOINTS.HOTELS.BY_ID(form.hotelId));
+          if (!hotelRes.ok) {
+            throw new Error('Failed to fetch hotel data');
+          }
+          const hotelData = await hotelRes.json();
+          
+          // Update with ManagerID
+          const updatePayload = {
+            HotelID: Number(form.hotelId),
+            HotelName: hotelData.hotelName ?? hotelData.HotelName,
+            Address: hotelData.address ?? hotelData.Address,
+            City: hotelData.city ?? hotelData.City,
+            ManagerID: data.userID, // Set the new manager's ID
+            CreatedAt: hotelData.createdAt ?? hotelData.CreatedAt,
+          };
+          
+          const updateRes = await apiPut(API_ENDPOINTS.HOTELS.BY_ID(form.hotelId), updatePayload);
+          if (updateRes.ok) {
+            console.log('✅ Hotel ManagerID updated successfully');
+          } else {
+            console.warn('⚠️ Failed to update hotel ManagerID');
+          }
+        } catch (updateError: any) {
+          console.error('❌ Error updating hotel ManagerID:', updateError);
+          // Don't fail the whole operation, just log the error
+        }
+      }
 
       setMessage('Manager created successfully');
       setMessageType('success');

@@ -28,7 +28,7 @@ const MyDocuments: React.FC = () => {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/documents/guest/${user.id}`);
+        const response = await fetch(`${API_BASE_URL}/api/documents/guest/${user.id}`);
         if (response.ok) {
           const data = await response.json();
           setDocuments(data);

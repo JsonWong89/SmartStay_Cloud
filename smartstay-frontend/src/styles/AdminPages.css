@@ -6,14 +6,14 @@
 }
 
 .page-content {
-  margin-left: 260px;
+  margin-left: 230px;
   padding: 32px;
   transition: margin-left 0.3s ease;
   min-height: 100vh;
 }
 
-/* When sidebar is collapsed */
-body:has(.sidebar.collapsed) .page-content {
+/* When sidebar is collapsed - using :has() to detect collapsed width */
+body:has(aside.w-20) .page-content {
   margin-left: 80px;
 }
 

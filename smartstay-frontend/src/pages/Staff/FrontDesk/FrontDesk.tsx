@@ -21,16 +21,17 @@ import {
 
 interface ConfirmAction {
   type: "checkin" | "checkout" | "cancel";
-  booking: Booking;
+  bookings: Booking[]; // Changed to array for multi-room
 }
 
 interface FrontDeskPageProps {
   activities: Booking[];
+  allBookings: Booking[]; // Added: all bookings for grouping
   loading: boolean;
   sidebarCollapsed: boolean;
   openBookingDetails: (booking: Booking) => void;
   updateStatus: (
-    id: number,
+    ids: number[], 
     status: "CheckedIn" | "CheckedOut" | "Cancelled"
   ) => Promise<void>;
   refresh: () => void;
@@ -44,15 +45,20 @@ export default function FrontDeskApp() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [activities, setActivities] = useState<Booking[]>([]);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]); // All bookings for details page
   const [loading, setLoading] = useState(true);
   const user = useAuthStore((state) => state.user);
 
   const loadActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await bookingsAPI.getTodayActivities(user?.hotelId);
-      if (res.success && res.data) {
-        const mapped: Booking[] = res.data.map((item: any) => {
+      const [todayRes, allRes] = await Promise.all([
+        bookingsAPI.getTodayActivities(user?.hotelId),
+        bookingsAPI.getAllBookings({ hotelId: user?.hotelId })
+      ]);
+
+      if (todayRes.success && todayRes.data) {
+        const mapped: Booking[] = todayRes.data.map((item: any) => {
           const checkInDate = item.checkInDate.split("T")[0];
           const checkOutDate = item.checkOutDate.split("T")[0];
 
@@ -89,6 +95,34 @@ export default function FrontDeskApp() {
         });
 
         setActivities(mapped);
+      }
+
+      // Store all bookings for detail page
+      if (allRes.success && allRes.data) {
+        const allMapped: Booking[] = allRes.data.map((b: any) => ({
+          BookingID: b.bookingId,
+          GuestName: b.guest?.fullName || b.guestName || "",
+          RoomNumber: b.room?.roomNumber || b.roomNumber || "",
+          RoomType: b.room?.roomType || b.roomType || "",
+          CheckInDate: b.checkInDate.split("T")[0],
+          CheckOutDate: b.checkOutDate.split("T")[0],
+          ActivityType: "Stayover",
+          BookingStatus: b.bookingStatus,
+          CheckInTime: null,
+          CheckOutTime: null,
+          TotalAmount: b.totalAmount,
+          DepositAmount: b.depositAmount || 0,
+          AmountPaid: b.totalPaid || 0,
+          PaymentStatus: (b.pendingAmount || b.totalAmount - (b.totalPaid || 0)) > 0 ? "Pending" : "Completed",
+          TotalGuests: b.totalGuests,
+          Email: b.guest?.email || b.email || "",
+          PhoneNumber: b.guest?.phoneNumber || b.phoneNumber || "",
+          ICNumber: b.guest?.icNumber || b.icNumber || "-",
+          Address: b.guest?.address || b.address || "-",
+          Gender: b.guest?.gender || b.gender || "Unknown",
+          Payments: b.payments || [],
+        }));
+        setAllBookings(allMapped);
       }
     } catch (err) {
       console.error("Failed to load activities:", err);
@@ -147,9 +181,14 @@ export default function FrontDeskApp() {
 
   const loadBookingDetails = async (id: number) => {
     try {
-      const res = await bookingsAPI.getBookingById(id);
-      if (res.success && res.data) {
-        const b = res.data;
+      // Fetch the clicked booking AND all bookings for the hotel
+      const [clickedRes, allRes] = await Promise.all([
+        bookingsAPI.getBookingById(id),
+        bookingsAPI.getAllBookings({ hotelId: user?.hotelId })
+      ]);
+
+      if (clickedRes.success && clickedRes.data) {
+        const b = clickedRes.data;
         const today = new Date().toISOString().split("T")[0];
 
         const validStatuses = [
@@ -170,9 +209,9 @@ export default function FrontDeskApp() {
 
         const booking: Booking = {
           BookingID: b.bookingId,
-          GuestName: b.guest.fullName,
-          RoomNumber: b.room.roomNumber,
-          RoomType: b.room.roomType,
+          GuestName: b.guest?.fullName  || "",
+          RoomNumber: b.room?.roomNumber  || "",
+          RoomType: b.room?.roomType || "",
           CheckInDate: b.checkInDate.split("T")[0],
           CheckOutDate: b.checkOutDate.split("T")[0],
           ActivityType:
@@ -191,13 +230,41 @@ export default function FrontDeskApp() {
           AmountPaid: b.totalPaid || 0,
           PaymentStatus: b.pendingAmount > 0 ? "Pending" : "Completed",
           TotalGuests: b.totalGuests,
-          Email: b.guest.email,
-          PhoneNumber: b.guest.phoneNumber,
-          ICNumber: b.guest.icNumber || "",
-          Address: b.guest.address || "",
-          Gender: b.guest.gender,
+          Email: b.guest?.email || "",
+          PhoneNumber: b.guest?.phoneNumber || "",
+          ICNumber: b.guest?.icNumber || "-",
+          Address: b.guest?.address || "-",
+          Gender: b.guest?.gender || "Unknown",
           Payments: b.payments || [],
         };
+
+        // Map all bookings for the allBookings prop
+        if (allRes.success && allRes.data) {
+          const allMapped: Booking[] = allRes.data.map((item: any) => ({
+            BookingID: item.bookingId,
+            GuestName: item.guest?.fullName || item.guestName || "",
+            RoomNumber: item.room?.roomNumber || item.roomNumber || "",
+            RoomType: item.room?.roomType || item.roomType || "",
+            CheckInDate: item.checkInDate.split("T")[0],
+            CheckOutDate: item.checkOutDate.split("T")[0],
+            ActivityType: "Stayover" as const,
+            BookingStatus: item.bookingStatus,
+            CheckInTime: null,
+            CheckOutTime: null,
+            TotalAmount: item.totalAmount,
+            DepositAmount: item.depositAmount || 0,
+            AmountPaid: item.totalPaid || 0,
+            PaymentStatus: (item.pendingAmount || item.totalAmount - (item.totalPaid || 0)) > 0 ? "Pending" as const : "Completed" as const,
+            TotalGuests: item.totalGuests,
+            Email: item.guest?.email || item.email || "",
+            PhoneNumber: item.guest?.phoneNumber || item.phoneNumber || "",
+            ICNumber: item.guest?.icNumber || item.icNumber || "-",
+            Address: item.guest?.address || item.address || "-",
+            Gender: item.guest?.gender || item.gender || "Unknown",
+            Payments: item.payments || [],
+          }));
+          setAllBookings(allMapped);
+        }
 
         setSelectedBooking(booking);
         setCurrentView("bookingdetails");
@@ -208,25 +275,30 @@ export default function FrontDeskApp() {
   };
 
   const updateStatus = async (
-    id: number,
+    ids: number[],
     status: "CheckedIn" | "CheckedOut" | "Cancelled"
   ) => {
     try {
-      const res = await bookingsAPI.updateBookingStatus(id, status);
-      if (res.success) {
-        if (status === "CheckedIn") {
-          await bookingsAPI.sendCheckIn(id);
-          alert("Check-In successful and email sent to guest.");
-        }
+      // Update all bookings in the group
+      for (const id of ids) {
+        const res = await bookingsAPI.updateBookingStatus(id, status);
+        if (!res.success) throw new Error(`Failed to update booking ${id}`);
+      }
 
-        if (status === "CheckedOut") {
-          await bookingsAPI.sendCheckOut(id);
-          alert("Check-Out successful and email sent to guest.");
-        }
-        loadActivities();
-        if (selectedBooking?.BookingID === id) {
-          loadBookingDetails(id);
-        }
+      // Send emails for the first booking only
+      if (status === "CheckedIn") {
+        await bookingsAPI.sendCheckIn(ids[0]);
+        alert(`Check-In successful for ${ids.length} room(s) and email sent to guest.`);
+      }
+
+      if (status === "CheckedOut") {
+        await bookingsAPI.sendCheckOut(ids[0]);
+        alert(`Check-Out successful for ${ids.length} room(s) and email sent to guest.`);
+      }
+
+      loadActivities();
+      if (selectedBooking && ids.includes(selectedBooking.BookingID)) {
+        loadBookingDetails(selectedBooking.BookingID);
       }
     } catch (err: any) {
       alert("Failed: " + (err.message || "Unknown error"));
@@ -249,6 +321,7 @@ export default function FrontDeskApp() {
         {currentView === "frontdesk" && (
           <FrontDeskPage
             activities={activities}
+            allBookings={allBookings}
             loading={loading}
             sidebarCollapsed={sidebarCollapsed}
             openBookingDetails={(booking) =>
@@ -261,6 +334,7 @@ export default function FrontDeskApp() {
         {currentView === "bookingdetails" && selectedBooking && (
           <BookingDetailsPage
             booking={selectedBooking}
+            allBookings={allBookings}
             goBack={() => {
               setCurrentView("frontdesk");
               setSelectedBooking(null);
@@ -270,7 +344,7 @@ export default function FrontDeskApp() {
               setSelectedBooking(updated);
               loadActivities();
             }}
-            updateStatus={updateStatus}
+            updateStatus={(id, status) => updateStatus([id], status)}
             refreshDetails={() => loadBookingDetails(selectedBooking.BookingID)}
           />
         )}
@@ -281,6 +355,7 @@ export default function FrontDeskApp() {
 
 function FrontDeskPage({
   activities,
+  allBookings,
   loading,
   sidebarCollapsed,
   openBookingDetails,
@@ -295,42 +370,68 @@ function FrontDeskPage({
     null
   );
 
-  const filteredActivities = activities.filter((activity) => {
+  // Group activities by guest email + dates (only active bookings)
+  const groupedActivities = React.useMemo(() => {
+    const groups = new Map<string, Booking[]>();
+    
+    activities.forEach((booking) => {
+      if (booking.BookingStatus === "Cancelled") return;
+      
+      const key = `${booking.Email}-${booking.CheckInDate}-${booking.CheckOutDate}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(booking);
+    });
+    
+    return Array.from(groups.values());
+  }, [activities]);
+
+  const filteredGroups = groupedActivities.filter((group) => {
+    const main = group[0];
     const matchesSearch =
-      activity.GuestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.RoomNumber.includes(searchQuery);
+      main.GuestName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.some(b => b.RoomNumber.includes(searchQuery));
     const matchesTab =
       filterTab === "all" ||
-      (filterTab === "checkin" && activity.ActivityType === "Check-In") ||
-      (filterTab === "checkout" && activity.ActivityType === "Check-Out") ||
-      (filterTab === "stayover" && activity.ActivityType === "Stayover");
+      (filterTab === "checkin" && main.ActivityType === "Check-In") ||
+      (filterTab === "checkout" && main.ActivityType === "Check-Out") ||
+      (filterTab === "stayover" && main.ActivityType === "Stayover");
     return matchesSearch && matchesTab;
   });
 
-  const todayCheckIns = activities.filter(
-    (a) => a.ActivityType === "Check-In"
+  const todayCheckIns = groupedActivities.filter(
+    (g) => g[0].ActivityType === "Check-In"
   ).length;
-  const todayCheckOuts = activities.filter(
-    (a) => a.ActivityType === "Check-Out"
+  const todayCheckOuts = groupedActivities.filter(
+    (g) => g[0].ActivityType === "Check-Out"
   ).length;
-  const currentlyStaying = activities.filter(
-    (a) => a.BookingStatus === "CheckedIn"
+  const currentlyStaying = groupedActivities.filter(
+    (g) => g[0].BookingStatus === "CheckedIn"
   ).length;
 
-  const handleAction = (type: "checkin" | "checkout", booking: Booking) => {
-    if (type === "checkin" && booking.PaymentStatus !== "Completed") {
+  const handleAction = (type: "checkin" | "checkout", group: Booking[]) => {
+    const main = group[0];
+    
+    // Get all related bookings including cancelled for payment calculation
+    const allRelated = allBookings.filter(
+      (b) =>
+        b.Email === main.Email &&
+        b.CheckInDate === main.CheckInDate &&
+        b.CheckOutDate === main.CheckOutDate
+    );
+    
+    const totalAmount = group.reduce((sum, b) => sum + b.TotalAmount, 0);
+    const totalPaid = allRelated.reduce((sum, b) => sum + b.AmountPaid, 0);
+    const pendingAmount = totalAmount - totalPaid;
+    
+    if (pendingAmount > 0) {
       alert(
-        "Payment Required: Full payment must be completed before check-in."
+        "Payment Required: Full payment must be completed before " + 
+        (type === "checkin" ? "check-in" : "check-out") + "."
       );
       return;
     }
-    if (type === "checkout" && booking.PaymentStatus !== "Completed") {
-      alert(
-        "Payment Required: Full payment must be completed before check-out."
-      );
-      return;
-    }
-    setConfirmAction({ type, booking });
+    
+    setConfirmAction({ type, bookings: group });
     setShowConfirmDialog(true);
   };
 
@@ -338,10 +439,32 @@ function FrontDeskPage({
     if (!confirmAction) return;
     const status: "CheckedIn" | "CheckedOut" =
       confirmAction.type === "checkin" ? "CheckedIn" : "CheckedOut";
-    await updateStatus(confirmAction.booking.BookingID, status);
+    const ids = confirmAction.bookings.map(b => b.BookingID);
+    await updateStatus(ids, status);
     setShowConfirmDialog(false);
     setConfirmAction(null);
     refresh();
+  };
+
+  // Get group financials
+  const getGroupFinancials = (group: Booking[]) => {
+    const main = group[0];
+    const totalAmount = group.reduce((sum, b) => sum + b.TotalAmount, 0);
+    
+    // Include payments from cancelled rooms
+    const allRelated = allBookings.filter(
+      (b) =>
+        b.Email === main.Email &&
+        b.CheckInDate === main.CheckInDate &&
+        b.CheckOutDate === main.CheckOutDate
+    );
+    
+    const totalPaid = allRelated.reduce((sum, b) => sum + b.AmountPaid, 0);
+    const pending = totalAmount - totalPaid;
+    const paymentStatus: "Completed" | "Pending" | "Failed" = 
+      pending > 0 ? "Pending" : "Completed";
+    
+    return { totalAmount, totalPaid, pending, paymentStatus };
   };
 
   return (
@@ -440,7 +563,7 @@ function FrontDeskPage({
             <thead>
               <tr className="border-b text-xs uppercase text-gray-600 bg-gray-50">
                 <th className="px-6 py-3 text-left">Guest</th>
-                <th className="px-6 py-3 text-left">Room</th>
+                <th className="px-6 py-3 text-left">Room(s)</th>
                 <th className="px-6 py-3 text-left">Activity</th>
                 <th className="px-6 py-3 text-left">Dates</th>
                 <th className="px-6 py-3 text-left">Total Price</th>
@@ -456,19 +579,22 @@ function FrontDeskPage({
                     Loading live data...
                   </td>
                 </tr>
-              ) : filteredActivities.length === 0 ? (
+              ) : filteredGroups.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="text-center py-12 text-gray-500">
                     No activities today
                   </td>
                 </tr>
               ) : (
-                filteredActivities.map((activity) => {
-                  const pendingAmount =
-                    activity.TotalAmount - activity.AmountPaid;
+                filteredGroups.map((group) => {
+                  const main = group[0];
+                  const roomCount = group.length;
+                  const roomList = group.map(b => b.RoomNumber).join(" + ");
+                  const { totalAmount, totalPaid, pending, paymentStatus } = getGroupFinancials(group);
+                  
                   return (
                     <tr
-                      key={activity.BookingID}
+                      key={group.map(b => b.BookingID).join("-")}
                       className="text-sm border-b border-gray-300 hover:bg-gray-50"
                     >
                       <td className="px-6 py-4">
@@ -478,10 +604,10 @@ function FrontDeskPage({
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
-                              {activity.GuestName}
+                              {main.GuestName}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {activity.PhoneNumber}
+                              {main.PhoneNumber}
                             </p>
                           </div>
                         </div>
@@ -489,21 +615,22 @@ function FrontDeskPage({
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-gray-900">
-                            Room {activity.RoomNumber}
+                            Room {roomList}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {activity.RoomType}
+                            {roomCount} room{roomCount > 1 ? "s" : ""}
+                            {roomCount > 1 && " • Multi-room"}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {activity.BookingStatus === "CheckedIn" &&
-                        activity.ActivityType !== "Check-Out" ? (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        {main.BookingStatus === "CheckedIn" &&
+                        main.ActivityType !== "Check-Out" ? (
+                          <span className="px-3 py-2 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                             In-House
                           </span>
                         ) : (
-                          <ActivityBadge type={activity.ActivityType} />
+                          <ActivityBadge type={main.ActivityType} />
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -511,13 +638,13 @@ function FrontDeskPage({
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-green-600" />
                             <span className="text-gray-700">
-                              In: {activity.CheckInDate}
+                              In: {main.CheckInDate}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="text-red-600" />
                             <span className="text-gray-700">
-                              Out: {activity.CheckOutDate}
+                              Out: {main.CheckOutDate}
                             </span>
                           </div>
                         </div>
@@ -525,74 +652,67 @@ function FrontDeskPage({
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-bold text-gray-900">
-                            RM {activity.TotalAmount.toFixed(2)}
+                            RM {totalAmount.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Paid: RM {activity.AmountPaid.toFixed(2)}
+                            Paid: RM {totalPaid.toFixed(2)}
                           </p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={activity.BookingStatus} />
+                        <StatusBadge status={main.BookingStatus} />
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <PaymentBadge status={activity.PaymentStatus} />
-                          {activity.PaymentStatus === "Pending" &&
-                            pendingAmount > 0 && (
-                              <p className="text-xs text-amber-600 mt-1 font-medium">
-                                Due: RM {pendingAmount.toFixed(2)}
-                              </p>
-                            )}
+                          <PaymentBadge status={paymentStatus} />
+                          {paymentStatus === "Pending" && pending > 0 && (
+                            <p className="text-xs text-amber-600 mt-1 font-medium">
+                              Due: RM {pending.toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2 justify-end">
                           <button
-                            onClick={() => openBookingDetails(activity)}
+                            onClick={() => openBookingDetails(main)}
                             className="p-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white transition"
                             title="View Details"
                           >
                             <Eye size={16} />
                           </button>
-                          {activity.BookingStatus === "Confirmed" &&
-                            activity.ActivityType === "Check-In" && (
+                          {main.BookingStatus === "Confirmed" &&
+                            main.ActivityType === "Check-In" && (
                               <button
-                                onClick={() =>
-                                  handleAction("checkin", activity)
-                                }
+                                onClick={() => handleAction("checkin", group)}
                                 className={`px-3 py-2 rounded-lg text-white text-xs font-medium transition ${
-                                  activity.PaymentStatus === "Completed"
+                                  paymentStatus === "Completed"
                                     ? "bg-green-600 hover:bg-green-700"
                                     : "bg-gray-400 cursor-not-allowed opacity-70"
                                 }`}
-                                disabled={
-                                  activity.PaymentStatus !== "Completed"
-                                }
+                                disabled={paymentStatus !== "Completed"}
                               >
-                                Check-In
+                                Check-In 
+                                {/* {roomCount > 1 ? `(${roomCount})` : ""} */}
                               </button>
                             )}
-                          {activity.BookingStatus === "CheckedIn" &&
-                            activity.ActivityType === "Check-Out" && (
+                          {main.BookingStatus === "CheckedIn" &&
+                            main.ActivityType === "Check-Out" && (
                               <button
-                                onClick={() =>
-                                  handleAction("checkout", activity)
-                                }
-                                className={`px-3 py-2 rounded-lg text-white text-xs font-medium transition ${
-                                  activity.PaymentStatus === "Completed"
+                                onClick={() => handleAction("checkout", group)}
+                                className={`px-2 py-2 rounded-lg text-white text-xs font-medium transition ${
+                                  paymentStatus === "Completed"
                                     ? "bg-blue-600 hover:bg-blue-700"
                                     : "bg-gray-400 cursor-not-allowed opacity-70"
                                 }`}
-                                disabled={
-                                  activity.PaymentStatus !== "Completed"
-                                }
+                                disabled={paymentStatus !== "Completed"}
                               >
-                                Check-Out
+                                Check-Out 
+                                {/* {roomCount > 1 ? `(${roomCount})` : ""} */}
                               </button>
                             )}
-                          {activity.BookingStatus === "CheckedIn" &&
-                            activity.ActivityType === "Stayover" && (
+                          {main.BookingStatus === "CheckedIn" &&
+                            main.ActivityType === "Stayover" && (
                               <span className="px-3 py-2 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium">
                                 In-House
                               </span>
@@ -619,8 +739,12 @@ function FrontDeskPage({
             <p className="text-gray-600 mb-6">
               Complete{" "}
               {confirmAction.type === "checkin" ? "check-in" : "check-out"} for{" "}
-              {confirmAction.booking.GuestName} in Room{" "}
-              {confirmAction.booking.RoomNumber}?
+              {confirmAction.bookings[0].GuestName} in {confirmAction.bookings.length} room(s)?
+              {confirmAction.bookings.length > 1 && (
+                <span className="block mt-2 text-sm font-medium text-purple-600">
+                  Rooms: {confirmAction.bookings.map(b => b.RoomNumber).join(", ")}
+                </span>
+              )}
             </p>
             <div className="flex gap-3">
               <button
@@ -666,8 +790,13 @@ function SummaryCard({
     blue: "bg-blue-50",
     sky: "bg-sky-50",
   };
+  const borderColors = {
+    green: "border-l-green-600",
+    blue: "border-l-blue-600",
+    sky: "border-l-sky-600",
+  };
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm flex items-center gap-4">
+    <div className={`rounded-xl bg-white p-6 shadow-sm flex items-center gap-4 border-l-8 ${borderColors[color]}`}>
       <div className={`p-3 rounded-lg ${bgColors[color]}`}>{icon}</div>
       <div>
         <p className="text-sm text-gray-500">{title}</p>

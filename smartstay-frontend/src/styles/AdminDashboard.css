@@ -4,13 +4,13 @@
 }
 
 .dashboard-content {
-  margin-left: 260px;
+  margin-left: 230px;
   padding: 32px;
   transition: margin-left 0.3s ease;
   min-height: 100vh;
 }
 
-body:has(.sidebar.collapsed) .dashboard-content {
+body:has(aside.w-20) .dashboard-content {
   margin-left: 80px;
 }
 
@@ -33,7 +33,7 @@ body:has(.sidebar.collapsed) .dashboard-content {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
 }
 

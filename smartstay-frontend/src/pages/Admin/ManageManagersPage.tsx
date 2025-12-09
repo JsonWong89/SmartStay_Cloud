@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import NavigationBar from '../../components/NavigationBar';
 import '../../styles/AdminPages.css';
-import { API_ENDPOINTS, apiGet } from '../../config/api';
+import { API_ENDPOINTS, apiGet, apiDelete } from '../../config/api';
 
 type Manager = {
   userID: number;
@@ -105,7 +105,7 @@ const ManageManagersPage: React.FC = () => {
         
         console.log('Normalized users:', allUsers);
         
-        const hotelManagers = allUsers.filter((u) => u.role === 'Manager');
+        const hotelManagers = allUsers.filter((u: Manager) => u.role === 'Manager');
         
         console.log('Total users:', allUsers.length, 'Hotel Managers found:', hotelManagers.length);
         console.log('Hotel Managers:', hotelManagers);
@@ -148,6 +148,42 @@ const ManageManagersPage: React.FC = () => {
     fetchHotels();
     fetchManagers();
   }, []);
+
+  const handleDelete = async (userID: number, fullName: string) => {
+    if (!confirm(`Are you sure you want to delete manager "${fullName}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await apiDelete(API_ENDPOINTS.USERS.BY_ID(userID.toString()));
+      if (!res.ok) {
+        throw new Error('Failed to delete manager');
+      }
+      // Refresh the managers list
+      const fetchManagers = async () => {
+        try {
+          const res = await apiGet(API_ENDPOINTS.USERS.BASE);
+          if (!res.ok) throw new Error('Failed to fetch users');
+          const data = await res.json();
+          const allUsers = data.map((m: any) => ({
+            userID: m.userID ?? m.UserID,
+            fullName: m.fullName ?? m.FullName ?? '',
+            email: m.email ?? m.Email ?? '',
+            role: m.role ?? m.Role ?? '',
+            hotelID: m.hotelID ?? m.HotelID,
+            createdAt: m.createdAt ?? m.CreatedAt,
+          }));
+          const hotelManagers = allUsers.filter((u: Manager) => u.role === 'Manager');
+          setManagers(hotelManagers);
+        } catch (e: any) {
+          console.error('Failed to refresh managers', e);
+        }
+      };
+      await fetchManagers();
+    } catch (e: any) {
+      alert(`Error: ${e?.message || 'Failed to delete manager'}`);
+    }
+  };
 
   const getHotelName = (hotelID?: number): string => {
     if (!hotelID) return '';
@@ -322,12 +358,7 @@ const ManageManagersPage: React.FC = () => {
                                   Edit
                                 </Link>
                                 <button
-                                  onClick={() => {
-                                    if (confirm(`Are you sure you want to delete manager "${m.fullName}"?`)) {
-                                      // Add delete logic here
-                                      alert('Delete functionality to be implemented');
-                                    }
-                                  }}
+                                  onClick={() => handleDelete(m.userID, m.fullName)}
                                   className="btn-secondary"
                                   style={{
                                     padding: '6px 12px',

@@ -2,7 +2,7 @@ import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import NavigationBar from '../../components/NavigationBar';
 import '../../styles/AdminPages.css';
-import { API_ENDPOINTS, apiPost, apiGet } from '../../config/api';
+import { API_ENDPOINTS, apiPost, apiGet, apiPut } from '../../config/api';
 
 type FormState = {
   hotelName: string;
@@ -72,21 +72,19 @@ const CreateHotelPage: React.FC = () => {
       setMessageType('error');
       return;
     }
-    if (form.managerID && isNaN(Number(form.managerID))) {
-      setMessage('Manager ID must be a number');
-      setMessageType('error');
-      return;
-    }
 
     setSubmitting(true);
     try {
+      // Step 1: Create the hotel with ManagerID (use PascalCase for backend)
       const payload: any = {
-        hotelName: form.hotelName.trim(),
-        address: form.address.trim() || null,
-        city: form.city.trim() || null,
-        managerID: form.managerID ? Number(form.managerID) : null,
-        createdAt: new Date().toISOString(),
+        HotelName: form.hotelName.trim(),
+        Address: form.address.trim() || null,
+        City: form.city.trim() || null,
+        ManagerID: form.managerID ? form.managerID : null,
+        CreatedAt: new Date().toISOString(),
       };
+
+      console.log('Creating hotel with payload:', payload);
 
       const res = await apiPost(API_ENDPOINTS.HOTELS.BASE, payload);
       const contentType = res.headers.get('content-type') || '';
@@ -96,6 +94,23 @@ const CreateHotelPage: React.FC = () => {
         
       if (!res.ok) {
         throw new Error(data?.message || `Failed to create hotel (HTTP ${res.status})`);
+      }
+
+      console.log('Hotel created:', data);
+
+      // Step 2: If a manager was selected, update the manager's HotelID
+      if (form.managerID && data.hotelID) {
+        console.log('Updating manager HotelID...');
+        const managerUpdateRes = await apiPut(
+          API_ENDPOINTS.USERS.BY_ID(form.managerID),
+          { hotelId: data.hotelID }
+        );
+        
+        if (!managerUpdateRes.ok) {
+          console.warn('Failed to update manager HotelID, but hotel was created');
+        } else {
+          console.log('Manager HotelID updated successfully');
+        }
       }
 
       setMessage('Hotel created successfully');

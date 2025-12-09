@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useAuthStore } from "../../store";
+import { dashboardAPI } from "../../services/api";
 import "../../styles/dashboard.css";
 
 import {
@@ -49,30 +49,22 @@ export default function ManagerOverview() {
     console.log("Fetching dashboard stats for hotelId:", user.hotelId);
     setLoading(true);
 
-    // Use the correct Dashboard API endpoint
-    axios
-      .get(
-        `https://localhost:7168/api/Dashboard/stats?hotelId=${user.hotelId}`
-      )
-      .then((res) => {
-        console.log("Dashboard API raw response:", res);
-        console.log("Dashboard response data:", res.data);
-        // Backend returns { success: true, data: {...} }
-        if (res.data.success && res.data.data) {
-          console.log("Setting data from res.data.data:", res.data.data);
-          setData(res.data.data);
-        } else if (res.data) {
-          console.log("Setting data directly from res.data:", res.data);
-          setData(res.data);
+    // Use the Dashboard API service
+    dashboardAPI.getStats(user.hotelId)
+      .then((response) => {
+        console.log("Dashboard API response:", response);
+        
+        if (response.success && response.data) {
+          console.log("Setting dashboard data:", response.data);
+          setData(response.data);
+        } else {
+          throw new Error("Invalid response format");
         }
         setLoading(false);
       })
       .catch((err) => {
         console.error("MANAGER DASHBOARD ERROR:", err);
-        console.log("Error response:", err.response);
-        console.log("Error data:", err.response?.data);
-        console.log("Error status:", err.response?.status);
-        setError(err.response?.data?.message || err.message || "Failed to load dashboard");
+        setError(err.message || "Failed to load dashboard stats");
         setLoading(false);
       });
   }, [user?.hotelId]);

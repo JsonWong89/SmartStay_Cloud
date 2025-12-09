@@ -11,21 +11,20 @@ const RootRedirect: React.FC = () => {
       // Redirect based on role
       const role = user.role.toLowerCase();
       
-      if (role === 'admin') {
-        navigate('/admin/dashboard', { replace: true });
-      } else if (role === 'manager' || role === 'hotel manager') {
-        navigate('/hotel-manager', { replace: true });
-      } else if (role === 'staff' || role === 'receptionist') {
-        navigate('/staff', { replace: true });
-      } else if (role === 'guest') {
-        navigate('/guest/dashboard', { replace: true });
-      } else {
-        // Default fallback to guest dashboard
-        navigate('/guest/dashboard', { replace: true });
+      if (role === "admin") {
+          console.log("Redirecting to /admin/dashboard");
+          navigate("/admin/dashboard");
+        } else if (role === "manager") {
+          console.log("Redirecting to /manager");
+          navigate("/manager");
+        } else if (role === "guest") {
+          navigate("/guest/dashboard");
+        } else if (role === "receptionist") {
+          navigate("/staff/dashboard");
       }
     } else {
-      // Not authenticated, show public guest dashboard
-      navigate('/guest/dashboard', { replace: true });
+      // Not authenticated, redirect to login
+      navigate('/login', { replace: true });
     }
   }, [user, isAuthenticated, navigate]);
 

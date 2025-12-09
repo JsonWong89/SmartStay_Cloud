@@ -17,6 +17,10 @@ type FormState = {
 type Hotel = {
   hotelID: number;
   hotelName: string;
+  address?: string;
+  city?: string;
+  managerID?: string;
+  createdAt?: string;
 };
 
 const EditRoomPage: React.FC = () => {
@@ -50,6 +54,10 @@ const EditRoomPage: React.FC = () => {
         const hotelList: Hotel[] = data.map((h: any) => ({
           hotelID: h.hotelID ?? h.HotelID,
           hotelName: h.hotelName ?? h.HotelName ?? '',
+          address: h.address ?? h.Address ?? '',
+          city: h.city ?? h.City ?? '',
+          managerID: h.managerID ?? h.ManagerID,
+          createdAt: h.createdAt ?? h.CreatedAt,
         }));
         setHotels(hotelList);
       } catch (e: any) {
@@ -155,15 +163,28 @@ const EditRoomPage: React.FC = () => {
       console.error('Failed to check for duplicates', e);
     }
     try {
+      // Find the selected hotel object
+      const selectedHotel = hotels.find(h => h.hotelID === Number(form.hotelId));
+      
       const payload = {
-        hotelId: Number(form.hotelId),
-        roomNumber: form.roomNumber,
-        roomType: form.roomType,
-        pricePerNight: Number(form.pricePerNight),
-        status: form.status,
-        description: form.description || null,
-        imageUrl: form.imageUrl || null,
+        HotelID: Number(form.hotelId),
+        Hotel: selectedHotel ? {
+          HotelID: selectedHotel.hotelID,
+          HotelName: selectedHotel.hotelName,
+          Address: selectedHotel.address || "",
+          City: selectedHotel.city || "",
+          ManagerID: selectedHotel.managerID || null,
+          CreatedAt: selectedHotel.createdAt || new Date().toISOString()
+        } : null,
+        RoomNumber: form.roomNumber,
+        RoomType: form.roomType,
+        PricePerNight: Number(form.pricePerNight),
+        Status: form.status,
+        Description: form.description || "",
+        ImageUrl: form.imageUrl || "",
       };
+
+      console.log("Updating room with payload:", payload);
 
       const res = await apiPut(API_ENDPOINTS.ROOMS.BY_ID(id!), payload);
       const contentType = res.headers.get('content-type') || '';

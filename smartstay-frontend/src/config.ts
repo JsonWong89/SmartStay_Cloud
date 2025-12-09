@@ -1,5 +1,5 @@
 // Stripe Configuration
-export const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SQHowCAVRIMLP3V1jjT3EjLst5ltA6SYFoeUqB8RaVtXKqceuI1TAQLzh5s60RRGZ4lD3DSJRBzCOOD22vQw3T200KxCpnTMX';
+export const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SWWXH7mTJRSAVeOBEH0fVq9Mo85z2qgQe4jfPSOwGiv4ykR6JUGOTKBsvgntAfpyTI83oOoaioNjTgpCou2suwx005cGG7nF9';
 
 // API Base URL
 export const API_BASE_URL = 'https://localhost:7168';

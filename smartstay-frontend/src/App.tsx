@@ -98,7 +98,7 @@ const App: React.FC = () => {
         }
       />
       <Route
-        path="/guest/booking"
+        path="/guest/booking/:roomId"
         element={
           <ProtectedRoute allowedRoles={["Guest"]}>
             <BookingPage />

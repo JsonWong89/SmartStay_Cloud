@@ -46,19 +46,22 @@ const BookingPage: React.FC = () => {
     const fetchRoomDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`);
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch room details');
         }
         
         const data = await response.json();
+        console.log('Room data received:', data);
+        
+        // Handle both camelCase and PascalCase field names
         setRoom({
-          id: data.id,
-          hotelName: data.hotelName,
-          roomType: data.roomType,
-          price: data.price,
-          imageUrl: data.imageUrl
+          id: data.roomId || data.RoomId || data.id,
+          hotelName: data.hotelName || data.HotelName,
+          roomType: data.roomType || data.RoomType,
+          price: data.pricePerNight || data.PricePerNight || data.price,
+          imageUrl: data.imageURL || data.ImageURL || data.imageUrl
         });
       } catch (err) {
         console.error('Error fetching room:', err);
@@ -105,7 +108,7 @@ const BookingPage: React.FC = () => {
     formData.append('GuestID', guestId);
     formData.append('DocumentType', documentType);
 
-    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+    const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
       method: 'POST',
       body: formData
     });
@@ -191,18 +194,22 @@ const BookingPage: React.FC = () => {
         await uploadDocument(additionalDoc, docType, user.id);
       }
 
-      // Step 3: Create booking via API
+      // Step 3: Create booking via API - Backend expects PascalCase
       const bookingRequest = {
-        guestID: user.id,
-        roomID: room.id,
-        checkInDate: checkInDate,
-        checkOutDate: checkOutDate,
-        totalGuests: guests,
-        totalAmount: totalPrice,
-        specialRequests: specialRequests
+        GuestID: user.id,
+        RoomID: room.id,
+        CheckInDate: checkInDate,
+        CheckOutDate: checkOutDate,
+        TotalGuests: guests,
+        TotalAmount: totalPrice,
+        DepositPaid: depositAmount,
+        PaymentMethod: "Card", // Default to Card for online bookings
+        SpecialRequests: specialRequests
       };
 
-      const response = await fetch(`${API_BASE_URL}/bookings`, {
+      console.log('Creating booking with payload:', bookingRequest);
+
+      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -211,20 +218,53 @@ const BookingPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to create booking');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create booking' }));
+        throw new Error(errorData.message || `Booking failed (HTTP ${response.status})`);
       }
 
-      const bookingData = await response.json();
-      console.log('Booking created:', bookingData);
+      const result = await response.json();
+      console.log('Booking API response:', result);
+      console.log('Full response structure:', JSON.stringify(result, null, 2));
+
+      // Extract booking data from response - handle different response structures
+      const bookingData = result.data || result;
+      console.log('Extracted booking data:', bookingData);
+      console.log('Full booking data:', JSON.stringify(bookingData, null, 2));
+      console.log('All keys in bookingData:', Object.keys(bookingData));
+
+      // ASP.NET Core serializes BookingID as bookingId (camelCase)
+      // Check all possible variations
+      const extractedBookingId = 
+        bookingData.bookingId || 
+        bookingData.bookingID || 
+        bookingData.BookingID || 
+        bookingData.BookingId || 
+        bookingData.id ||
+        bookingData.Id ||
+        bookingData.ID;
+      
+      console.log('Final extracted booking ID:', extractedBookingId);
+      console.log('Type of booking ID:', typeof extractedBookingId);
+
+      if (!extractedBookingId) {
+        console.error('Failed to extract booking ID from:', bookingData);
+        console.error('Available keys:', Object.keys(bookingData));
+        throw new Error('Booking was created but no booking ID was returned from the server. Please contact support.');
+      }
 
       // Navigate to payment page with booking data
       navigate(`/guest/payment`, { 
         state: { 
           booking: {
-            ...bookingData,
+            bookingID: extractedBookingId, // Use bookingID (uppercase) for PaymentPage
+            bookingStatus: bookingData.bookingStatus || bookingData.BookingStatus,
+            totalAmount: bookingData.totalAmount || bookingData.TotalAmount || totalPrice,
+            depositAmount: bookingData.depositAmount || bookingData.DepositAmount || depositAmount,
             hotelName: room.hotelName,
-            roomType: room.roomType
+            roomType: room.roomType,
+            checkInDate: checkInDate,
+            checkOutDate: checkOutDate,
+            totalGuests: guests
           }
         } 
       });
@@ -544,7 +584,7 @@ const BookingPage: React.FC = () => {
 
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                   <p className="text-sm text-gray-600 mb-1">Deposit Required (20%)</p>
-                  <p className="text-xl font-bold text-blue-600">${depositAmount.toFixed(2)}</p>
+                  <p className="text-xl font-bold text-blue-600">RM{depositAmount.toFixed(2)}</p>
                   <p className="text-xs text-gray-500 mt-1">Pay now to secure your reservation</p>
                 </div>
 

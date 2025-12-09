@@ -249,25 +249,31 @@ const AuthPage: React.FC = () => {
       console.log("userData.HotelId:", userData.HotelId);
       console.log("userData.hotelID:", userData.hotelID);
       console.log("userData.HotelID:", userData.HotelID);
-      
+
       const role = (userData.role || userData.Role || "").toLowerCase();
       const userRole = userData.role || userData.Role; // Keep original case for store
       const hotelIdValue = userData.hotelId || userData.HotelId || userData.hotelID || userData.HotelID || undefined;
-      
+
       console.log("Extracted hotelId:", hotelIdValue);
-      
+
       setUser({
         userId: userData.id || userData.Id || userData.userId || userData.UserId || userData.userID || userData.UserID || "",
         id: userData.id || userData.Id || userData.userID || userData.UserID,
         fullName: userData.fullName || userData.FullName,
         email: userData.email || userData.Email,
         role: userRole, // Use original case
+        hotelName:
+          userData.hotelName ||
+          userData.HotelName ||
+          userData.hotel?.hotelName ||
+          userData.Hotel?.HotelName ||
+          "",
         hotelId: hotelIdValue,
       });
-      
+
       console.log("User stored in state with hotelId:", hotelIdValue);
-      console.log("Navigating user with role:", role); 
-      
+      console.log("Navigating user with role:", role);
+
       setMessage("Login successful!");
       setMessageType("success");
 
@@ -425,7 +431,7 @@ const AuthPage: React.FC = () => {
                       />
                     </div>
 
-                    <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>
+                    <button type="submit" disabled={loading} style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {}) }}>
                       {loading ? "Sending..." : "Send Reset Code"}
                     </button>
                   </form>
@@ -487,7 +493,7 @@ const AuthPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>
+                    <button type="submit" disabled={loading} style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {}) }}>
                       {loading ? "Resetting..." : "Reset Password"}
                     </button>
                   </form>
@@ -587,7 +593,7 @@ const AuthPage: React.FC = () => {
                     </button>
                   </div>
 
-                  <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>
+                  <button type="submit" disabled={loading} style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {}) }}>
                     {loading ? "Signing in..." : "Sign In"}
                   </button>
                 </form>
@@ -747,7 +753,7 @@ const AuthPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <button type="submit" disabled={loading} style={{...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {})}}>
+                  <button type="submit" disabled={loading} style={{ ...styles.submitButton, ...(loading ? styles.submitButtonDisabled : {}) }}>
                     {loading ? "Creating Account..." : "Create Account"}
                   </button>
                 </form>

@@ -9,6 +9,10 @@ type Hotel = {
   hotelName: string;
   address?: string;
   city?: string;
+  description?: string;
+  imageUrl?: string;
+  phoneNumber?: string;
+  email?: string;
   managerID?: number;
   createdAt?: string;
 };
@@ -45,6 +49,10 @@ const HotelsPage: React.FC = () => {
         hotelName: h.hotelName ?? h.HotelName ?? '',
         address: h.address ?? h.Address,
         city: h.city ?? h.City,
+        description: h.description ?? h.Description,
+        imageUrl: h.imageUrl ?? h.ImageUrl,
+        phoneNumber: h.phoneNumber ?? h.PhoneNumber,
+        email: h.email ?? h.Email,
         managerID: h.managerID ?? h.ManagerID,
         createdAt: h.createdAt ?? h.CreatedAt,
       }));

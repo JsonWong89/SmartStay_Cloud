@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { API_BASE_URL } from '../../config';
 import GuestNavbar from '../../components/GuestNavbar';
+import Toast, { ToastType } from '../../components/Toast';
 
 interface GuestData {
   guestId: string;
@@ -50,6 +51,13 @@ const GuestProfile: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Toast notifications
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const showToast = (message: string, type: ToastType) => {
+    setToast({ message, type });
+  };
 
   // Fetch profile data on mount
   useEffect(() => {
@@ -164,30 +172,30 @@ const GuestProfile: React.FC = () => {
     e.preventDefault();
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      alert('Please fill in all password fields');
+      showToast('⚠️ Please fill in all password fields', 'warning');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert('New password and confirm password do not match');
+      showToast('🔒 New passwords don\'t match. Please try again.', 'error');
       return;
     }
 
     if (newPassword.length < 8) {
-      alert('Password must be at least 8 characters long');
+      showToast('🔐 Password must be at least 8 characters long.', 'warning');
       return;
     }
 
     if (!user?.id) {
-      alert('User ID not found');
+      showToast('⚠️ User session not found. Please sign in again.', 'error');
       return;
     }
 
     try {
       const payload = {
-        userId: user.userId || user.id,
-        currentPassword: currentPassword,
-        newPassword: newPassword
+        GuestID: user.id,
+        CurrentPassword: currentPassword,
+        NewPassword: newPassword
       };
       console.log('Change password payload:', payload);
 
@@ -200,23 +208,36 @@ const GuestProfile: React.FC = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to change password' }));
         console.error('Change password error response:', response.status, errorData);
-        throw new Error(errorData.message || errorData.title || 'Failed to change password');
+        console.error('Validation errors:', errorData.errors);
+        
+        // Extract error messages from validation errors
+        let errorMessage = 'Failed to change password';
+        if (errorData.errors) {
+          const errorMessages = Object.entries(errorData.errors)
+            .map(([field, messages]: [string, any]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ');
+          errorMessage = errorMessages || errorData.title || errorMessage;
+        } else {
+          errorMessage = errorData.message || errorData.title || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      alert('Password changed successfully!');
+      showToast('✨ Password changed successfully!', 'success');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setShowPasswordChange(false);
     } catch (error: any) {
       console.error('Error changing password:', error);
-      alert(`Failed to change password: ${error.message}`);
+      showToast(`❌ ${error.message}`, 'error');
     }
   };
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete your account?\n\nThis action cannot be undone. All your data will be permanently deleted.'
+      '⚠️ Are you sure you want to delete your account?\n\nThis action cannot be undone. All your data will be permanently deleted.'
     );
 
     if (confirmed) {
@@ -234,12 +255,14 @@ const GuestProfile: React.FC = () => {
             throw new Error('Failed to delete account');
           }
 
-          alert('Account deleted successfully. You will be logged out.');
-          clearUser();
-          navigate('/');
+          showToast('🗑️ Account deleted successfully. We\'re sorry to see you go!', 'success');
+          setTimeout(() => {
+            clearUser();
+            navigate('/');
+          }, 1500);
         } catch (error) {
           console.error('Error deleting account:', error);
-          alert('Failed to delete account. Please contact support.');
+          showToast('❌ Failed to delete account. Please contact support.', 'error');
         }
       }
     }
@@ -542,6 +565,15 @@ const GuestProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { API_BASE_URL } from '../../config';
 import GuestNavbar from '../../components/GuestNavbar';
+import { ToastContainer } from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
 
 interface Reservation {
   bookingID: number;
@@ -27,6 +29,7 @@ const MyReservations: React.FC = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const { toast, showSuccess, showError, hideToast } = useToast();
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -114,10 +117,10 @@ const MyReservations: React.FC = () => {
           )
         );
         
-        alert('Reservation cancelled successfully. Note: Your deposit is non-refundable.');
+        showSuccess('✅ Reservation cancelled successfully. Note: Your deposit is non-refundable.');
       } catch (error) {
         console.error('Error cancelling reservation:', error);
-        alert(error instanceof Error ? error.message : 'Failed to cancel reservation. Please try again.');
+        showError(error instanceof Error ? `❌ ${error.message}` : '❌ Failed to cancel reservation. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -397,11 +400,11 @@ const MyReservations: React.FC = () => {
             </div>
           </div>
         )}
-        </>
+          </>
         )}
       </div>
+      
+      <ToastContainer toast={toast} onClose={hideToast} />
     </div>
   );
-};
-
-export default MyReservations;
+};export default MyReservations;

@@ -105,27 +105,31 @@ const AuthPage: React.FC = () => {
     setLoading(true);
 
     try {
+      const payload = { Email: forgotPasswordEmail };
+      console.log('Forgot password request payload:', payload);
+
       const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ Email: forgotPasswordEmail })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json().catch(() => ({ message: 'Request sent' }));
       console.log('Forgot password response:', response.status, data);
 
       if (response.ok) {
-        setMessage('Reset code sent to your email. Please check your inbox.');
+        setMessage('✨ Reset code sent! Check your email inbox.');
         setMessageType('success');
         setShowResetForm(true);
       } else {
         console.error('Forgot password error:', data);
-        setMessage(data.message || 'Failed to send reset code. Please try again.');
+        const errorMsg = data.message || data.title || data.error || 'Unable to send reset code. Please verify your email and try again.';
+        setMessage(errorMsg);
         setMessageType('error');
       }
     } catch (error) {
       console.error('Forgot password exception:', error);
-      setMessage('An error occurred. Please try again.');
+      setMessage('⚠️ Connection error. Please check your network and try again.');
       setMessageType('error');
     } finally {
       setLoading(false);
@@ -138,13 +142,13 @@ const AuthPage: React.FC = () => {
     setMessageType("");
 
     if (newPassword !== confirmResetPassword) {
-      setMessage('Passwords do not match');
+      setMessage('🔒 Passwords don\'t match. Please try again.');
       setMessageType('error');
       return;
     }
 
     if (newPassword.length < 8) {
-      setMessage('Password must be at least 8 characters');
+      setMessage('🔐 Password must be at least 8 characters long.');
       setMessageType('error');
       return;
     }
@@ -152,20 +156,24 @@ const AuthPage: React.FC = () => {
     setLoading(true);
 
     try {
+      const payload = {
+        email: forgotPasswordEmail,
+        token: resetCode,
+        newPassword: newPassword
+      };
+      console.log('Reset password payload:', payload);
+
       const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          Email: forgotPasswordEmail,
-          ResetCode: resetCode,
-          NewPassword: newPassword
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json().catch(() => ({ message: 'Password reset' }));
+      console.log('Reset password response:', response.status, data);
 
       if (response.ok) {
-        setMessage('Password reset successfully! You can now sign in.');
+        setMessage('🎉 Password reset successful! You can now sign in with your new password.');
         setMessageType('success');
         setTimeout(() => {
           setShowForgotPassword(false);

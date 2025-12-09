@@ -43,19 +43,19 @@ export default function ManagerManageBookings() {
 
     try {
       // Backend GET /api/bookings returns all bookings
-      const res = await axios.get(
+      const res = await axios.get<any[]>(
         `https://localhost:7168/api/bookings`
       );
-      
+
       console.log("All bookings:", res.data);
-      
+
       // Filter bookings by current hotel
-      const hotelBookings = res.data.filter((booking: any) => 
+      const hotelBookings = res.data.filter((booking: any) =>
         (booking.hotelID || booking.HotelID) === user.hotelId
       );
-      
+
       console.log(`Filtered ${hotelBookings.length} bookings for hotel ${user.hotelId}`);
-      
+
       // Map to match Booking interface
       const mappedBookings = hotelBookings.map((b: any) => ({
         bookingID: String(b.bookingID || b.BookingID),
@@ -71,7 +71,7 @@ export default function ManagerManageBookings() {
         bookingStatus: b.bookingStatus || b.BookingStatus || "Pending",
         createdAt: b.createdAt || b.CreatedAt,
       }));
-      
+
       setBookings(mappedBookings);
       setFilteredBookings(mappedBookings);
     } catch (err) {
@@ -129,56 +129,46 @@ export default function ManagerManageBookings() {
     setFilteredBookings(data);
   }, [bookings, search, filterYear, filterMonth]);
 
-  // 📌 Update Booking Status
-  const updateStatus = async (bookingId: number, newStatus: string) => {
+  //  Update Booking Status
+  async function updateStatus(id: number, newStatus: string) {
     try {
-      // Find the booking to get its full data
-      const booking = bookings.find(b => b.bookingID === String(bookingId));
-      if (!booking) {
-        alert("Booking not found");
-        return;
-      }
-      
-      // Backend PUT /api/bookings/{id} expects full Booking object
-      const payload = {
-        guestID: booking.guestID,
-        hotelID: user?.hotelId,
-        roomID: booking.roomID,
-        checkInDate: booking.checkInDate,
-        checkOutDate: booking.checkOutDate,
-        totalGuests: booking.totalGuests,
-        totalAmount: booking.totalAmount,
-        depositAmount: booking.depositAmount,
-        bookingStatus: newStatus, // Update status
-      };
-      
-      await axios.put(
-        `https://localhost:7168/api/bookings/${bookingId}`,
-        payload
+      const res = await axios.put(
+        `https://localhost:7168/api/bookings/${id}/status`,
+        JSON.stringify(newStatus),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
       );
 
-      alert(`Booking updated to ${newStatus}!`);
-      fetchBookings();
-    } catch (err) {
-      console.error("STATUS UPDATE ERROR:", err);
-      alert("Failed to update booking.");
-    }
-  };
+      alert("Booking status updated!");
 
-  // 📌 Guest Popup
+      //Refresh the booking table immediately after update
+      fetchBookings();
+
+      console.log(res.data);
+    } catch (err: any) {
+      console.error(err.response?.data || err.message);
+      alert("Failed to update booking status");
+    }
+  }
+
+
+
+  //  Guest Popup
   async function openGuestProfile(guestId: string) {
     try {
-      // Backend GET /api/Guests/{id}
-      const res = await axios.get(
-        `https://localhost:7168/api/Guests/${guestId}`
+      const res = await axios.get<any>(
+        `https://localhost:7168/api/guests/${guestId}?hotelId=${user?.hotelId}`
       );
-      setGuestInfo(res.data);
+
+      setGuestInfo(res.data.data); // ✔ pick the 'data' object from response  
       setShowGuestPopup(true);
     } catch (err) {
       console.error("Failed to fetch guest:", err);
       alert("Failed to load guest information");
     }
   }
+
 
   return (
     <div className="manager-bookings fade-in">
@@ -304,42 +294,48 @@ export default function ManagerManageBookings() {
                 </td>
 
                 <td className="action-buttons">
-                  <button
-                    className="btn btn-confirm"
-                    onClick={() =>
-                      updateStatus(Number(b.bookingID), "Confirmed")
-                    }
-                  >
-                    Confirm
-                  </button>
+                  <div className="action-group">
 
-                  <button
-                    className="btn btn-cancel"
-                    onClick={() =>
-                      updateStatus(Number(b.bookingID), "Cancelled")
-                    }
-                  >
-                    Cancel
-                  </button>
+                    {/* CONFIRM — only Pending can use */}
+                    <button
+                      className="action-btn confirm"
+                      disabled={b.bookingStatus !== "Pending"}
+                      onClick={() => updateStatus(Number(b.bookingID), "Confirmed")}
+                    >
+                      Confirm
+                    </button>
 
-                  <button
-                    className="btn btn-checkin"
-                    onClick={() =>
-                      updateStatus(Number(b.bookingID), "CheckedIn")
-                    }
-                  >
-                    Check In
-                  </button>
+                    {/* CHECK IN — only Confirmed can use */}
+                    <button
+                      className="action-btn checkin"
+                      disabled={b.bookingStatus !== "Confirmed"}
+                      onClick={() => updateStatus(Number(b.bookingID), "CheckedIn")}
+                    >
+                      Check In
+                    </button>
 
-                  <button
-                    className="btn btn-checkout"
-                    onClick={() =>
-                      updateStatus(Number(b.bookingID), "CheckedOut")
-                    }
-                  >
-                    Check Out
-                  </button>
+                    {/* CHECK OUT — only CheckedIn can use */}
+                    <button
+                      className="action-btn checkout"
+                      disabled={b.bookingStatus !== "CheckedIn"}
+                      onClick={() => updateStatus(Number(b.bookingID), "CheckedOut")}
+                    >
+                      Check Out
+                    </button>
+
+                    {/* CANCEL — disable if already CheckedOut or Cancelled */}
+                    <button
+                      className="action-btn cancel"
+                      disabled={b.bookingStatus === "CheckedOut" || b.bookingStatus === "Cancelled"}
+                      onClick={() => updateStatus(Number(b.bookingID), "Cancelled")}
+                    >
+                      Cancel
+                    </button>
+
+                  </div>
                 </td>
+
+
               </tr>
             ))}
           </tbody>
@@ -353,7 +349,7 @@ export default function ManagerManageBookings() {
             <h3 className="modal-title">Guest Profile</h3>
 
             <p>
-              <strong>ID:</strong> {guestInfo.guestID}
+              <strong>ID:</strong> {guestInfo.guestId}
             </p>
             <p>
               <strong>Name:</strong> {guestInfo.fullName}

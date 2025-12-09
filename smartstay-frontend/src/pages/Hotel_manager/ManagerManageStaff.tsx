@@ -98,9 +98,8 @@ export default function ManagerManageStaff() {
 
     try {
       const [staffRes, usersRes] = await Promise.all([
-        axios.get<StaffApi[]>(
-          `https://localhost:7168/api/Staff`
-        ),
+        axios.get<{ success: boolean; data: StaffApi[] }>(`https://localhost:7168/api/Staff`),
+
         axios.get<any[]>(
           `https://localhost:7168/api/Users`
         ),
@@ -110,29 +109,27 @@ export default function ManagerManageStaff() {
       console.log("Staff response type:", typeof staffRes.data, Array.isArray(staffRes.data));
 
       // Handle if response is wrapped or direct array
-      const staffArray: any[] = Array.isArray(staffRes.data) 
-        ? staffRes.data 
-        : ((staffRes.data as any).data && Array.isArray((staffRes.data as any).data) ? (staffRes.data as any).data : []);
+      const staffArray: StaffApi[] = staffRes.data?.data ?? [];
 
       // Filter staff by hotelId
-      const hotelStaff = staffArray.filter((s: any) => s.hotelID === user.hotelId);
+      const hotelStaff = staffArray.filter((s: any) => s.hotelId === user.hotelId);
 
       // Filter receptionists from Users by role and hotelId
-      const receptionists = usersRes.data.filter((u: any) => 
-        (u.role || u.Role) === 'Receptionist' && 
+      const receptionists = usersRes.data.filter((u: any) =>
+        (u.role || u.Role) === 'Receptionist' &&
         (u.hotelID || u.HotelID) === user.hotelId
       );
 
       const staffRows: StaffRow[] = hotelStaff.map((s: any) => ({
-        id: String(s.staffID),
+        id: String(s.staffId),
         source: "Staff",
-        hotelID: s.hotelID,
+        hotelID: s.hotelId,
         fullName: s.fullName,
         position: s.position,
         gender: s.gender,
         contactNumber: s.contactNumber,
         email: s.email,
-        createdDate: s.hiredate,
+        createdDate: s.hireDate,
       }));
 
       const recRows: StaffRow[] = receptionists.map((r: any) => ({
@@ -222,7 +219,7 @@ export default function ManagerManageStaff() {
           ContactNumber: newPerson.contactNumber,
           HireDate: new Date().toISOString(),
         });
-        
+
         await axios.post("https://localhost:7168/api/Staff", {
           HotelID: user.hotelId,
           FullName: newPerson.fullName,
@@ -241,12 +238,12 @@ export default function ManagerManageStaff() {
           Gender: newPerson.gender,
           Email: newPerson.email,
           HotelID: user.hotelId,
-          PasswordHash: "Staff@123", 
+          PasswordHash: "Staff@123",
           Role: "Receptionist"
         };
-        
+
         console.log("Adding receptionist with payload:", payload);
-        
+
         const res: any = await axios.post(
           "https://localhost:7168/api/Users",
           payload

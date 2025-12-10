@@ -253,6 +253,7 @@ const AuthPage: React.FC = () => {
       const role = (userData.role || userData.Role || "").toLowerCase();
       const userRole = userData.role || userData.Role; // Keep original case for store
       const hotelIdValue = userData.hotelId || userData.HotelId || userData.hotelID || userData.HotelID || undefined;
+      const hotelName = userData.hotelName || userData.HotelName || userData.hotelName || userData.HotelName || undefined;
       
       console.log("Extracted hotelId:", hotelIdValue);
       
@@ -263,6 +264,7 @@ const AuthPage: React.FC = () => {
         email: userData.email || userData.Email,
         role: userRole, // Use original case
         hotelId: hotelIdValue,
+        hotelName: hotelName
       });
       
       console.log("User stored in state with hotelId:", hotelIdValue);

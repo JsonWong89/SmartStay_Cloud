@@ -39,13 +39,21 @@ export function StatCard({
     purple: "bg-purple-50",
   };
 
+  const borderColors: Record<string, string> = {
+    indigo: "border-l-indigo-600",
+    green: "border-l-green-600",
+    blue: "border-l-blue-600",
+    amber: "border-l-amber-600",
+    purple: "border-l-purple-600",
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4">
-      <div className="flex items-center gap-3">
-        <div className={`p-2.5 rounded-lg ${colors[color]}`}>{icon}</div>
+    <div className={`bg-white rounded-xl shadow-sm p-5 border-l-8 ${borderColors[color]}`}>
+      <div className="flex items-center gap-2">
+        <div className={`p-3 rounded-lg ${colors[color]}`}>{icon}</div>
         <div>
-          <p className="text-xs text-gray-500">{title}</p>
-          <p className="text-xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-gray-500">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
         </div>
       </div>
     </div>
@@ -99,11 +107,11 @@ export function RoomCard({
         </div>
         <p className="text-sm text-gray-600 mb-3">{room.roomType}</p>
         <div className="flex items-center gap-2 mb-3">
-          <DollarSign className="h-4 w-4 text-gray-400" />
+        
           <span className="font-bold text-lg text-gray-900">
             RM {room.pricePerNight.toFixed(2)}
           </span>
-          <span className="text-sm text-gray-500">/night</span>
+          <span className="text-sm text-gray-500">/Per Night</span>
         </div>
         <p className="text-xs text-gray-600 mb-4 line-clamp-2">{room.description}</p>
         <button

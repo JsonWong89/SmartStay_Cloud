@@ -1,4 +1,3 @@
-// components/Sidebar.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -35,20 +34,14 @@ export default function Sidebar({
 
   const user = useAuthStore((state) => state.user);
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'S';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const handleToggle = () => {
     const newState = !collapsed;
     setCollapsed(newState);
     setSidebarCollapsed(newState);
+  };
+
+  const getInitials = (name?: string) => {
+    return name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   const menuItems = [
@@ -86,14 +79,14 @@ export default function Sidebar({
       section: "MANAGEMENT",
       items: [
         {
-          name: "View Staff",
-          path: "/staff/staff-list",
-          icon: <FiUsers className="h-5 w-5" />,
-        },
-        {
           name: "Manage Guests",
           path: "/staff/manage-guests",
           icon: <FiUserCheck className="h-5 w-5" />,
+        },
+        {
+          name: "View Staff",
+          path: "/staff/staff-list",
+          icon: <FiUsers className="h-5 w-5" />,
         },
       ],
     },
@@ -213,19 +206,9 @@ export default function Sidebar({
 
       {/* Footer */}
       <div className="border-t border-white/10 px-5 py-4">
-        {/* {!collapsed && (
-          <div className="mb-4 flex gap-6 text-[13px] text-cyan-300">
-            <button className="flex items-center gap-1.5 hover:text-white">
-              <FiBell className="h-4 w-4" /> Notifications
-            </button>
-            <button className="flex items-center gap-1.5 hover:text-white">
-              <FiHelpCircle className="h-4 w-4" /> Support
-            </button>
-          </div>
-        )} */}
 
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold" >
             {getInitials(user?.fullName)}
           </div>
           {!collapsed && (

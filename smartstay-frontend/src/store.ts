@@ -6,6 +6,7 @@ interface User {
   id?: string; 
   fullName: string;
   email: string;
+  gender?:string;
   role: 'Admin' | 'Manager' | 'Receptionist' | 'Guest' | 'Hotel Manager' | 'Staff';
   phone?: string;
   hotelId?: number;

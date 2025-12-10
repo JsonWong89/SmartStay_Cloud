@@ -67,13 +67,17 @@ export default function ManagerProfile() {
         if (!form.userId) return;
 
         try {
-            const payload: any = {
+            const payload = {
                 email: form.email,
                 fullName: form.fullName,
+                gender: form.gender,
                 role: "Manager",
                 hotelID: Number(form.hotelId),
-                password: changingPassword && form.password.trim() !== "" ? form.password : undefined,
+                password: changingPassword && form.password.trim() !== ""
+                    ? form.password
+                    : "",   // <-- required, cannot be undefined
             };
+
 
             // 🔵 UPDATE BACKEND
             await axios.put(
@@ -83,9 +87,12 @@ export default function ManagerProfile() {
 
             // Update global user store so sidebar also updates
             setUser({
+                ...user!,
                 fullName: form.fullName,
-                name: form.fullName,
+                email: form.email,
+                gender: form.gender,   // 🔥 UPDATE GENDER
             });
+
 
             alert("Profile updated successfully!");
 
@@ -123,7 +130,16 @@ export default function ManagerProfile() {
 
                 <div className="profile-item col-span-2">
                     <label>Hotel</label>
-                    <input value={`${form.hotelId} - ${form.hotelName}`} disabled />
+                    <input
+                        value={
+                            form.hotelName
+                                ? form.hotelName
+                                : "Please contact admin to assign a hotel for you."
+                        }
+                        disabled
+                    />
+
+
                 </div>
             </div>
 
@@ -164,21 +180,14 @@ export default function ManagerProfile() {
                 <div className="profile-item">
                     <label>Password</label>
 
-                    {/* Old Password - Read Only */}
-                    {!changingPassword && (
+                    {!changingPassword ? (
+                        // Normal display (masked)
                         <div className="password-box">
                             <input
-                                type={showPass ? "text" : "password"}
-                                value={form.oldPassword}
+                                type="password"
+                                value={form.oldPassword || ""}
                                 disabled
                             />
-                            <button
-                                type="button"
-                                className="pass-toggle"
-                                onClick={() => setShowPass(!showPass)}
-                            >
-                                {showPass ? <FiEyeOff /> : <FiEye />}
-                            </button>
 
                             <button
                                 className="change-pass-btn"
@@ -187,44 +196,56 @@ export default function ManagerProfile() {
                                 Change
                             </button>
                         </div>
-                    )}
+                    ) : (
+                        // Editing password (show old + new)
+                        <div className="password-box" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
 
-                    {/* New Password - Editable */}
-                    {changingPassword && (
-                        <div className="password-box">
+                            {/* 🔥 OLD PASSWORD — masked but still visible */}
                             <input
-                                type={showPass ? "text" : "password"}
-                                placeholder="Enter new password"
-                                name="password"
-                                value={form.password}
-                                onChange={handleChange}
+                                type="password"
+                                value={form.oldPassword || ""}
+                                disabled
                             />
-                            <button
-                                type="button"
-                                className="pass-toggle"
-                                onClick={() => setShowPass(!showPass)}
-                            >
-                                {showPass ? <FiEyeOff /> : <FiEye />}
-                            </button>
 
-                            <button
-                                className="change-pass-btn cancel"
-                                onClick={() => {
-                                    setChangingPassword(false);
-                                    setForm({ ...form, password: "" });
-                                }}
-                            >
-                                Cancel
-                            </button>
+                            {/* 🔥 NEW PASSWORD FIELD */}
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <input
+                                    type={showPass ? "text" : "password"}
+                                    placeholder="Enter new password"
+                                    name="password"
+                                    value={form.password}
+                                    onChange={handleChange}
+                                />
+
+                                <button
+                                    type="button"
+                                    className="pass-toggle"
+                                    onClick={() => setShowPass(!showPass)}
+                                >
+                                    {showPass ? <FiEyeOff /> : <FiEye />}
+                                </button>
+
+                                <button
+                                    className="change-pass-btn cancel"
+                                    onClick={() => {
+                                        setChangingPassword(false);
+                                        setForm({ ...form, password: "" });
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
+
+
             </div>
 
             <button className="save-btn" onClick={saveChanges}>
                 Save Changes
             </button>
         </div>
-        
+
     );
 }

@@ -12,7 +12,6 @@ interface Room {
   status: string;
   description: string;
   imageUrl: string;
-  newImage?: File | null;
 
 }
 
@@ -37,7 +36,7 @@ export default function ManagerManageRooms() {
     price: "",
     status: "Available",
     description: "",
-    image: null as File | null,
+    image: "",
   });
 
   const fetchRooms = async () => {
@@ -49,29 +48,28 @@ export default function ManagerManageRooms() {
     setLoading(true);
     try {
       // Fetch all rooms and filter by hotelId on frontend
-      // Backend doesn't have /api/rooms/hotel/{id} endpoint
       const res = await axios.get<any[]>(
-        `https://localhost:7168/api/rooms`
+        `https://localhost:7168/api/rooms?hotelId=${user.hotelId}`
       );
-      
+
       console.log("All rooms response:", res.data);
-      
+
       // Log all hotelIDs to see what hotels have rooms
-      const hotelIDs = res.data.map((room: any) => room.hotelID);
+      const hotelIDs = res.data.map((room: any) => room.hotelID || room.HotelID);
       console.log("All hotel IDs in rooms:", hotelIDs);
       console.log("User hotelId to match:", user.hotelId, typeof user.hotelId);
-      
-      // Filter rooms by current hotel
-      const hotelRooms = res.data.filter((room: any) => 
+
+      // Filter rooms by current hotelAvailable
+      const hotelRooms = res.data.filter((room: any) =>
         (room.hotelID || room.HotelID) === user.hotelId
       );
-      
+
       console.log(`Filtered ${hotelRooms.length} rooms for hotel ${user.hotelId}`);
-      
+
       // Map to match Room interface
       const mappedRooms = hotelRooms.map((room: any) => ({
         roomID: room.roomID || room.id,
-        hotelID: room.hotelID || room.HotelID,
+        hotelID: room.hotelID || room.hotelId || room.HotelID,
         roomNumber: room.roomNumber,
         roomType: room.roomType,
         pricePerNight: room.pricePerNight || room.price,
@@ -79,7 +77,7 @@ export default function ManagerManageRooms() {
         description: room.description || "",
         imageUrl: room.imageUrl || room.imageURL || "",
       }));
-      
+
       setRooms(mappedRooms);
       setFilteredRooms(mappedRooms);
     } catch (err) {
@@ -133,7 +131,16 @@ export default function ManagerManageRooms() {
   // ➕ Add Room
   // ─────────────────────────────
   async function handleAddRoom() {
+    let payload: any = {};
     try {
+      if (!user?.hotelId) {
+        alert("You are not assigned to a hotel yet.");
+        return;
+      }
+      if (!newRoom.image) {
+        alert("Please select an image");
+        return;
+      }
       // Backend expects Room object, not FormData
       const payload = {
         hotelID: user?.hotelId,
@@ -142,8 +149,10 @@ export default function ManagerManageRooms() {
         pricePerNight: parseFloat(newRoom.price),
         status: newRoom.status,
         description: newRoom.description,
-        imageURL: "", // You might need image upload handling
+        imageURL: newRoom.image,
       };
+      console.log("Sending payload:", payload);
+
 
       await axios.post("https://localhost:7168/api/rooms", payload);
 
@@ -156,14 +165,21 @@ export default function ManagerManageRooms() {
         price: "",
         status: "Available",
         description: "",
-        image: null,
+        image: "",
       });
       fetchRooms();
-    } catch (err: any) {
-      console.log("FULL ERROR:", err.response);
-      console.log("ERROR DATA:", err.response?.data);
+    } 
+    catch (err: any)
+     {
+      console.log("FULL ERROR:", err);
+      console.log("BACKEND RESPONSE:", err.response?.data);
+      console.log("Payload sent:", payload);
+      console.log("User from store:", user);
+      
+
       alert("Failed to add room: " + (err.response?.data?.message || err.message));
     }
+
   }
 
   // ─────────────────────────────
@@ -173,7 +189,6 @@ export default function ManagerManageRooms() {
     if (!selectedRoom) return;
 
     try {
-      // Backend expects Room object, not FormData
       const payload = {
         hotelID: selectedRoom.hotelID,
         roomNumber: selectedRoom.roomNumber,
@@ -193,7 +208,6 @@ export default function ManagerManageRooms() {
       setShowEdit(false);
       fetchRooms();
     } catch (err: any) {
-      console.log("UPDATE ERROR:", err.response?.data);
       alert("Failed to update room: " + (err.response?.data?.message || err.message));
     }
   }
@@ -250,7 +264,17 @@ export default function ManagerManageRooms() {
           <option value="high-low">High → Low</option>
         </select>
 
-        <button className="btn-add" onClick={() => setShowAdd(true)}>
+        <button
+          className="btn-add"
+          disabled={!user?.hotelId}
+          onClick={() => {
+            if (!user?.hotelId) {
+              alert("Your account is not assigned to a hotel yet. Please wait for admin approval.");
+              return;
+            }
+            setShowAdd(true);
+          }}
+        >
           ➕ Add Room
         </button>
       </div>
@@ -313,6 +337,69 @@ export default function ManagerManageRooms() {
           <div className="modal-box">
             <h3>Add New Room</h3>
 
+            {/* Room Image Upload */}
+            <label style={{ fontWeight: 600 }}>Room Image</label>
+
+            {/* Custom Upload Button */}
+            <label
+              className="btn-edit"
+              style={{
+                display: "inline-block",
+                marginBottom: "10px",
+                cursor: "pointer",
+                padding: "10px 16px",
+                borderRadius: "8px",
+                background: "#0ea5e9",
+                color: "white",
+                textAlign: "center"
+              }}
+              onClick={() => document.getElementById("addImageInput")?.click()}
+            >
+              📁 Choose Image
+            </label>
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              id="addImageInput"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setNewRoom({ ...newRoom, image: reader.result as string });
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+
+            {/* Preview */}
+            {newRoom.image && (
+              <img
+                src={newRoom.image}
+                alt="Preview"
+                style={{
+                  width: "100%",
+                  height: 180,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  margin: "10px 0",
+                  border: "1px solid #ddd",
+                }}
+              />
+            )}
+
+            {/* Error message */}
+            {!newRoom.image && (
+              <p style={{ color: "red", fontSize: "14px", marginTop: "4px" }}>
+                Please select room image
+              </p>
+            )}
+
+
             {/* Room Number */}
             <label style={{ fontWeight: 600 }}>Room Number</label>
             <input
@@ -361,13 +448,6 @@ export default function ManagerManageRooms() {
               onChange={(e) => setNewRoom({ ...newRoom, description: e.target.value })}
             />
 
-            {/* Image Upload */}
-            <label style={{ fontWeight: 600 }}>Room Image</label>
-            <input
-              type="file"
-              onChange={(e) => setNewRoom({ ...newRoom, image: e.target.files![0] })}
-            />
-
             {/* Buttons */}
             <div className="modal-actions">
               <button className="btn-add" onClick={handleAddRoom}>Add</button>
@@ -384,7 +464,7 @@ export default function ManagerManageRooms() {
           <div className="modal-box">
             <h3>Edit Room</h3>
 
-            {/* 📌 Show current image */}
+            {/* Show current image */}
             <label style={{ fontWeight: 600 }}>Current Image</label>
             <img
               src={newPreview || selectedRoom.imageUrl}
@@ -398,8 +478,7 @@ export default function ManagerManageRooms() {
                 border: "1px solid #ddd",
               }}
             />
-
-            {/* 📌 Change image button */}
+            {/* Change image button */}
             <button
               className="btn-edit"
               style={{ marginBottom: 10 }}
@@ -412,12 +491,26 @@ export default function ManagerManageRooms() {
             <input
               type="file"
               id="editImageInput"
+              accept="image/*"
               style={{ display: "none" }}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
-                  setSelectedRoom({ ...selectedRoom, newImage: file });
-                  setNewPreview(URL.createObjectURL(file));
+                  const reader = new FileReader();
+
+                  reader.onloadend = () => {
+                    const base64 = reader.result as string;
+
+                    // Update selectedRoom with new Base64 image
+                    setSelectedRoom((prev) =>
+                      prev ? { ...prev, imageUrl: base64 } : prev
+                    );
+
+                    // Update preview
+                    setNewPreview(base64);
+                  };
+
+                  reader.readAsDataURL(file);
                 }
               }}
             />

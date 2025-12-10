@@ -44,8 +44,6 @@ interface MetricCardProps {
   title: string;
   value: number | string;
   icon: React.ReactNode;
-  trend: string;
-  trendUp: boolean;
   color: "blue" | "green" | "purple" | "indigo";
   loading?: boolean;
 }
@@ -365,32 +363,24 @@ export default function StaffDashboard() {
               title="Today's Check-ins"
               value={stats.checkinsToday}
               icon={<DoorOpen className="h-6 w-6" />}
-              trend="+12%"
-              trendUp={true}
               color="blue"
             />
             <MetricCard
               title="Today's Check-outs"
               value={stats.checkoutsToday}
               icon={<DoorClosed className="h-6 w-6" />}
-              trend="-3%"
-              trendUp={false}
               color="green"
             />
             <MetricCard
               title="Current Guests"
               value={stats.currentBookings}
               icon={<Users className="h-6 w-6" />}
-              trend="+5%"
-              trendUp={true}
               color="purple"
             />
             <MetricCard
               title="Occupancy Rate"
               value={`${stats.occupancyRate}%`}
               icon={<Activity className="h-6 w-6" />}
-              trend="+2.5%"
-              trendUp={true}
               color="indigo"
             />
           </div>
@@ -556,46 +546,51 @@ export default function StaffDashboard() {
 }
 
 // Metric Card Component
-const MetricCard: React.FC<MetricCardProps> = ({
-  title,
-  value,
-  icon,
-  trend,
-  trendUp,
-  color,
-  loading,
-}) => {
-  const colorClasses: Record<"blue" | "green" | "purple" | "indigo", string> = {
-    blue: "bg-blue-100",
-    green: "bg-green-100",
-    purple: "bg-purple-100",
-    indigo: "bg-indigo-100",
+const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon, color, loading }) => {
+  const colorMap = {
+    blue: {
+      iconBg: "bg-blue-100",
+      iconText: "text-blue-600",
+      border: "border-l-blue-600",
+    },
+    green: {
+      iconBg: "bg-green-100",
+      iconText: "text-green-600",
+      border: "border-l-green-600",
+    },
+    purple: {
+      iconBg: "bg-purple-100",
+      iconText: "text-purple-600",
+      border: "border-l-purple-600",
+    },
+    indigo: {
+      iconBg: "bg-indigo-100",
+      iconText: "text-indigo-600",
+      border: "border-l-indigo-600",
+    },
   };
 
-  const iconColorClasses: Record<"blue" | "green" | "purple" | "indigo", string> = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    purple: "text-purple-600",
-    indigo: "text-indigo-600",
-  };
+  const colors = colorMap[color];
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-white p-6 shadow-sm animate-pulse">
-        <div className="h-12 bg-gray-200 rounded mb-2"></div>
-        <div className="h-8 bg-gray-200 rounded"></div>
+      <div className="rounded-2xl bg-white p-6 shadow-sm border-l-8 border-gray-200 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded mb-3 w-32"></div>
+        <div className="h-10 bg-gray-300 rounded w-24"></div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm flex items-center gap-4">
-      <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-        <div className={iconColorClasses[color]}>{icon}</div>
-      </div>
-      <div>
-        <p className="text-sm text-gray-500">{title}</p>
-        <p className="text-3xl font-bold">{value}</p>
+    <div className={`rounded-2xl bg-white p-6 shadow-md hover:shadow-lg transition-shadow border-l-8 ${colors.border}`}>
+      <div className="flex items-center gap-4">
+        <div className={`p-4 rounded-2xl ${colors.iconBg}`}>
+          <div className={colors.iconText}>{icon}</div>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+        </div>
       </div>
     </div>
   );
@@ -677,4 +672,3 @@ const QuickStatCard: React.FC<QuickStatCardProps> = ({ icon, title, value, bgCol
     </div>
   );
 };
-

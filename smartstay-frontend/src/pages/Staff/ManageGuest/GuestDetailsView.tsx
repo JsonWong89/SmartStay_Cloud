@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Mail,
   Phone,
@@ -34,13 +34,56 @@ interface Props {
   guest: Guest;
   onBack: () => void;
   onVerifyDocument: (id: number) => void;
+  onEdit: () => void;
   navigate: (path: string) => void;
 }
 
-export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navigate }: Props) {
+export default function GuestDetailsView({ guest, onBack, onVerifyDocument, onEdit, navigate }: Props) {
   const isActive = guest.isActive;
-  const activeBooking = guest.bookingHistory.find((b) => b.bookingStatus === "CheckedIn");
   const hasRegisteredAccount = guest.hasAccount;
+
+  // Group bookings by email + dates (for multi-room support)
+  const groupedBookings = useMemo(() => {
+    const groups = new Map<string, typeof guest.bookingHistory>();
+    
+    guest.bookingHistory.forEach((booking) => {
+      const key = `${guest.email}-${booking.checkInDate}-${booking.checkOutDate}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(booking);
+    });
+
+    // Convert to array and sort by date (newest first)
+    return Array.from(groups.values())
+      .map(group => {
+        // Only count non-cancelled for active rooms
+        const activeRooms = group.filter(b => b.bookingStatus !== "Cancelled");
+        const totalAmount = activeRooms.reduce((sum, b) => sum + b.totalAmount, 0);
+        const totalPaid = group.reduce((sum, b) => sum + (b.totalPaid || 0), 0); // Include cancelled for money safety
+        
+        return {
+          bookings: group,
+          activeBookings: activeRooms,
+          mainBooking: activeRooms[0] || group[0],
+          roomCount: activeRooms.length,
+          totalAmount,
+          totalPaid,
+          pendingAmount: totalAmount - totalPaid
+        };
+      })
+      .sort((a, b) => 
+        new Date(b.mainBooking.checkInDate).getTime() - 
+        new Date(a.mainBooking.checkInDate).getTime()
+      );
+  }, [guest.bookingHistory, guest.email]);
+
+  // Find active multi-room booking if exists
+  const activeMultiRoomBooking = useMemo(() => {
+    return groupedBookings.find(group => 
+      group.activeBookings.some(b => b.bookingStatus === "CheckedIn")
+    );
+  }, [groupedBookings]);
 
   const renderStars = (rating: number) => {
     return (
@@ -141,29 +184,59 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
         </div>
       </div>
 
-      {isActive && activeBooking && (
+      {/* Active Stay Alert - Updated for Multi-Room */}
+      {isActive && activeMultiRoomBooking && (
         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-5 mb-6">
           <div className="flex items-start gap-3">
             <div className="p-2 bg-green-600 rounded-lg">
               <Home className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-green-900 mb-1">Currently Staying</h3>
+              <h3 className="font-semibold text-green-900 mb-1 flex items-center gap-2">
+                Currently Staying
+                {activeMultiRoomBooking.roomCount > 1 && (
+                  <span className="px-2 py-0.5 rounded-full bg-green-600 text-white text-xs font-bold">
+                    {activeMultiRoomBooking.roomCount} Rooms
+                  </span>
+                )}
+              </h3>
               <p className="text-sm text-green-700 mb-3">
-                Room {activeBooking.roomNumber} ({activeBooking.roomType}) • Check-out: {activeBooking.checkOutDate}
+                {activeMultiRoomBooking.roomCount === 1 ? (
+                  <>
+                    Room {activeMultiRoomBooking.mainBooking.roomNumber} ({activeMultiRoomBooking.mainBooking.roomType})
+                  </>
+                ) : (
+                  <>
+                    Rooms: {activeMultiRoomBooking.activeBookings.map(b => b.roomNumber).join(", ")}
+                  </>
+                )}
+                {" • "}Check-out: {activeMultiRoomBooking.mainBooking.checkOutDate}
               </p>
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <p className="text-green-600 text-xs">Booking ID</p>
-                  <p className="font-medium text-green-900">#{activeBooking.bookingId}</p>
+                  <p className="text-green-600 text-xs">Booking ID(s)</p>
+                  <p className="font-medium text-green-900">
+                    #{activeMultiRoomBooking.mainBooking.bookingId}
+                    {activeMultiRoomBooking.roomCount > 1 && ` +${activeMultiRoomBooking.roomCount - 1}`}
+                  </p>
                 </div>
                 <div>
                   <p className="text-green-600 text-xs">Total Guests</p>
-                  <p className="font-medium text-green-900">{activeBooking.totalGuests} guest(s)</p>
+                  <p className="font-medium text-green-900">
+                    {activeMultiRoomBooking.mainBooking.totalGuests} guest(s)
+                  </p>
                 </div>
                 <div>
                   <p className="text-green-600 text-xs">Total Amount</p>
-                  <p className="font-medium text-green-900">RM {activeBooking.totalAmount.toFixed(2)}</p>
+                  <p className="font-medium text-green-900">
+                    RM {activeMultiRoomBooking.totalAmount.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-green-600 text-xs">Amount Paid</p>
+                  <p className="font-medium text-green-900">
+                    RM {activeMultiRoomBooking.totalPaid.toFixed(2)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -254,23 +327,18 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-300">
             <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <button className="w-full px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition flex items-center justify-center gap-2">
+              <button 
+              onClick={onEdit}
+              className="w-full px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition flex items-center justify-center gap-2">
                 <Edit size={16} />
                 Edit Guest Info
-              </button>
-              <button className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition flex items-center justify-center gap-2">
-                <Plus size={16} />
-                New Booking
-              </button>
-              <button className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                <Mail size={16} />
-                Send Email
               </button>
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">
+          {/* Booking History - Updated for Multi-Room */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-300">
             <div className="px-6 py-5 border-b border-gray-300">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-lg">
@@ -281,57 +349,110 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
             </div>
 
             <div className="p-6">
-              {guest.bookingHistory.length > 0 ? (
+              {groupedBookings.length > 0 ? (
                 <div className="space-y-4">
-                  {guest.bookingHistory.map((booking) => (
-                    <div
-                      key={booking.bookingId}
-                      className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-gray-900">Booking #{booking.bookingId}</h4>
-                            <BookingStatusBadge status={booking.bookingStatus} />
+                  {groupedBookings.map((group, groupIndex) => {
+                    const main = group.mainBooking;
+                    const roomCount = group.roomCount;
+                    const roomList = group.activeBookings.map(b => b.roomNumber).join(", ");
+                    
+                    return (
+                      <div
+                        key={`${main.bookingId}-${groupIndex}`}
+                        className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <h4 className="font-semibold text-gray-900">
+                                Booking #{main.bookingId}
+                                {roomCount > 1 && ` +${roomCount - 1}`}
+                              </h4>
+                              <BookingStatusBadge status={main.bookingStatus} />
+                              {roomCount > 1 && (
+                                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold">
+                                  {roomCount} Rooms
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {roomCount === 1 ? (
+                                <>Room {main.roomNumber} - {main.roomType}</>
+                              ) : (
+                                <>Rooms: {roomList}</>
+                              )}
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-600">Room {booking.roomNumber} - {booking.roomType}</p>
+                          <div className="text-right">
+                            <p className="font-bold text-lg text-gray-900">
+                              RM {group.totalAmount.toFixed(2)}
+                            </p>
+                            {group.totalPaid > 0 && (
+                              <p className="text-xs text-green-600">
+                                Paid: RM {group.totalPaid.toFixed(2)}
+                              </p>
+                            )}
+                            {group.pendingAmount > 0 && (
+                              <p className="text-xs text-amber-600">
+                                Due: RM {group.pendingAmount.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <p className="font-bold text-lg text-gray-900">RM {booking.totalAmount.toFixed(2)}</p>
-                      </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                        <div>
-                          <p className="text-gray-500 text-xs mb-1">Check-In</p>
-                          <p className="font-medium text-gray-900">{booking.checkInDate}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div>
+                            <p className="text-gray-500 text-xs mb-1">Check-In</p>
+                            <p className="font-medium text-gray-900">{main.checkInDate}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs mb-1">Check-Out</p>
+                            <p className="font-medium text-gray-900">{main.checkOutDate}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs mb-1">Guests</p>
+                            <p className="font-medium text-gray-900">{main.totalGuests} guest(s)</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs mb-1">Rooms</p>
+                            <p className="font-medium text-gray-900">{roomCount} room(s)</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-gray-500 text-xs mb-1">Check-Out</p>
-                          <p className="font-medium text-gray-900">{booking.checkOutDate}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs mb-1">Guests</p>
-                          <p className="font-medium text-gray-900">{booking.totalGuests} guest(s)</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500 text-xs mb-1">Deposit</p>
-                          <p className="font-medium text-gray-900">RM {booking.depositAmount.toFixed(2)}</p>
-                        </div>
-                      </div>
 
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                        <p className="text-xs text-gray-500">
-                          Booked on {new Date(booking.createdAt).toLocaleDateString("en-MY")}
-                        </p>
-                        <button
-                          onClick={() => navigate(`/staff/receipt/${booking.bookingId}`)}
-                          className="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1"
-                        >
-                          <Eye size={14} />
-                          View Receipt
-                        </button>
+                        {/* Show all rooms in group if multi-room */}
+                        {roomCount > 1 && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <p className="text-xs font-semibold text-gray-600 mb-2">Room Details:</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {group.activeBookings.map((booking) => (
+                                <div key={booking.bookingId} className="text-xs bg-purple-50 rounded p-2">
+                                  <p className="font-medium text-purple-900">
+                                    Room {booking.roomNumber} - {booking.roomType}
+                                  </p>
+                                  <p className="text-purple-700">
+                                    RM {booking.totalAmount.toFixed(2)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
+                          <p className="text-xs text-gray-500">
+                            Booked on {new Date(main.createdAt).toLocaleDateString("en-MY")}
+                          </p>
+                          <button
+                            onClick={() => navigate(`/staff/receipt/${main.bookingId}`)}
+                            className="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1"
+                          >
+                            <Eye size={14} />
+                            View Receipt
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12">
@@ -390,7 +511,7 @@ export default function GuestDetailsView({ guest, onBack, onVerifyDocument, navi
                           </span>
                         )}
                         <a
-                          href={doc.fileUrl.startsWith("http") ? `https://localhost:7168${doc.fileUrl}` : doc.fileUrl}
+                          href={doc.fileUrl.startsWith("http") ? `https://localhost:7161${doc.fileUrl}` : doc.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-indigo-600 hover:text-indigo-800"

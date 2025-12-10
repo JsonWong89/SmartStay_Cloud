@@ -26,6 +26,7 @@ export interface Booking {
   totalGuests: number;
   totalAmount: number;
   depositAmount: number;
+  totalPaid?: number;
   bookingStatus: "Pending" | "Confirmed" | "CheckedIn" | "CheckedOut" | "Cancelled";
   createdAt: string;
 }

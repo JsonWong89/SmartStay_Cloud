@@ -46,6 +46,7 @@ export default function HotelInfo() {
     email: "",
   });
 
+
   // Fetch hotel
   const fetchHotel = async () => {
     try {
@@ -99,13 +100,24 @@ export default function HotelInfo() {
   });
 
   // Change image preview
-  const handleImageChange = (e: any) => {
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+    });
+  }
+
+  const handleImageChange = async (e: any) => {
     const file = e.target.files[0];
-    if (file) {
-      setFile(file);
-      setPreviewImage(URL.createObjectURL(file));
-    }
+    if (!file) return;
+
+    const base64 = await fileToBase64(file);
+    setPreviewImage(base64);
   };
+
+
 
   // Save updates
   const handleSave = async () => {

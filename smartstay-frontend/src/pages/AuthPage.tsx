@@ -548,14 +548,14 @@ const AuthPage: React.FC = () => {
 
                   <div style={styles.formGroup}>
                     <label style={styles.label}>Password</label>
-                    <div style={styles.passwordWrapper}>
+                    <div style={{...styles.passwordWrapper, width: '100%'}}>
                       <input
                         type={showLoginPassword ? "text" : "password"}
                         name="password"
                         value={loginForm.password}
                         onChange={handleLoginChange}
                         placeholder="Enter your password"
-                        style={styles.input}
+                        style={{...styles.input, width: '100%', paddingRight: '40px'}}
                         required
                       />
                       <button

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import { API_BASE_URL } from '../../config';
 import GuestNavbar from '../../components/GuestNavbar';
@@ -25,6 +25,9 @@ interface Reservation {
 const MyReservations: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const highlightedBookingId = searchParams.get('bookingId');
+  const bookingRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +61,21 @@ const MyReservations: React.FC = () => {
 
     fetchReservations();
   }, [user?.id]);
+
+  // Scroll to highlighted booking after reservations load
+  useEffect(() => {
+    if (highlightedBookingId && !loading && reservations.length > 0) {
+      const bookingId = parseInt(highlightedBookingId);
+      const element = bookingRefs.current[bookingId];
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Clear the query param after scrolling
+          setTimeout(() => setSearchParams({}), 2000);
+        }, 100);
+      }
+    }
+  }, [highlightedBookingId, loading, reservations, setSearchParams]);
 
   const filteredReservations = reservations.filter((res) => {
     if (filterStatus === 'all') {
@@ -247,8 +265,19 @@ const MyReservations: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredReservations.map((reservation) => (
-              <div key={reservation.bookingID} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+            {filteredReservations.map((reservation) => {
+              const isHighlighted = highlightedBookingId === String(reservation.bookingID);
+              return (
+              <div 
+                key={reservation.bookingID} 
+                ref={(el) => {
+                  if (el) bookingRefs.current[reservation.bookingID] = el;
+                }}
+                className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition ${
+                  isHighlighted ? 'ring-4 ring-blue-500 ring-opacity-50' : ''
+                }`}
+                style={isHighlighted ? { animation: 'pulse 2s ease-in-out' } : undefined}
+              >
                 <div className="md:flex">
                   {/* Room Image */}
                   <div className="md:w-48 h-48 md:h-auto">
@@ -288,11 +317,11 @@ const MyReservations: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
                         <p className="text-xs text-gray-500">Check-in</p>
-                        <p className="font-semibold">{reservation.checkInDate}</p>
+                        <p className="font-semibold">{new Date(reservation.checkInDate).toLocaleDateString()}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Check-out</p>
-                        <p className="font-semibold">{reservation.checkOutDate}</p>
+                        <p className="font-semibold">{new Date(reservation.checkOutDate).toLocaleDateString()}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Guests</p>
@@ -366,7 +395,8 @@ const MyReservations: React.FC = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
 

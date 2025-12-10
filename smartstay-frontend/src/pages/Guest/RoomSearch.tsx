@@ -13,6 +13,14 @@ interface Room {
   city?: string;
 }
 
+// Room type capacity mapping
+const ROOM_CAPACITY: Record<string, number> = {
+  'Standard': 2,
+  'Deluxe': 3,
+  'Suite': 4,
+  'Family': 6
+};
+
 const RoomSearch: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -110,6 +118,13 @@ const RoomSearch: React.FC = () => {
       // Filter by room type
       if (roomTypeFilter && !room.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase())) {
         console.log(`Room ${room.id} filtered out by room type`);
+        return false;
+      }
+      
+      // Filter by guest capacity
+      const roomCapacity = ROOM_CAPACITY[room.roomType] || 2;
+      if (guests > roomCapacity) {
+        console.log(`Room ${room.id} (${room.roomType}) filtered out by guest capacity: ${guests} > ${roomCapacity}`);
         return false;
       }
       
@@ -275,7 +290,7 @@ const RoomSearch: React.FC = () => {
               </h2>
               <p className="text-gray-600">
                 {checkInDate && checkOutDate
-                  ? `${checkInDate} to ${checkOutDate}`
+                  ? `${new Date(checkInDate).toLocaleDateString()} to ${new Date(checkOutDate).toLocaleDateString()}`
                   : 'Select dates to see availability'}
               </p>
             </div>
@@ -328,7 +343,8 @@ const RoomSearch: React.FC = () => {
                           <div>
                             <h3 className="text-xl font-bold text-gray-800">{room.roomType}</h3>
                             <p className="text-gray-600">{room.hotelName}</p>
-                            {room.city && <p className="text-sm text-gray-500">📍 {room.city}</p>}
+                            {room.city && <p className="text-sm text-gray-500">{room.city}</p>}
+                            <p className="text-sm text-gray-500 mt-1">Max {ROOM_CAPACITY[room.roomType] || 2} guests</p>
                           </div>
                           <div className="text-right">
                             <p className="text-3xl font-bold text-blue-600">RM{room.price}</p>

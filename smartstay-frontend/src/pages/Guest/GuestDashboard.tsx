@@ -20,6 +20,7 @@ interface Hotel {
   description?: string;
   imageUrl?: string;
   rating?: number;
+  minRoomPrice?: number;
 }
 
 const GuestDashboard: React.FC = () => {
@@ -325,7 +326,10 @@ const GuestDashboard: React.FC = () => {
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                       <div>
                         <span className="text-gray-500 text-xs block">Starting from</span>
-                        <p className="text-2xl font-bold text-blue-600">RM199<span className="text-sm font-normal text-gray-500">/night</span></p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          RM{hotel.minRoomPrice || 199}
+                          <span className="text-sm font-normal text-gray-500">/night</span>
+                        </p>
                       </div>
                       <button
                         onClick={() => navigate('/guest/search')}

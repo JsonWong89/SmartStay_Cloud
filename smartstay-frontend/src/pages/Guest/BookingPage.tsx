@@ -82,15 +82,20 @@ const BookingPage: React.FC = () => {
       if (!user?.id) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/guests/${user.id}`);
+        // Use same API approach as GuestProfile - requires hotelId query parameter
+        const response = await fetch(`${API_BASE_URL}/api/guests/${user.id}?hotelId=1`);
         if (response.ok) {
-          const guestData = await response.json();
+          const responseData = await response.json();
+          // Extract data from wrapped response
+          const guestData = responseData.data || responseData;
+          
+          // Handle both camelCase and PascalCase from backend
           // Pre-fill fields if not already set
-          if (!guestPhone && guestData.phoneNumber) {
-            setGuestPhone(guestData.phoneNumber);
+          if (!guestPhone) {
+            setGuestPhone(guestData.phoneNumber || guestData.PhoneNumber || '');
           }
-          if (!guestAddress && guestData.address) {
-            setGuestAddress(guestData.address);
+          if (!guestAddress) {
+            setGuestAddress(guestData.address || guestData.Address || '');
           }
         }
       } catch (error) {

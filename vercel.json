@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd smartstay-frontend && npm install && npm run build",
+  "outputDirectory": "smartstay-frontend/dist",
+  "installCommand": "cd smartstay-frontend && npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

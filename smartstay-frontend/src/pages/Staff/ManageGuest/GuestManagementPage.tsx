@@ -96,11 +96,11 @@ export default function GuestManagementPage() {
         status: d.status,
       })) : [];
 
-      const reviews = reviewsRes.success ? reviewsRes.data.map((r: any) => ({
-        reviewId: r.reviewId,
-        bookingId: r.bookingId,
+      const reviews = Array.isArray(reviewsRes) ? reviewsRes.map((r: any) => ({
+        reviewId: r.reviewID,
+        bookingId: r.bookingID,
         hotelName: r.hotelName,
-        roomNumber: r.roomNumber,
+        roomNumber: r.roomNumber, 
         roomType: r.roomType,
         rating: r.rating,
         comment: r.comment,

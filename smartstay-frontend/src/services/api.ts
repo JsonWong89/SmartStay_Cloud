@@ -330,19 +330,17 @@ export const reviewsAPI = {
   },
 
   getReviewsByGuestId: async (guestId: string) => {
-    return apiCall<{
-      success: boolean;
-      data: Array<{
-        reviewId: number;
-        bookingId: number;
-        hotelName: string;
-        roomNumber: string;
-        roomType: string;
-        rating: number;
-        comment: string | null;
-        reviewDate: string;
-      }>;
-    }>(`/api/reviews/guest/${guestId}`);
+    return apiCall<Array<{
+      reviewID: number;
+      bookingID: number;
+      guestID: string;
+      guestName: string;
+      rating: number;
+      comment: string | null;
+      reviewDate: string;
+      hotelName: string;
+      roomType: string;
+    }>>(`/api/reviews/guest/${guestId}`);
   },
 
   // submitReview: async (payload: {

@@ -7,6 +7,8 @@ import { API_ENDPOINTS, apiGet, apiPut } from '../../config/api';
 type FormState = {
   fullName: string;
   email: string;
+  password: string;
+  gender: string;
   role: string;
   hotelId: string;
 };
@@ -22,6 +24,8 @@ const EditManagerPage: React.FC = () => {
   const [form, setForm] = useState<FormState>({
     fullName: '',
     email: '',
+    password: '',
+    gender: '',
     role: 'Manager',
     hotelId: '',
   });
@@ -80,6 +84,8 @@ const EditManagerPage: React.FC = () => {
         setForm({
           fullName: data.fullName ?? data.FullName ?? '',
           email: data.email ?? data.Email ?? '',
+          password: '', // Don't populate existing password
+          gender: data.gender ?? data.Gender ?? '',
           role: data.role ?? data.Role ?? 'Manager',
           hotelId: hotelIdValue ? hotelIdValue.toString() : '',
         });
@@ -118,6 +124,16 @@ const EditManagerPage: React.FC = () => {
       setMessageType('error');
       return;
     }
+    if (!form.gender) {
+      setMessage('Gender is required');
+      setMessageType('error');
+      return;
+    }
+    if (form.password && form.password.length < 6) {
+      setMessage('Password must be at least 6 characters (leave empty to keep current password)');
+      setMessageType('error');
+      return;
+    }
     if (form.hotelId && isNaN(Number(form.hotelId))) {
       setMessage('Hotel ID must be a number');
       setMessageType('error');
@@ -127,14 +143,17 @@ const EditManagerPage: React.FC = () => {
     setSubmitting(true);
     try {
       const payload: any = {
-        fullName: form.fullName,
-        email: form.email,
-        role: form.role,
+        FullName: form.fullName,
+        Email: form.email,
+        Gender: form.gender,
+        Role: form.role,
+        // Backend requires Password field (use PascalCase)
+        Password: form.password && form.password.trim() ? form.password : "KEEP_CURRENT_PASSWORD",
       };
       if (form.hotelId) {
-        payload.hotelId = Number(form.hotelId);
+        payload.HotelId = Number(form.hotelId);
       } else {
-        payload.hotelId = null;
+        payload.HotelId = null;
       }
 
       const res = await apiPut(API_ENDPOINTS.USERS.BY_ID(id!), payload);
@@ -216,6 +235,39 @@ const EditManagerPage: React.FC = () => {
                     placeholder="jane@example.com"
                     required
                   />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="gender">Gender</label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={form.gender}
+                    onChange={handleChange}
+                    className="input"
+                    required
+                  >
+                    <option value="">-- Select gender --</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password">New Password (optional)</label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="••••••••"
+                  />
+                  <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '12px' }}>
+                    Leave empty to keep current password. Minimum 6 characters if updating.
+                  </small>
                 </div>
 
                 <div className="form-group">

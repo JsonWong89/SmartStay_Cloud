@@ -332,8 +332,8 @@ const GuestDashboard: React.FC = () => {
                         </p>
                       </div>
                       <button
-                        onClick={() => navigate('/guest/search')}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                        onClick={() => navigate('/guest/search', { state: { hotelName: hotel.hotelName } })}
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition shadow-md hover:shadow-lg cursor-pointer"
                       >
                         View
                       </button>

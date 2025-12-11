@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store';
 import GuestNavbar from '../../components/GuestNavbar';
 
@@ -24,13 +24,14 @@ const ROOM_CAPACITY: Record<string, number> = {
 const RoomSearch: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
   // Search filters
   const [checkInDate, setCheckInDate] = useState(searchParams.get('checkIn') || '');
   const [checkOutDate, setCheckOutDate] = useState(searchParams.get('checkOut') || '');
   const [guests, setGuests] = useState(parseInt(searchParams.get('guests') || '1'));
-  const [hotelFilter, setHotelFilter] = useState('');
+  const [hotelFilter, setHotelFilter] = useState((location.state as { hotelName?: string })?.hotelName || '');
   const [roomTypeFilter, setRoomTypeFilter] = useState('');
   const [cityFilter, setCityFilter] = useState(searchParams.get('location') || '');
   const [maxPrice, setMaxPrice] = useState(1000);

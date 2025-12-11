@@ -4,6 +4,7 @@ import { paymentsAPI, bookingsAPI } from "../../services/api";
 import Sidebar from "../../components/Sidebar";
 import { ArrowLeft, Download, Printer } from "lucide-react";
 import html2pdf from "html2pdf.js";
+import { useAuthStore } from "../../store";
 
 interface Payment {
   paymentId: number;
@@ -16,7 +17,12 @@ interface Payment {
 interface BookingDetails {
   bookingId: number;
   bookingStatus: string;
-  guest: { fullName: string; email: string; phoneNumber: string; icNumber: string };
+  guest: {
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    icNumber: string;
+  };
   room: { hotelName: string; roomNumber: string; roomType: string };
   checkInDate: string;
   checkOutDate: string;
@@ -38,6 +44,9 @@ const ReceiptPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const [relatedBookings, setRelatedBookings] = useState<any[]>([]);
+  const [mainBooking, setMainBooking] = useState<any>(null);
 
   useEffect(() => {
     const loadReceiptData = async () => {
@@ -49,40 +58,70 @@ const ReceiptPage: React.FC = () => {
 
       try {
         setLoading(true);
-        const bookingRes = await bookingsAPI.getBookingById(Number(bookingId));
-        if (!bookingRes.success || !bookingRes.data) throw new Error("Booking not found");
 
-        const apiBooking = bookingRes.data;
-        const nights = Math.ceil(
-          (new Date(apiBooking.checkOutDate).getTime() - new Date(apiBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)
+        // 1. Get the main booking
+        const mainBookingRes = await bookingsAPI.getBookingById(
+          Number(bookingId)
+        );
+        if (!mainBookingRes.success || !mainBookingRes.data) {
+          throw new Error("Booking not found");
+        }
+        const mainBooking = mainBookingRes.data;
+        setMainBooking(mainBooking);
+
+        // 2. Get ALL related bookings (same guest + same dates)
+        const allBookingsRes = await bookingsAPI.getAllBookings({
+          hotelId: user?.hotelId || 1,
+          guestId: mainBooking.guest.guestId,
+          dateFrom: mainBooking.checkInDate,
+          dateTo: mainBooking.checkOutDate,
+        });
+
+        const relatedBookings = allBookingsRes.success
+          ? allBookingsRes.data
+          : [mainBooking];
+        setRelatedBookings(relatedBookings);
+
+        // 3. Calculate total amount from ALL rooms
+        const totalAmount = relatedBookings.reduce(
+          (sum: number, b: any) => sum + b.totalAmount,
+          0
         );
 
-        const mappedBooking: BookingDetails = {
-          bookingId: apiBooking.bookingId,
-          bookingStatus: apiBooking.bookingStatus,
-          guest: {
-            fullName: apiBooking.guest.fullName,
-            email: apiBooking.guest.email,
-            phoneNumber: apiBooking.guest.phoneNumber || "N/A",
-            icNumber: apiBooking.guest.icNumber || "N/A",
-          },
-          room: {
-            hotelName: apiBooking.room.hotelName || "SmartStay Hotel",
-            roomNumber: apiBooking.room.roomNumber,
-            roomType: apiBooking.room.roomType,
-          },
-          checkInDate: apiBooking.checkInDate.split("T")[0],
-          checkOutDate: apiBooking.checkOutDate.split("T")[0],
-          totalAmount: apiBooking.totalAmount,
-          depositAmount: apiBooking.depositAmount || 0,
-          numberOfNights: apiBooking.numberOfNights || nights,
-          totalGuests: apiBooking.totalGuests || 1,
-        };
+        // 4. Fetch payments for every booking ID
+        const allPayments: Payment[] = [];
+        for (const booking of relatedBookings) {
+          const paymentsRes = await paymentsAPI.getPaymentsByBooking(
+            booking.bookingId
+          );
+          if (paymentsRes.success && paymentsRes.data) {
+            allPayments.push(...paymentsRes.data);
+          }
+        }
 
-        setBooking(mappedBooking);
+        // Remove duplicate payments
+        const uniquePayments = allPayments.filter(
+          (p, index, self) =>
+            self.findIndex((x) => x.paymentId === p.paymentId) === index
+        );
 
-        const paymentsRes = await paymentsAPI.getPaymentsByBooking(Number(bookingId));
-        if (paymentsRes.success && paymentsRes.data) setPayments(paymentsRes.data);
+        setPayments(uniquePayments);
+
+        // 5. Set booking info with combined data
+        setBooking({
+          bookingId: relatedBookings
+            .map((booking: any) => booking.bookingId)
+            .join(" + "),
+          bookingStatus: mainBooking.bookingStatus,
+          guest: mainBooking.guest,
+          room: mainBooking.room,
+          checkInDate: mainBooking.checkInDate.split("T")[0],
+          checkOutDate: mainBooking.checkOutDate.split("T")[0],
+          totalAmount,
+          depositAmount: mainBooking.depositAmount || 0,
+          numberOfNights: mainBooking.numberOfNights || 1,
+          totalGuests: mainBooking.totalGuests || 1,
+        });
       } catch (err: any) {
         setError(err.message || "Unable to load receipt");
       } finally {
@@ -91,52 +130,116 @@ const ReceiptPage: React.FC = () => {
     };
 
     loadReceiptData();
-  }, [bookingId]);
+  }, [bookingId, user?.hotelId]);
+
+  // useEffect(() => {
+  //   const loadReceiptData = async () => {
+  //     if (!bookingId) {
+  //       setError("Invalid booking ID");
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     try {
+  //       setLoading(true);
+  //       const bookingRes = await bookingsAPI.getBookingById(Number(bookingId));
+  //       if (!bookingRes.success || !bookingRes.data) throw new Error("Booking not found");
+
+  //       const apiBooking = bookingRes.data;
+  //       const nights = Math.ceil(
+  //         (new Date(apiBooking.checkOutDate).getTime() - new Date(apiBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)
+  //       );
+
+  //       const mappedBooking: BookingDetails = {
+  //         bookingId: apiBooking.bookingId,
+  //         bookingStatus: apiBooking.bookingStatus,
+  //         guest: {
+  //           fullName: apiBooking.guest.fullName,
+  //           email: apiBooking.guest.email,
+  //           phoneNumber: apiBooking.guest.phoneNumber || "N/A",
+  //           icNumber: apiBooking.guest.icNumber || "N/A",
+  //         },
+  //         room: {
+  //           hotelName: apiBooking.room.hotelName || "SmartStay Hotel",
+  //           roomNumber: apiBooking.room.roomNumber,
+  //           roomType: apiBooking.room.roomType,
+  //         },
+  //         checkInDate: apiBooking.checkInDate.split("T")[0],
+  //         checkOutDate: apiBooking.checkOutDate.split("T")[0],
+  //         totalAmount: apiBooking.totalAmount,
+  //         depositAmount: apiBooking.depositAmount || 0,
+  //         numberOfNights: apiBooking.numberOfNights || nights,
+  //         totalGuests: apiBooking.totalGuests || 1,
+  //       };
+
+  //       setBooking(mappedBooking);
+
+  //       const paymentsRes = await paymentsAPI.getPaymentsByBooking(Number(bookingId));
+  //       if (paymentsRes.success && paymentsRes.data) setPayments(paymentsRes.data);
+  //     } catch (err: any) {
+  //       setError(err.message || "Unable to load receipt");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   loadReceiptData();
+  // }, [bookingId]);
 
   const handlePrint = () => window.print();
 
   const handleDownload = async () => {
-  if (!receiptRef.current || !booking) {
-    alert("Receipt content not available");
-    return;
-  }
+    if (!receiptRef.current || !booking) {
+      alert("Receipt content not available");
+      return;
+    }
 
-  setDownloading(true);
+    setDownloading(true);
 
-  try {
-    const opt = {
-      margin: [0.4, 0.4, 0.4, 0.4] as [number, number, number, number], // Fixed: proper tuple
-      filename: `SmartStay-Receipt-${booking.bookingId}.pdf`,
-      image: { type: "jpeg" as const, quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        backgroundColor: "#ffffff" // Ensures clean background
-      },
-      jsPDF: { 
-        unit: "in" as const, 
-        format: "a4" as const, 
-        orientation: "portrait" as const 
-      },
-    };
+    try {
+      const opt = {
+        margin: [0.4, 0.4, 0.4, 0.4] as [number, number, number, number], // Fixed: proper tuple
+        filename: `SmartStay-Receipt-${booking.bookingId}.pdf`,
+        image: { type: "jpeg" as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: "#ffffff", // Ensures clean background
+        },
+        jsPDF: {
+          unit: "in" as const,
+          format: "a4" as const,
+          orientation: "portrait" as const,
+        },
+      };
 
-    await html2pdf().set(opt).from(receiptRef.current).save();
-  } catch (error) {
-    console.error("PDF generation failed:", error);
-    alert("Failed to generate PDF. Use Print → Save as PDF instead.");
-  } finally {
-    setDownloading(false);
-  }
-};
+      await html2pdf().set(opt).from(receiptRef.current).save();
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      alert("Failed to generate PDF. Use Print → Save as PDF instead.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const remainingBalance = booking ? booking.totalAmount - totalPaid : 0;
   const isCancelled = booking?.bookingStatus === "Cancelled";
   const hasNoPayments = payments.length === 0;
 
-  if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center text-xl">Loading receipt...</div>;
-  if (error || !booking) return <div className="min-h-screen bg-gray-100 flex items-center justify-center text-xl text-red-600">{error || "Receipt not found"}</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center text-xl">
+        Loading receipt...
+      </div>
+    );
+  if (error || !booking)
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center text-xl text-red-600">
+        {error || "Receipt not found"}
+      </div>
+    );
 
   return (
     <>
@@ -191,9 +294,17 @@ const ReceiptPage: React.FC = () => {
       `}</style>
 
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar activePage="Reservation" setActivePage={() => {}} setSidebarCollapsed={setSidebarCollapsed} />
+        <Sidebar
+          activePage="Reservation"
+          setActivePage={() => {}}
+          setSidebarCollapsed={setSidebarCollapsed}
+        />
 
-        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "ml-20" : "ml-[230px]"}`}>
+        <div
+          className={`flex-1 transition-all duration-300 ${
+            sidebarCollapsed ? "ml-20" : "ml-[230px]"
+          }`}
+        >
           {loading && (
             <div className="min-h-screen flex items-center justify-center text-xl text-gray-600">
               Loading receipt...
@@ -211,11 +322,17 @@ const ReceiptPage: React.FC = () => {
               {/* Top Buttons */}
               <header className="bg-white print-hidden">
                 <div className="px-6 py-4 flex justify-between items-center flex-wrap gap-4">
-                  <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+                  <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                  >
                     <ArrowLeft size={20} /> Back
                   </button>
                   <div className="flex gap-3">
-                    <button onClick={handlePrint} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2">
+                    <button
+                      onClick={handlePrint}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2"
+                    >
                       <Printer size={18} /> Print
                     </button>
                     <button
@@ -223,7 +340,13 @@ const ReceiptPage: React.FC = () => {
                       disabled={downloading}
                       className="bg-purple-600 hover:bg-purple-700 disabled:opacity-70 text-white px-5 py-2.5 rounded-lg flex items-center gap-2"
                     >
-                      {downloading ? "Generating..." : <><Download size={18} /> Download PDF</>}
+                      {downloading ? (
+                        "Generating..."
+                      ) : (
+                        <>
+                          <Download size={18} /> Download PDF
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -242,7 +365,9 @@ const ReceiptPage: React.FC = () => {
                     <div className="header">
                       <div className="header-icon">Hotel</div>
                       <h1 className="header-title">SmartStay Hotels</h1>
-                      <p className="header-subtitle">Premium Accommodation Experience</p>
+                      <p className="header-subtitle">
+                        Premium Accommodation Experience
+                      </p>
                       <p className="header-contact">
                         support@smartstay.com | +60 12-345 6789
                       </p>
@@ -253,7 +378,11 @@ const ReceiptPage: React.FC = () => {
                       <div>
                         <p className="info-item-label">Receipt Number</p>
                         <p className="info-item-value">
-                          {hasNoPayments ? "N/A" : `RCP-${payments[0].paymentId.toString().padStart(6, "0")}`}
+                          {hasNoPayments
+                            ? "N/A"
+                            : `RCP-${payments[0].paymentId
+                                .toString()
+                                .padStart(6, "0")}`}
                         </p>
                       </div>
                       <div>
@@ -263,14 +392,35 @@ const ReceiptPage: React.FC = () => {
                       <div>
                         <p className="info-item-label">Receipt Date</p>
                         <p className="info-item-value">
-                          {hasNoPayments ? "N/A" : new Date(payments[0].paymentDate).toLocaleDateString("en-MY")}
+                          {hasNoPayments
+                            ? "N/A"
+                            : new Date(
+                                payments[0].paymentDate
+                              ).toLocaleDateString("en-MY")}
                         </p>
                       </div>
                       <div>
                         <p className="info-item-label">Status</p>
                         <p className="info-item-value">
-                          <span className={isCancelled ? "alert-cancelled" : hasNoPayments ? "alert-warning" : "alert-success"} style={{ padding: "3px 8px", borderRadius: "6px", fontSize: "12px" }}>
-                            {isCancelled ? "Cancelled" : hasNoPayments ? "No Payment" : payments[0].status}
+                          <span
+                            className={
+                              isCancelled
+                                ? "alert-cancelled"
+                                : hasNoPayments
+                                ? "alert-warning"
+                                : "alert-success"
+                            }
+                            style={{
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {isCancelled
+                              ? "Cancelled"
+                              : hasNoPayments
+                              ? "No Payment"
+                              : payments[0].status}
                           </span>
                         </p>
                       </div>
@@ -281,19 +431,46 @@ const ReceiptPage: React.FC = () => {
                       <div className="box">
                         <div className="box-title">Bill To</div>
                         <div className="box-text">
-                          <p className="font-semibold text-base">{booking.guest.fullName}</p>
+                          <p className="font-semibold text-base">
+                            {booking.guest.fullName}
+                          </p>
                           <p>{booking.guest.email}</p>
                           <p>{booking.guest.phoneNumber}</p>
                           <p>IC: {booking.guest.icNumber}</p>
                         </div>
                       </div>
                       <div className="box box-purple">
-                        <div className="box-title">Hotel Information</div>
-                        <div className="box-text">
-                          <p className="font-semibold text-base">{booking.room.hotelName}</p>
-                          <p>Room {booking.room.roomNumber} - {booking.room.roomType}</p>
-                          <p>{booking.totalGuests} Guest(s)</p>
-                          <p>{booking.numberOfNights} Night(s)</p>
+                        <div className="box-title">
+                          Hotel Information{" "}
+                          {relatedBookings.length > 1 &&
+                            `(${relatedBookings.length} Rooms)`}
+                        </div>
+                        <div className="box-text space-y-2">
+                          <p className="font-semibold text-base">
+                            {mainBooking.room.hotelName || "SmartStay Hotel"}
+                          </p>
+
+                          {/* Show ALL rooms */}
+                          {relatedBookings.map((b: any, index: number) => (
+                            <div key={b.bookingId} className="py-1">
+                              <span className="font-medium">
+                                Room {b.room.roomNumber} - {b.room.roomType}
+                              </span>
+                              <span className="text-purple-700 ml-3">
+                                RM {b.totalAmount.toFixed(2)}
+                              </span>
+                              {relatedBookings.length > 1 && (
+                                <span className="text-xs text-purple-600 ml-2">
+                                  (Booking #{b.bookingId})
+                                </span>
+                              )}
+                            </div>
+                          ))}
+
+                          <div className="border-t border-purple-200 pt-2 mt-2">
+                            <p>{booking?.totalGuests} Guest(s)</p>
+                            <p>{booking?.numberOfNights} Night(s)</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -304,18 +481,26 @@ const ReceiptPage: React.FC = () => {
                       <div>
                         <p className="stay-label">Check-In</p>
                         <p className="stay-value">
-                          {new Date(booking.checkInDate).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" })}
+                          {new Date(booking.checkInDate).toLocaleDateString(
+                            "en-MY",
+                            { day: "numeric", month: "long", year: "numeric" }
+                          )}
                         </p>
                       </div>
                       <div>
                         <p className="stay-label">Check-Out</p>
                         <p className="stay-value">
-                          {new Date(booking.checkOutDate).toLocaleDateString("en-MY", { day: "numeric", month: "long", year: "numeric" })}
+                          {new Date(booking.checkOutDate).toLocaleDateString(
+                            "en-MY",
+                            { day: "numeric", month: "long", year: "numeric" }
+                          )}
                         </p>
                       </div>
                       <div>
                         <p className="stay-label">Duration</p>
-                        <p className="stay-value">{booking.numberOfNights} Nights</p>
+                        <p className="stay-value">
+                          {booking.numberOfNights} Nights
+                        </p>
                       </div>
                     </div>
 
@@ -323,7 +508,8 @@ const ReceiptPage: React.FC = () => {
                     <div className="section-title">Payment Summary</div>
                     {hasNoPayments ? (
                       <div className="alert alert-warning">
-                        <strong>No Payments Recorded</strong> — Total amount due: RM {booking.totalAmount.toFixed(2)}
+                        <strong>No Payments Recorded</strong> — Total amount
+                        due: RM {booking.totalAmount.toFixed(2)}
                       </div>
                     ) : (
                       <table className="table">
@@ -343,21 +529,31 @@ const ReceiptPage: React.FC = () => {
                               <td>
                                 Payment {i + 1} ({p.paymentMethod})
                                 <br />
-                                <span style={{ fontSize: "11px", color: "#6b7280" }}>
-                                  {new Date(p.paymentDate).toLocaleDateString("en-MY")}
+                                <span
+                                  style={{ fontSize: "11px", color: "#6b7280" }}
+                                >
+                                  {new Date(p.paymentDate).toLocaleDateString(
+                                    "en-MY"
+                                  )}
                                 </span>
                               </td>
-                              <td className="payment-amount-paid">- RM {p.amount.toFixed(2)}</td>
+                              <td className="payment-amount-paid">
+                                - RM {p.amount.toFixed(2)}
+                              </td>
                             </tr>
                           ))}
                           <tr className="total-row">
                             <td className="total-label">Total Paid</td>
-                            <td className="total-value">RM {totalPaid.toFixed(2)}</td>
+                            <td className="total-value">
+                              RM {totalPaid.toFixed(2)}
+                            </td>
                           </tr>
                           {remainingBalance > 0 && (
                             <tr className="balance-row">
                               <td className="total-label">Remaining Balance</td>
-                              <td className="total-value balance-value">RM {remainingBalance.toFixed(2)}</td>
+                              <td className="total-value balance-value">
+                                RM {remainingBalance.toFixed(2)}
+                              </td>
                             </tr>
                           )}
                         </tbody>
@@ -367,27 +563,35 @@ const ReceiptPage: React.FC = () => {
                     {/* Final Message */}
                     {isCancelled ? (
                       <div className="alert alert-cancelled">
-                        <strong>Booking Cancelled</strong> — Refund will be processed according to policy.
+                        <strong>Booking Cancelled</strong> — Refund will be
+                        processed according to policy.
                       </div>
                     ) : remainingBalance === 0 ? (
                       <div className="alert alert-success">
-                        <strong>Payment Complete!</strong> Your booking is fully paid and confirmed.
+                        <strong>Payment Complete!</strong> Your booking is fully
+                        paid and confirmed.
                       </div>
                     ) : hasNoPayments ? (
                       <div className="alert alert-warning">
-                        <strong>Payment Required</strong> — Full payment needed to confirm booking.
+                        <strong>Payment Required</strong> — Full payment needed
+                        to confirm booking.
                       </div>
                     ) : (
                       <div className="alert alert-info">
-                        <strong>Thank you for your payment!</strong> Remaining: RM {remainingBalance.toFixed(2)} due on check-in.
+                        <strong>Thank you for your payment!</strong> Remaining:
+                        RM {remainingBalance.toFixed(2)} due on check-in.
                       </div>
                     )}
 
                     {/* Footer */}
                     <div className="footer">
-                      <p><strong>SmartStay Hotels</strong> • support@smartstay.com • +60 12-345 6789</p>
+                      <p>
+                        <strong>SmartStay Hotels</strong> •
+                        support@smartstay.com • +60 12-345 6789
+                      </p>
                       <p className="text-xs mt-2">
-                        System-generated receipt • {new Date().toLocaleString("en-MY")}
+                        System-generated receipt •{" "}
+                        {new Date().toLocaleString("en-MY")}
                       </p>
                     </div>
                   </div>

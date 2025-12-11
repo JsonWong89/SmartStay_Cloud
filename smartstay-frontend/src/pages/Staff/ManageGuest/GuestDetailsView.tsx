@@ -391,6 +391,26 @@ Props) {
                 <Edit size={16} />
                 Edit Guest Info
               </button>
+              <button
+                onClick={() =>
+                  navigate("/staff/walk-in-booking", {
+                    state: {
+                      guestInfo: {
+                        FullName: guest.fullName,
+                        ICNumber: guest.icNumber,
+                        Email: guest.email,
+                        PhoneNumber: guest.phoneNumber,
+                        Gender: guest.gender || "",
+                        Address: guest.address || "",
+                      },
+                    },
+                  })
+                }
+                className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition flex items-center justify-center gap-2"
+              >
+                <Plus size={16} />
+                Add Booking
+              </button>
             </div>
           </div>
         </div>

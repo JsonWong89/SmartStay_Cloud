@@ -320,14 +320,29 @@ const AuthPage: React.FC = () => {
         setMessageType("error");
         return;
       }
-      const emailRegex = /\S+@\S+\.[A-Za-z]{2,}/;
-      if (!emailRegex.test(registerForm.email)) {
+      // Validate IC Number format (12 digits for Malaysian IC)
+      const icNumber = registerForm.icNumber.replace(/\D/g, '');
+      if (icNumber.length < 6 || icNumber.length > 20) {
+        setMessage("Please enter a valid IC Number or Passport (6-20 characters).");
+        setMessageType("error");
+        return;
+      }
+      // Improved email regex
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      if (!emailRegex.test(registerForm.email.trim())) {
         setMessage("Please enter a valid email address.");
         setMessageType("error");
         return;
       }
       if (!registerForm.phoneNumber.trim()) {
         setMessage("Phone number is required.");
+        setMessageType("error");
+        return;
+      }
+      // Validate phone number format (8-15 digits, optional +)
+      const phoneNumber = registerForm.phoneNumber.replace(/[\s-]/g, '');
+      if (!/^\+?\d{8,15}$/.test(phoneNumber)) {
+        setMessage("Please enter a valid phone number (8-15 digits).");
         setMessageType("error");
         return;
       }

@@ -129,12 +129,40 @@ const GuestProfile: React.FC = () => {
     
     // Validation
     if (!fullName || !email || !phone) {
-      alert('Please fill in all required fields');
+      showToast('⚠️ Please fill in all required fields', 'warning');
       return;
     }
 
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      showToast('⚠️ Full name must be at least 2 characters', 'warning');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+      showToast('📧 Please enter a valid email address', 'error');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneNumber = phone.replace(/[\s-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(phoneNumber)) {
+      showToast('📱 Please enter a valid phone number (8-15 digits)', 'error');
+      return;
+    }
+
+    // Validate IC Number if provided
+    if (icNumber) {
+      const ic = icNumber.replace(/\D/g, '');
+      if (ic.length < 6 || ic.length > 20) {
+        showToast('🪪 Please enter a valid IC Number or Passport (6-20 characters)', 'error');
+        return;
+      }
+    }
+
     if (!user?.id) {
-      alert('User ID not found');
+      showToast('⚠️ User session not found. Please sign in again.', 'error');
       return;
     }
 

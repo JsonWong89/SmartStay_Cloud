@@ -68,23 +68,22 @@ const GuestProfile: React.FC = () => {
       }
 
       try {
-        // Fetch guest profile - guests endpoint requires hotelId query parameter
-        const guestResponse = await fetch(`${API_BASE_URL}/api/guests/${user.id}?hotelId=1`);
+        // Fetch guest profile using the profile endpoint
+        const guestResponse = await fetch(`${API_BASE_URL}/api/Guests/profile/${user.id}`);
         
         if (guestResponse.ok) {
           const response = await guestResponse.json();
           console.log('Profile data loaded:', response);
           
-          // Extract data from wrapped response
+          // Extract data from the success response structure
           const data = response.data || response;
           
-          // Handle both camelCase and PascalCase from backend
-          setFullName(data.fullName || data.FullName || '');
-          setEmail(data.email || data.Email || '');
-          setPhone(data.phoneNumber || data.PhoneNumber || '');
-          setAddress(data.address || data.Address || '');
-          setGender(data.gender || data.Gender || '');
-          setIcNumber(data.icNumber || data.ICNumber || '');
+          setFullName(data.fullName || '');
+          setEmail(data.email || '');
+          setPhone(data.phoneNumber || '');
+          setAddress(data.address || '');
+          setGender(data.gender || '');
+          setIcNumber(data.icNumber || '');
         } else {
           console.error('Failed to fetch profile:', guestResponse.status);
         }

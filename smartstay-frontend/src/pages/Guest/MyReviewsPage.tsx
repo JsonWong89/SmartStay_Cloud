@@ -167,7 +167,7 @@ const MyReviewsPage: React.FC = () => {
                   <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
                     <div className="flex gap-3">
                       <button
-                        onClick={() => navigate(`/guest/reservations`)}
+                        onClick={() => navigate(`/guest/reservations?bookingId=${review.bookingID}`)}
                         className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                       >
                         View Booking

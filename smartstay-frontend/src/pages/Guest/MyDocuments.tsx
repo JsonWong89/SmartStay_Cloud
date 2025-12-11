@@ -81,8 +81,28 @@ const MyDocuments: React.FC = () => {
     });
   };
 
-  const handleViewDocument = (fileURL: string) => {
-    window.open(`${API_BASE_URL}${fileURL}`, '_blank');
+  const handleViewDocument = async (fileURL: string, fileName: string) => {
+    try {
+      // Try to fetch the document through the API
+      const response = await fetch(`${API_BASE_URL}/api/documents/download?url=${encodeURIComponent(fileURL)}`);
+      
+      if (response.ok) {
+        // If API endpoint exists, download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      } else {
+        // Fallback: try direct URL access
+        const fullURL = fileURL.startsWith('http://') || fileURL.startsWith('https://') 
+          ? fileURL 
+          : `${API_BASE_URL}${fileURL}`;
+        window.open(fullURL, '_blank');
+      }
+    } catch (error) {
+      console.error('Error viewing document:', error);
+      alert('Unable to view document. The file may not be available on the server. Please contact support.');
+    }
   };
 
   return (
@@ -172,10 +192,10 @@ const MyDocuments: React.FC = () => {
                     </div>
 
                     <button
-                      onClick={() => handleViewDocument(document.fileURL)}
+                      onClick={() => handleViewDocument(document.fileURL, document.fileName)}
                       className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition text-sm font-medium"
                     >
-                      👁️ View
+                    View
                     </button>
                   </div>
                 </div>

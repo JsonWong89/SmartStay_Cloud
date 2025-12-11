@@ -20,6 +20,7 @@ interface Hotel {
   description?: string;
   imageUrl?: string;
   rating?: number;
+  minRoomPrice?: number;
 }
 
 const GuestDashboard: React.FC = () => {
@@ -325,11 +326,14 @@ const GuestDashboard: React.FC = () => {
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                       <div>
                         <span className="text-gray-500 text-xs block">Starting from</span>
-                        <p className="text-2xl font-bold text-blue-600">RM199<span className="text-sm font-normal text-gray-500">/night</span></p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          RM{hotel.minRoomPrice || 199}
+                          <span className="text-sm font-normal text-gray-500">/night</span>
+                        </p>
                       </div>
                       <button
-                        onClick={() => navigate('/guest/search')}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition shadow-md hover:shadow-lg"
+                        onClick={() => navigate('/guest/search', { state: { hotelName: hotel.hotelName } })}
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition shadow-md hover:shadow-lg cursor-pointer"
                       >
                         View
                       </button>

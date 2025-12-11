@@ -61,7 +61,14 @@ export default function ManagerManageBookings() {
         bookingID: String(b.bookingID || b.BookingID),
         guestID: b.guestID || b.GuestID,
         roomID: b.roomID || b.RoomID,
-        roomType: b.roomType || b.RoomType || "",
+        roomType:
+          b.roomType ||
+          b.RoomType ||
+          b.room?.roomType ||
+          b.room?.RoomType ||
+          b.Room?.roomType ||
+          b.Room?.RoomType ||
+          "",
         hotelName: b.hotelName || b.HotelName || "",
         checkInDate: b.checkInDate || b.CheckInDate,
         checkOutDate: b.checkOutDate || b.CheckOutDate,
@@ -253,7 +260,6 @@ export default function ManagerManageBookings() {
               <th>Total (RM)</th>
               <th>Status</th>
               <th>Created</th>
-              <th>Actions</th>
             </tr>
           </thead>
 
@@ -293,47 +299,7 @@ export default function ManagerManageBookings() {
                   {new Date(b.createdAt).toLocaleString("en-GB").replace(",", "")}
                 </td>
 
-                <td className="action-buttons">
-                  <div className="action-group">
 
-                    {/* CONFIRM — only Pending can use */}
-                    <button
-                      className="action-btn confirm"
-                      disabled={b.bookingStatus !== "Pending"}
-                      onClick={() => updateStatus(Number(b.bookingID), "Confirmed")}
-                    >
-                      Confirm
-                    </button>
-
-                    {/* CHECK IN — only Confirmed can use */}
-                    <button
-                      className="action-btn checkin"
-                      disabled={b.bookingStatus !== "Confirmed"}
-                      onClick={() => updateStatus(Number(b.bookingID), "CheckedIn")}
-                    >
-                      Check In
-                    </button>
-
-                    {/* CHECK OUT — only CheckedIn can use */}
-                    <button
-                      className="action-btn checkout"
-                      disabled={b.bookingStatus !== "CheckedIn"}
-                      onClick={() => updateStatus(Number(b.bookingID), "CheckedOut")}
-                    >
-                      Check Out
-                    </button>
-
-                    {/* CANCEL — disable if already CheckedOut or Cancelled */}
-                    <button
-                      className="action-btn cancel"
-                      disabled={b.bookingStatus === "CheckedOut" || b.bookingStatus === "Cancelled"}
-                      onClick={() => updateStatus(Number(b.bookingID), "Cancelled")}
-                    >
-                      Cancel
-                    </button>
-
-                  </div>
-                </td>
 
 
               </tr>

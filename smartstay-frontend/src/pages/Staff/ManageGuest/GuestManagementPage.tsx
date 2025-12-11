@@ -118,18 +118,16 @@ export default function GuestManagementPage() {
     }))
   : [];
 
-const reviews = reviewsRes?.success && reviewsRes.data
-  ? reviewsRes.data.map((r: any) => ({
-      reviewId: r.reviewId,
-      bookingId: r.bookingId,
-      hotelName: r.hotelName,
-      roomNumber: r.roomNumber,
-      roomType: r.roomType,
-      rating: r.rating,
-      comment: r.comment || null,
-      reviewDate: r.reviewDate.split("T")[0],
-    }))
-  : [];
+      const reviews = Array.isArray(reviewsRes) ? reviewsRes.map((r: any) => ({
+        reviewId: r.reviewID,
+        bookingId: r.bookingID,
+        hotelName: r.hotelName,
+        roomNumber: r.roomNumber, 
+        roomType: r.roomType,
+        rating: r.rating,
+        comment: r.comment,
+        reviewDate: r.reviewDate.split("T")[0],
+      })) : [];
 
       setSelectedGuest({
         ...guest,

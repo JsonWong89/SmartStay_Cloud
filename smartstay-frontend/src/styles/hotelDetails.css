@@ -1,55 +1,270 @@
-.hotel-info-container {
-  padding: 30px;
+/* ============================== */
+/*    HOTEL PAGE LAYOUT          */
+/* ============================== */
+
+.hotel-page {
+  padding: 25px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  animation: fadeIn 0.4s ease;
 }
 
-.hotel-image-wrapper {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ============================== */
+/*          IMAGE BANNER          */
+/* ============================== */
+
+.hotel-image-container {
   width: 100%;
-  max-width: 450px;
-  border-radius: 15px;
+  max-width: 750px;
+  border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  position: relative;
+  box-shadow: 0px 8px 25px rgba(0,0,0,0.25);
+  margin-bottom: 25px;
 }
 
-.hotel-image {
+.hotel-image-banner {
   width: 100%;
-  height: 280px;
+  height: 340px;
   object-fit: cover;
+  transition: 0.3s ease-in-out;
 }
 
-.hotel-content {
-  text-align: center;
-  max-width: 600px;
+.hotel-image-banner:hover {
+  transform: scale(1.02);
+}
+
+
+/* ============================== */
+/*      CHANGE IMAGE BUTTON       */
+/* ============================== */
+
+.image-upload-btn {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(37, 99, 235, 0.9);
+  padding: 8px 14px;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  backdrop-filter: blur(6px);
+  transition: 0.3s;
+}
+
+.image-upload-btn:hover {
+  background: rgba(29, 78, 216, 0.95);
+}
+
+
+/* ============================== */
+/*       MAIN CONTENT CARD        */
+/* ============================== */
+
+.hotel-card-container {
+  width: 100%;
+  max-width: 750px;
+  padding: 25px 28px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 18px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0px 6px 18px rgba(0,0,0,0.12);
+  animation: fadeIn 0.5s ease;
+}
+
+
+/* ============================== */
+/*   TITLE + EDIT BUTTON ROW      */
+/* ============================== */
+
+.hotel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .hotel-title {
-  font-size: 36px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
 }
+
+.hotel-title-input {
+  font-size: 32px;
+  font-weight: 700;
+  width: 70%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+
+/* ============================== */
+/*           EDIT BUTTON          */
+/* ============================== */
+
+.edit-btn {
+  background: #2563eb;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  transition: 0.25s;
+}
+
+.edit-btn:hover {
+  background: #1d4ed8;
+}
+
+
+/* ============================== */
+/*          CITY TEXT             */
+/* ============================== */
 
 .hotel-city {
   font-size: 20px;
-  color: #777;
-}
-/* Fix hotel page inside manager layout */
-.main-content .hotel-info-container {
-  padding-top: 10px;
+  font-weight: 500;
+  color: #5b5b5b;
+  margin-top: 5px;
 }
 
-.hotel-content {
-  margin-top: 10px;
+
+/* ============================== */
+/*         STAR RATING            */
+/* ============================== */
+
+.hotel-rating {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 15px 0 25px;
 }
 
-/* Reduce image height to fit dashboard layout */
-.hotel-image {
-  height: 240px;
+
+/* ============================== */
+/*       INFORMATION CARD         */
+/* ============================== */
+
+.hotel-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-size: 16px;
 }
 
-/* Better readability inside dashboard */
-.hotel-card {
-  padding: 20px;
+.info-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-row strong {
   font-size: 15px;
-  line-height: 1.6;
+  color: #111;
+}
+
+.info-row p {
+  margin: 5px 0 0;
+  color: #444;
+}
+
+
+/* ============================== */
+/*        EDIT MODE INPUTS        */
+/* ============================== */
+
+.input-field {
+  padding: 8px 10px;
+  width: 100%;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+}
+
+textarea.input-field {
+  height: 100px;
+  resize: none;
+}
+
+
+/* ============================== */
+/*         SAVE BUTTON            */
+/* ============================== */
+
+.save-changes-btn {
+  margin-top: 25px;
+  width: 100%;
+  padding: 14px;
+  background: #2563eb;
+  border-radius: 10px;
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.save-changes-btn:hover {
+  background: #1d4ed8;
+}
+.reviews-section {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 700px;
+}
+
+.reviews-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.no-review-msg {
+  color: #777;
+  font-style: italic;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.review-card {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.review-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.review-comment {
+  margin: 10px 0;
+  font-size: 15px;
+  color: #444;
+}
+
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #777;
 }

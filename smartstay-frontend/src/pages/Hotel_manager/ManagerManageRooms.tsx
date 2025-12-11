@@ -168,14 +168,13 @@ export default function ManagerManageRooms() {
         image: "",
       });
       fetchRooms();
-    } 
-    catch (err: any)
-     {
+    }
+    catch (err: any) {
       console.log("FULL ERROR:", err);
       console.log("BACKEND RESPONSE:", err.response?.data);
       console.log("Payload sent:", payload);
       console.log("User from store:", user);
-      
+
 
       alert("Failed to add room: " + (err.response?.data?.message || err.message));
     }
@@ -196,7 +195,7 @@ export default function ManagerManageRooms() {
         pricePerNight: selectedRoom.pricePerNight,
         status: selectedRoom.status,
         description: selectedRoom.description,
-        imageURL: selectedRoom.imageUrl,
+        ImageURL: selectedRoom.imageUrl,
       };
 
       await axios.put(
@@ -311,19 +310,24 @@ export default function ManagerManageRooms() {
                 <td>RM {r.pricePerNight}</td>
                 <td>{r.status}</td>
                 <td>
-                  <button
-                    className="btn-edit"
-                    onClick={() => {
-                      setSelectedRoom(r);
-                      setShowEdit(true);
-                    }}
-                  >
-                    Edit
-                  </button>
+                  <div className="action-buttons">
+                    <button
+                      className="btn-edit"
+                      onClick={() => {
+                        setSelectedRoom(r);
+                        setShowEdit(true);
+                      }}
+                    >
+                      Edit
+                    </button>
 
-                  <button className="btn-delete" onClick={() => handleDeleteRoom(r.roomID)}>
-                    Delete
-                  </button>
+                    <button
+                      className="btn-delete"
+                      onClick={() => handleDeleteRoom(r.roomID)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -15,27 +15,78 @@ interface Hotel {
   rating: number;
   createdAt: string;
   description: string;
+  managerID: string;
+}
+
+interface Review {
+  reviewID: number;
+  guestName: string;
+  rating: number;
+  comment: string;
+  reviewDate: string;
+  roomType: string;
 }
 
 export default function HotelInfo() {
   const user = useAuthStore((s) => s.user);
-  const [hotel, setHotel] = useState<Hotel | null>(null);
-  const [loading, setLoading] = useState(true);
 
+  const [hotel, setHotel] = useState<Hotel | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [editMode, setEditMode] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  const [form, setForm] = useState({
+    hotelName: "",
+    description: "",
+    phoneNumber: "",
+    email: "",
+  });
+
+
+  // Fetch hotel
   const fetchHotel = async () => {
     try {
       const res = await axios.get<Hotel>(
         `https://localhost:7168/api/hotels/${user?.hotelId}`
       );
+
       setHotel(res.data);
+
+      setForm({
+        hotelName: res.data.hotelName,
+        description: res.data.description,
+        phoneNumber: res.data.phoneNumber,
+        email: res.data.email,
+      });
     } catch (err) {
       console.error("HOTEL FETCH ERROR:", err);
     }
     setLoading(false);
   };
 
+  // Fetch reviews
+  const fetchReviews = async () => {
+    try {
+      const res = await axios.get<Review[]>(
+        `https://localhost:7168/api/reviews/hotel/${user?.hotelId}`
+      );
+      setReviews(res.data);
+    } catch (err) {
+      console.error("REVIEW FETCH ERROR:", err);
+    }
+    setLoadingReviews(false);
+  };
+
+  // Load data once hotelId is ready
   useEffect(() => {
-    if (user?.hotelId) fetchHotel();
+    if (user?.hotelId) {
+      fetchHotel();
+      fetchReviews();
+    }
   }, [user?.hotelId]);
 
   if (loading) return <p>Loading hotel info...</p>;
@@ -48,34 +99,208 @@ export default function HotelInfo() {
     day: "numeric",
   });
 
+  // Change image preview
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+    });
+  }
+
+  const handleImageChange = async (e: any) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const base64 = await fileToBase64(file);
+    setPreviewImage(base64);
+  };
+
+
+
+  // Save updates
+  const handleSave = async () => {
+    try {
+      const payload = {
+        hotelName: form.hotelName,
+        address: hotel.address,
+        city: hotel.city,
+        description: form.description,
+        phoneNumber: form.phoneNumber,
+        email: form.email,
+        rating: hotel.rating,
+        imageUrl: previewImage || hotel.imageUrl,
+        managerID: hotel.managerID,
+      };
+
+      await axios.put(
+        `https://localhost:7168/api/hotels/${hotel.hotelID}`,
+        payload
+      );
+
+      // Update sidebar hotel name
+      useAuthStore.getState().setUser({
+        ...user!,
+        hotelName: form.hotelName,
+      });
+
+      alert("Hotel updated successfully!");
+      setEditMode(false);
+      fetchHotel();
+    } catch (err) {
+      console.error("UPDATE HOTEL ERROR:", err);
+      alert("Failed to update hotel.");
+    }
+  };
+
   return (
-    <div className="hotel-info-container">
-      {/* IMAGE */}
-      <div className="hotel-image-wrapper">
-        <img src={hotel.imageUrl} className="hotel-image" alt="Hotel" />
+    <div className="hotel-page">
+
+      {/* ========== IMAGE SECTION ========== */}
+      <div className="hotel-image-container">
+        <img
+          src={previewImage || hotel.imageUrl}
+          className="hotel-image-banner"
+          alt="Hotel"
+        />
+
+        {editMode && (
+          <label className="image-upload-btn">
+            Change Image
+            <input type="file" accept="image/*" hidden onChange={handleImageChange} />
+          </label>
+        )}
       </div>
 
-      {/* CONTENT */}
-      <div className="hotel-content">
-        <h1 className="hotel-title">{hotel.hotelName}</h1>
+      {/* ========== HOTEL INFO CARD ========== */}
+      <div className="hotel-card-container">
+        <div className="hotel-header">
+          {editMode ? (
+            <input
+              className="hotel-title-input"
+              value={form.hotelName}
+              onChange={(e) => setForm({ ...form, hotelName: e.target.value })}
+            />
+          ) : (
+            <h1 className="hotel-title">{hotel.hotelName}</h1>
+          )}
+
+          <button className="edit-btn" onClick={() => setEditMode(!editMode)}>
+            {editMode ? "Cancel" : "Edit"}
+          </button>
+        </div>
+
         <h3 className="hotel-city">{hotel.city}</h3>
 
-        {/* ⭐ STAR RATING */}
+        {/* STAR RATING */}
         <div className="hotel-rating">
           {[1, 2, 3, 4, 5].map((i) => (
-            <FaStar key={i} size={28} color={i <= hotel.rating ? "#FFD700" : "#ccc"} />
+            <FaStar key={i} size={26} color={i <= hotel.rating ? "#FFD700" : "#ccc"} />
           ))}
         </div>
 
-        {/* GLASS CARD */}
-        <div className="hotel-card">
-          <p><strong>Description:</strong> {hotel.description}</p>
-          <p><strong>Address:</strong> {hotel.address}</p>
-          <p><strong>Phone:</strong> {hotel.phoneNumber}</p>
-          <p><strong>Email:</strong> {hotel.email}</p>
-          <p><strong>Created At:</strong> {created}</p>
+        {/* INFO CARD */}
+        <div className="hotel-info-card">
+          <div className="info-row">
+            <strong>Description:</strong>
+            {editMode ? (
+              <textarea
+                className="input-field"
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+              />
+            ) : (
+              <p>{hotel.description}</p>
+            )}
+          </div>
+
+          <div className="info-row">
+            <strong>Phone:</strong>
+            {editMode ? (
+              <input
+                className="input-field"
+                value={form.phoneNumber}
+                onChange={(e) =>
+                  setForm({ ...form, phoneNumber: e.target.value })
+                }
+              />
+            ) : (
+              <p>{hotel.phoneNumber}</p>
+            )}
+          </div>
+
+          <div className="info-row">
+            <strong>Email:</strong>
+            {editMode ? (
+              <input
+                className="input-field"
+                value={form.email}
+                onChange={(e) =>
+                  setForm({ ...form, email: e.target.value })
+                }
+              />
+            ) : (
+              <p>{hotel.email}</p>
+            )}
+          </div>
+
+          <div className="info-row">
+            <strong>Address:</strong>
+            <p>{hotel.address}</p>
+          </div>
+
+          <div className="info-row">
+            <strong>Created At:</strong>
+            <p>{created}</p>
+          </div>
         </div>
+
+        {editMode && (
+          <button className="save-changes-btn" onClick={handleSave}>
+            Save Changes
+          </button>
+        )}
       </div>
+
+      {/* ========== REVIEWS SECTION ========== */}
+      <div className="reviews-section">
+        <h2 className="reviews-title">Guest Reviews</h2>
+
+        {loadingReviews ? (
+          <p>Loading reviews...</p>
+        ) : reviews.length === 0 ? (
+          <p className="no-review-msg">
+            There are currently no reviews for this hotel.
+          </p>
+        ) : (
+          <div className="reviews-list">
+            {reviews.map((r) => (
+              <div key={r.reviewID} className="review-card">
+                <div className="review-header">
+                  <h4>{r.guestName}</h4>
+
+                  <div className="stars">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <FaStar key={i} size={18} color={i <= r.rating ? "#FFD700" : "#ccc"} />
+                    ))}
+                  </div>
+                </div>
+
+                <p className="review-comment">"{r.comment}"</p>
+
+                <div className="review-footer">
+                  <span>{r.roomType}</span>
+                  <span>{new Date(r.reviewDate).toLocaleDateString("en-MY")}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }

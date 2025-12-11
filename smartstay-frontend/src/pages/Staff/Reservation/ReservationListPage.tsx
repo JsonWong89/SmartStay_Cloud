@@ -40,16 +40,47 @@ export default function ReservationListPage({
   const groupedReservations = useMemo(() => {
     const groups = new Map<string, Booking[]>();
 
+    // First pass: collect ALL bookings (including cancelled)
     bookings.forEach((booking) => {
-      if (booking.bookingStatus === "Cancelled") return;
-
       const key = `${booking.guest.email}-${booking.checkInDate}-${booking.checkOutDate}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(booking);
     });
 
-    return Array.from(groups.values());
+    // Second pass: for each group, filter out cancelled rooms UNLESS the entire group is cancelled
+    const result: Booking[][] = [];
+
+    groups.forEach((groupBookings) => {
+      const activeBookings = groupBookings.filter(
+        (b) => b.bookingStatus !== "Cancelled"
+      );
+
+      // If there are active rooms → show only active ones
+      if (activeBookings.length > 0) {
+        result.push(activeBookings);
+      }
+      // If ALL rooms are cancelled → show ONE cancelled booking (so row appears)
+      else {
+        // Pick any cancelled booking (usually all same status)
+        result.push([groupBookings[0]]);
+      }
+    });
+
+    return result;
   }, [bookings]);
+  // const groupedReservations = useMemo(() => {
+  //   const groups = new Map<string, Booking[]>();
+
+  //   bookings.forEach((booking) => {
+  //     // if (booking.bookingStatus === "Cancelled") return;
+
+  //     const key = `${booking.guest.email}-${booking.checkInDate}-${booking.checkOutDate}`;
+  //     if (!groups.has(key)) groups.set(key, []);
+  //     groups.get(key)!.push(booking);
+  //   });
+
+  //   return Array.from(groups.values());
+  // }, [bookings]);
 
   // Filter groups
   const filteredGroups = useMemo(() => {
@@ -57,13 +88,16 @@ export default function ReservationListPage({
       const main = group[0];
       const query = filters.searchQuery.toLowerCase();
 
-      const matchesStatus = filters.status === "all" || main.bookingStatus === filters.status;
+      const matchesStatus =
+        filters.status === "all" || main.bookingStatus === filters.status;
       const matchesSearch =
         main.guest.fullName.toLowerCase().includes(query) ||
         group.some((b) => b.room.roomNumber.includes(query)) ||
         group.some((b) => b.bookingId.toString().includes(query));
-      const matchesDateFrom = !filters.dateFrom || main.checkInDate >= filters.dateFrom;
-      const matchesDateTo = !filters.dateTo || main.checkInDate <= filters.dateTo;
+      const matchesDateFrom =
+        !filters.dateFrom || main.checkInDate >= filters.dateFrom;
+      const matchesDateTo =
+        !filters.dateTo || main.checkInDate <= filters.dateTo;
 
       return matchesStatus && matchesSearch && matchesDateFrom && matchesDateTo;
     });
@@ -72,7 +106,9 @@ export default function ReservationListPage({
   // Stats
   const stats = useMemo(() => {
     const total = groupedReservations.length;
-    const checkedIn = groupedReservations.filter((g) => g[0].bookingStatus === "CheckedIn").length;
+    const checkedIn = groupedReservations.filter(
+      (g) => g[0].bookingStatus === "CheckedIn"
+    ).length;
     const totalRevenue = bookings.reduce((sum, b) => sum + b.totalPaid, 0);
     const pendingPayments = groupedReservations.reduce((sum, group) => {
       const amount = group.reduce((s, b) => s + b.totalAmount, 0);
@@ -100,7 +136,9 @@ export default function ReservationListPage({
 
     const rows = filteredGroups.map((group) => {
       const main = group[0];
-      const roomList = group.map((b) => `Room ${b.room.roomNumber}`).join(" + ");
+      const roomList = group
+        .map((b) => `Room ${b.room.roomNumber}`)
+        .join(" + ");
       const totalAmount = group.reduce((s, b) => s + b.totalAmount, 0);
       const totalPaid = group.reduce((s, b) => s + b.totalPaid, 0);
 
@@ -128,21 +166,48 @@ export default function ReservationListPage({
   };
 
   // Get financials including payments from cancelled rooms
+  // const getGroupFinancials = (group: Booking[]) => {
+  //   const main = group[0];
+  //   const totalAmount = group.reduce((s, b) => s + b.totalAmount, 0);
+
+  //   const allRelated = bookings.filter(
+  //     (b) =>
+  //       b.guest.email === main.guest.email &&
+  //       b.checkInDate === main.checkInDate &&
+  //       b.checkOutDate === main.checkOutDate
+  //   );
+
+  //   const totalPaid = allRelated.reduce((s, b) => s + b.totalPaid, 0);
+  //   const pending = totalAmount - totalPaid;
+
+  //   return { totalAmount, totalPaid, pending };
+  // };
   const getGroupFinancials = (group: Booking[]) => {
     const main = group[0];
-    const totalAmount = group.reduce((s, b) => s + b.totalAmount, 0);
 
-    const allRelated = bookings.filter(
+    // Current total = only active rooms
+    const currentTotalAmount = group.reduce((sum, b) => sum + b.totalAmount, 0);
+
+    // Total paid = ALL payments ever made (including from cancelled rooms)
+    const allRelatedBookings = bookings.filter(
       (b) =>
         b.guest.email === main.guest.email &&
         b.checkInDate === main.checkInDate &&
         b.checkOutDate === main.checkOutDate
     );
 
-    const totalPaid = allRelated.reduce((s, b) => s + b.totalPaid, 0);
-    const pending = totalAmount - totalPaid;
+    const totalPaid = allRelatedBookings.reduce(
+      (sum, b) => sum + b.totalPaid,
+      0
+    );
+    const balanceDue = currentTotalAmount - totalPaid;
 
-    return { totalAmount, totalPaid, pending };
+    return {
+      totalAmount: currentTotalAmount,
+      totalPaid,
+      pending: balanceDue > 0 ? balanceDue : 0,
+      refundOwed: balanceDue < 0 ? Math.abs(balanceDue) : 0,
+    };
   };
 
   return (
@@ -158,7 +223,9 @@ export default function ReservationListPage({
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Reservation Management
               </h1>
-              <p className="text-sm text-gray-500">Manage all hotel reservations</p>
+              <p className="text-sm text-gray-500">
+                Manage all hotel reservations
+              </p>
             </div>
           </div>
 
@@ -172,7 +239,12 @@ export default function ReservationListPage({
               }`}
             >
               <Filter size={18} />
-              Filters {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              Filters{" "}
+              {showFilters ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
             </button>
 
             <button
@@ -187,24 +259,66 @@ export default function ReservationListPage({
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard title="Total" value={stats.total} icon={<FileText className="h-5 w-5 text-sky-600" />} color="sky" />
-          <StatCard title="Checked In" value={stats.checkedIn} icon={<CheckCircle className="h-5 w-5 text-green-600" />} color="green" />
-          <StatCard title="Revenue" value={`RM ${stats.totalRevenue.toFixed(2)}`} icon={<DollarSign className="h-5 w-5 text-emerald-600" />} color="emerald" />
-          <StatCard title="Pending" value={`RM ${stats.pendingPayments.toFixed(2)}`} icon={<AlertCircle className="h-5 w-5 text-amber-600" />} color="amber" />
+          <StatCard
+            title="Total"
+            value={stats.total}
+            icon={<FileText className="h-5 w-5 text-sky-600" />}
+            color="sky"
+          />
+          <StatCard
+            title="Checked In"
+            value={stats.checkedIn}
+            icon={<CheckCircle className="h-5 w-5 text-green-600" />}
+            color="green"
+          />
+          <StatCard
+            title="Revenue"
+            value={`RM ${stats.totalRevenue.toFixed(2)}`}
+            icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
+            color="emerald"
+          />
+          <StatCard
+            title="Pending"
+            value={`RM ${stats.pendingPayments.toFixed(2)}`}
+            icon={<AlertCircle className="h-5 w-5 text-amber-600" />}
+            color="amber"
+          />
         </div>
 
         {/* Filters */}
         {showFilters && (
           <div className="bg-white rounded-xl shadow-sm p-5 mb-6 border border-gray-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilters(f => ({ ...f, status: v }))} />
-              <FilterDate label="Check-In From" value={filters.dateFrom} onChange={(v) => setFilters(f => ({ ...f, dateFrom: v }))} />
-              <FilterDate label="Check-In To" value={filters.dateTo} onChange={(v) => setFilters(f => ({ ...f, dateTo: v }))} />
-              <FilterSearch value={filters.searchQuery} onChange={(v) => setFilters(f => ({ ...f, searchQuery: v }))} />
+              <FilterSelect
+                label="Status"
+                value={filters.status}
+                onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+              />
+              <FilterDate
+                label="Check-In From"
+                value={filters.dateFrom}
+                onChange={(v) => setFilters((f) => ({ ...f, dateFrom: v }))}
+              />
+              <FilterDate
+                label="Check-In To"
+                value={filters.dateTo}
+                onChange={(v) => setFilters((f) => ({ ...f, dateTo: v }))}
+              />
+              <FilterSearch
+                value={filters.searchQuery}
+                onChange={(v) => setFilters((f) => ({ ...f, searchQuery: v }))}
+              />
             </div>
             <div className="mt-4 text-right">
               <button
-                onClick={() => setFilters({ status: "all", dateFrom: "", dateTo: "", searchQuery: "" })}
+                onClick={() =>
+                  setFilters({
+                    status: "all",
+                    dateFrom: "",
+                    dateTo: "",
+                    searchQuery: "",
+                  })
+                }
                 className="text-sm text-sky-600 hover:text-sky-700 font-medium"
               >
                 Clear all filters
@@ -230,14 +344,30 @@ export default function ReservationListPage({
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Booking ID</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden sm:table-cell">Guest</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden md:table-cell">Rooms</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">Dates</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">Guests</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">Payment</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Status</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                  Booking ID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden sm:table-cell">
+                  Guest
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden md:table-cell">
+                  Rooms
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">
+                  Dates
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">
+                  Guests
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">
+                  Payment
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -253,18 +383,29 @@ export default function ReservationListPage({
                 filteredGroups.map((group) => {
                   const main = group[0];
                   const roomCount = group.length;
-                  const roomList = group.map((b) => b.room.roomNumber).join(" + ");
-                  const { totalAmount, totalPaid, pending } = getGroupFinancials(group);
+                  const roomList = group
+                    .map((b) => b.room.roomNumber)
+                    .join(" + ");
+                  const { totalAmount, totalPaid, pending } =
+                    getGroupFinancials(group);
 
                   return (
-                    <tr key={group.map((b) => b.bookingId).join("-")} className="hover:bg-gray-50 transition">
+                    <tr
+                      key={group.map((b) => b.bookingId).join("-")}
+                      className="hover:bg-gray-50 transition"
+                    >
                       <td className="px-4 py-4">
                         <div>
                           <p className="font-bold text-gray-900">
-                            #{main.bookingId}{roomCount > 1 && ` +${roomCount - 1}`}
+                            #{main.bookingId}
+                            {roomCount > 1 && ` +${roomCount - 1}`}
                           </p>
-                          <p className="text-xs text-gray-500">{main.createdAt}</p>
-                          <p className="text-xs text-gray-500 sm:hidden">{main.guest.fullName}</p>
+                          <p className="text-xs text-gray-500">
+                            {main.createdAt}
+                          </p>
+                          <p className="text-xs text-gray-500 sm:hidden">
+                            {main.guest.fullName}
+                          </p>
                         </div>
                       </td>
 
@@ -274,15 +415,21 @@ export default function ReservationListPage({
                             <User className="h-5 w-5 text-sky-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 truncate max-w-[180px]">{main.guest.fullName}</p>
-                            <p className="text-xs text-gray-500 truncate max-w-[180px]">{main.guest.email}</p>
+                            <p className="font-medium text-gray-900 truncate max-w-[180px]">
+                              {main.guest.fullName}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate max-w-[180px]">
+                              {main.guest.email}
+                            </p>
                           </div>
                         </div>
                       </td>
 
                       <td className="px-4 py-4 hidden md:table-cell">
                         <p className="font-medium">Room {roomList}</p>
-                        <p className="text-xs text-gray-600">{roomCount} room{roomCount > 1 ? "s" : ""}</p>
+                        <p className="text-xs text-gray-600">
+                          {roomCount} room{roomCount > 1 ? "s" : ""}
+                        </p>
                       </td>
 
                       <td className="px-4 py-4 text-xs hidden lg:table-cell">
@@ -295,28 +442,49 @@ export default function ReservationListPage({
                             <Calendar className="h-4 w-4 text-red-600" />
                             <span>{main.checkOutDate}</span>
                           </div>
-                          <p className="text-sky-600 text-xs font-medium">{main.numberOfNights} night(s)</p>
+                          <p className="text-sky-600 text-xs font-medium">
+                            {main.numberOfNights} night(s)
+                          </p>
                         </div>
                       </td>
 
                       <td className="px-4 py-4 text-center hidden xl:table-cell">
                         <div className="flex items-center justify-center gap-1">
                           <Users size={16} className="text-gray-500" />
-                          <span className="font-medium">{main.totalGuests}</span>
+                          <span className="font-medium">
+                            {main.totalGuests}
+                          </span>
                         </div>
                       </td>
 
                       <td className="px-4 py-4 text-right hidden xl:table-cell">
                         <div className="text-sm">
-                          <p className="font-bold">RM {totalAmount.toFixed(2)}</p>
-                          <p className="text-green-600 text-xs">Paid: RM {totalPaid.toFixed(2)}</p>
-                          {pending > 0 && <p className="text-orange-600 text-xs">Due: RM {pending.toFixed(2)}</p>}
+                          <p className="font-bold">
+                            RM {totalAmount.toFixed(2)}
+                          </p>
+                          <p className="text-green-600 text-xs">
+                            Paid: RM {totalPaid.toFixed(2)}
+                          </p>
+                          {pending > 0 && (
+                            <p className="text-orange-600 text-xs">
+                              Due: RM {pending.toFixed(2)}
+                            </p>
+                          )}
                         </div>
                       </td>
 
                       <td className="px-4 py-4">
                         <div className="flex justify-center">
-                          <BookingStatusBadge status={main.bookingStatus} />
+                          {/* <BookingStatusBadge status={main.bookingStatus} /> */}
+                          <BookingStatusBadge
+                            status={
+                              group.every(
+                                (b) => b.bookingStatus === "Cancelled"
+                              )
+                                ? "Cancelled"
+                                : main.bookingStatus
+                            }
+                          />
                         </div>
                       </td>
 
@@ -342,29 +510,48 @@ export default function ReservationListPage({
             const main = group[0];
             const roomCount = group.length;
             const roomList = group.map((b) => b.room.roomNumber).join(" + ");
-            const { totalAmount, totalPaid, pending } = getGroupFinancials(group);
+            const { totalAmount, totalPaid, pending } =
+              getGroupFinancials(group);
 
             return (
-              <div key={group.map((b) => b.bookingId).join("-")} className="border-b border-gray-200 p-4">
+              <div
+                key={group.map((b) => b.bookingId).join("-")}
+                className="border-b border-gray-200 p-4"
+              >
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-bold text-lg">
-                      #{main.bookingId}{roomCount > 1 && ` +${roomCount - 1}`}
+                      #{main.bookingId}
+                      {roomCount > 1 && ` +${roomCount - 1}`}
                     </p>
-                    <p className="text-sm text-gray-600">{main.guest.fullName}</p>
+                    <p className="text-sm text-gray-600">
+                      {main.guest.fullName}
+                    </p>
                   </div>
                   <BookingStatusBadge status={main.bookingStatus} />
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <p><span className="text-gray-600">Rooms:</span> {roomList}</p>
-                  <p><span className="text-gray-600">Dates:</span> {main.checkInDate} → {main.checkOutDate}</p>
-                  <p><span className="text-gray-600">Guests:</span> {main.totalGuests}</p>
+                  <p>
+                    <span className="text-gray-600">Rooms:</span> {roomList}
+                  </p>
+                  <p>
+                    <span className="text-gray-600">Dates:</span>{" "}
+                    {main.checkInDate} → {main.checkOutDate}
+                  </p>
+                  <p>
+                    <span className="text-gray-600">Guests:</span>{" "}
+                    {main.totalGuests}
+                  </p>
 
                   <div className="flex justify-between items-end pt-3 border-t">
                     <div>
                       <p className="font-bold">RM {totalAmount.toFixed(2)}</p>
-                      {pending > 0 && <p className="text-xs text-amber-600">Due: RM {pending.toFixed(2)}</p>}
+                      {pending > 0 && (
+                        <p className="text-xs text-amber-600">
+                          Due: RM {pending.toFixed(2)}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => openBookingDetails(main.bookingId)}
@@ -384,7 +571,17 @@ export default function ReservationListPage({
 }
 
 // Reusable components
-const StatCard = ({ title, value, icon, color }: { title: string; value: string | number; icon: React.ReactNode; color: string }) => {
+const StatCard = ({
+  title,
+  value,
+  icon,
+  color,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+}) => {
   const colors: Record<string, string> = {
     sky: "bg-sky-50 text-sky-700",
     green: "bg-green-50 text-green-700",
@@ -399,22 +596,33 @@ const StatCard = ({ title, value, icon, color }: { title: string; value: string 
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm p-5 border border-gray-200 border-l-8 ${borderColors[color]}`}>
+    <div
+      className={`bg-white rounded-xl shadow-sm p-5 border border-gray-200 border-l-8 ${borderColors[color]}`}
+    >
       <div className="flex items-center gap-2">
         <div className={`p-3 rounded-lg ${colors[color]}`}>{icon}</div>
         <div>
           <p className="text-sm text-gray-500">{title}</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
         </div>
-        
       </div>
     </div>
   );
 };
 
-const FilterSelect = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+const FilterSelect = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label}
+    </label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -430,9 +638,19 @@ const FilterSelect = ({ label, value, onChange }: { label: string; value: string
   </div>
 );
 
-const FilterDate = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+const FilterDate = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label}
+    </label>
     <input
       type="date"
       value={value}
@@ -442,11 +660,22 @@ const FilterDate = ({ label, value, onChange }: { label: string; value: string; 
   </div>
 );
 
-const FilterSearch = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+const FilterSearch = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">Search</label>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      Search
+    </label>
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+      <Search
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        size={18}
+      />
       <input
         type="text"
         placeholder="Guest, room, ID..."

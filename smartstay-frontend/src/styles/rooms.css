@@ -171,8 +171,9 @@
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: space-between;   /* Push left & right */
+  gap: 15px;                         /* Spacing between buttons */
+  margin-top: 20px;
 }
 
 .image-upload {
@@ -182,4 +183,16 @@
   border-radius: 8px;
   width: 100%;
   background: #fafafa;
+}
+.action-buttons {
+  display: flex;
+  justify-content: space-between; /* Edit left, Delete right */
+  align-items: center;
+  gap: 10px; /* space between buttons */
+}
+
+.action-buttons button {
+  flex: 1; /* both buttons equal width */
+  padding: 8px 0;
+  text-align: center;
 }

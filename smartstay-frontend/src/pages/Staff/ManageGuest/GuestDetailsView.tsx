@@ -29,7 +29,8 @@ import {
 } from "lucide-react";
 import { BookingStatusBadge } from "../../../components/GuestWidgets";
 import { Guest } from "./types";
-import { API_BASE_URL } from '../../../config';
+import { API_BASE_URL } from "../../../config";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = API_BASE_URL;
 
@@ -38,7 +39,7 @@ interface Props {
   onBack: () => void;
   onVerifyDocument: (id: number) => void;
   onEdit: () => void;
-  navigate: (path: string) => void;
+  // navigate: (path: string) => void;
 }
 
 export default function GuestDetailsView({
@@ -46,8 +47,9 @@ export default function GuestDetailsView({
   onBack,
   onVerifyDocument,
   onEdit,
-  navigate,
-}: Props) {
+}: // navigate,
+Props) {
+  const navigate = useNavigate();
   const isActive = guest.isActive;
   const hasRegisteredAccount = guest.hasAccount;
 
@@ -281,12 +283,6 @@ export default function GuestDetailsView({
                     RM {activeMultiRoomBooking.totalAmount.toFixed(2)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-green-600 text-xs">Amount Paid</p>
-                  <p className="font-medium text-green-900">
-                    RM {activeMultiRoomBooking.totalPaid.toFixed(2)}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -460,11 +456,6 @@ export default function GuestDetailsView({
                                 Paid: RM {group.totalPaid.toFixed(2)}
                               </p>
                             )}
-                            {group.pendingAmount > 0 && (
-                              <p className="text-xs text-amber-600">
-                                Due: RM {group.pendingAmount.toFixed(2)}
-                              </p>
-                            )}
                           </div>
                         </div>
 
@@ -533,7 +524,9 @@ export default function GuestDetailsView({
                           </p>
                           <button
                             onClick={() =>
-                              navigate(`/staff/receipt/${main.bookingId}`)
+                              navigate("/staff/receipt/" + main.bookingId, {
+                                state: { returnToGuestId: guest.guestId }, // ← This is all you need
+                              })
                             }
                             className="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1"
                           >

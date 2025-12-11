@@ -131,61 +131,6 @@ const ReceiptPage: React.FC = () => {
 
     loadReceiptData();
   }, [bookingId, user?.hotelId]);
-
-  // useEffect(() => {
-  //   const loadReceiptData = async () => {
-  //     if (!bookingId) {
-  //       setError("Invalid booking ID");
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     try {
-  //       setLoading(true);
-  //       const bookingRes = await bookingsAPI.getBookingById(Number(bookingId));
-  //       if (!bookingRes.success || !bookingRes.data) throw new Error("Booking not found");
-
-  //       const apiBooking = bookingRes.data;
-  //       const nights = Math.ceil(
-  //         (new Date(apiBooking.checkOutDate).getTime() - new Date(apiBooking.checkInDate).getTime()) / (1000 * 60 * 60 * 24)
-  //       );
-
-  //       const mappedBooking: BookingDetails = {
-  //         bookingId: apiBooking.bookingId,
-  //         bookingStatus: apiBooking.bookingStatus,
-  //         guest: {
-  //           fullName: apiBooking.guest.fullName,
-  //           email: apiBooking.guest.email,
-  //           phoneNumber: apiBooking.guest.phoneNumber || "N/A",
-  //           icNumber: apiBooking.guest.icNumber || "N/A",
-  //         },
-  //         room: {
-  //           hotelName: apiBooking.room.hotelName || "SmartStay Hotel",
-  //           roomNumber: apiBooking.room.roomNumber,
-  //           roomType: apiBooking.room.roomType,
-  //         },
-  //         checkInDate: apiBooking.checkInDate.split("T")[0],
-  //         checkOutDate: apiBooking.checkOutDate.split("T")[0],
-  //         totalAmount: apiBooking.totalAmount,
-  //         depositAmount: apiBooking.depositAmount || 0,
-  //         numberOfNights: apiBooking.numberOfNights || nights,
-  //         totalGuests: apiBooking.totalGuests || 1,
-  //       };
-
-  //       setBooking(mappedBooking);
-
-  //       const paymentsRes = await paymentsAPI.getPaymentsByBooking(Number(bookingId));
-  //       if (paymentsRes.success && paymentsRes.data) setPayments(paymentsRes.data);
-  //     } catch (err: any) {
-  //       setError(err.message || "Unable to load receipt");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   loadReceiptData();
-  // }, [bookingId]);
-
   const handlePrint = () => window.print();
 
   const handleDownload = async () => {
@@ -291,11 +236,20 @@ const ReceiptPage: React.FC = () => {
         .alert-success { background: #f0fdf4; border-color: #22c55e; color: #166534; }
         .alert-info { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
         .footer { text-align: center; padding: 20px 0; border-top: 1px solid #e5e7eb; margin-top: 20px; font-size: 13px; color: #6b7280; }
+        /* Fix for html2canvas - Override Tailwind oklch colors with hex */
+       
+        #receipt-to-print .bg-white { background-color: #ffffff !important; }
+        #receipt-to-print .text-gray-600 { color: #4b5563 !important; }
+        #receipt-to-print .text-purple-700 { color: #7e22ce !important; }
+        #receipt-to-print .text-purple-600 { color: #9333ea !important; }
+        #receipt-to-print .text-red-600 { color: #dc2626 !important; }
+        #receipt-to-print .border-purple-200 { border-color: #e9d5ff !important; }
+        #receipt-to-print .space-y-2 > * + * { margin-top: 0.5rem !important; }
       `}</style>
 
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar
-          activePage="Reservation"
+          activePage="Manage Guests"
           setActivePage={() => {}}
           setSidebarCollapsed={setSidebarCollapsed}
         />
@@ -323,10 +277,23 @@ const ReceiptPage: React.FC = () => {
               <header className="bg-white print-hidden">
                 <div className="px-6 py-4 flex justify-between items-center flex-wrap gap-4">
                   <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                    onClick={() => {
+                      const guestId = (location.state as any)?.returnToGuestId;
+
+                      if (guestId) {
+                        // Go back to the guest management page and open the same guest
+                        navigate("/staff/manage-guests", {
+                          state: { openGuestId: guestId },
+                          replace: true, // optional: cleans URL history
+                        });
+                      } else {
+                        navigate(-1); // fallback if something went wrong
+                      }
+                    }}
+                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium"
                   >
-                    <ArrowLeft size={20} /> Back
+                    <ArrowLeft size={20} />
+                    Back to {booking?.guest.fullName || "Guest Details"}
                   </button>
                   <div className="flex gap-3">
                     <button

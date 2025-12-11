@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "../../../components/Sidebar";
-import { guestsAPI, bookingsAPI, documentsAPI, reviewsAPI } from "../../../services/api";
+import {
+  guestsAPI,
+  bookingsAPI,
+  documentsAPI,
+  reviewsAPI,
+} from "../../../services/api";
 import { useAuthStore } from "../../../store";
 import { useNavigate } from "react-router-dom";
 import GuestListView from "./GuestListView";
@@ -8,6 +13,7 @@ import GuestDetailsView from "./GuestDetailsView";
 import EditGuestView from "./EditGuestView";
 import { Guest } from "./types";
 import { RefreshCw, AlertCircle } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 export default function GuestManagementPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -15,11 +21,15 @@ export default function GuestManagementPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "active">("all");
   const [filterMinBookings, setFilterMinBookings] = useState<number | "">("");
   const [showFilters, setShowFilters] = useState(false);
-  const [currentView, setCurrentView] = useState<"list" | "details" | "edit">("list");
+  const [currentView, setCurrentView] = useState<"list" | "details" | "edit">(
+    "list"
+  );
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
-  const [sortBy, setSortBy] = useState<"name" | "bookings" | "spent" | "recent">("name");
+  const [sortBy, setSortBy] = useState<
+    "name" | "bookings" | "spent" | "recent"
+  >("name");
   const [guests, setGuests] = useState<Guest[]>([]);
-  const [loading, setLoading] = useState(true);        // Main loading (initial + refresh)
+  const [loading, setLoading] = useState(true); // Main loading (initial + refresh)
   const [contentLoading, setContentLoading] = useState(false); // For details/edit transitions
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -28,6 +38,7 @@ export default function GuestManagementPage() {
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const hotelId = user?.hotelId || 1;
+  const location = useLocation();
 
   // Fetch guests list
   const fetchGuests = useCallback(async () => {
@@ -36,7 +47,8 @@ export default function GuestManagementPage() {
     try {
       const response = await guestsAPI.getAllGuests(hotelId, {
         status: filterStatus === "active" ? "active" : undefined,
-        minBookings: filterMinBookings === "" ? undefined : Number(filterMinBookings),
+        minBookings:
+          filterMinBookings === "" ? undefined : Number(filterMinBookings),
         searchQuery: searchQuery || undefined,
       });
 
@@ -74,60 +86,45 @@ export default function GuestManagementPage() {
         reviewsAPI.getReviewsByGuestId(guest.guestId),
       ]);
 
-      const bookingHistory = bookingsRes.success ? bookingsRes.data.map((b: any) => ({
-        bookingId: b.bookingId,
-        roomNumber: b.room.roomNumber,
-        roomType: b.room.roomType,
-        checkInDate: b.checkInDate.split("T")[0],
-        checkOutDate: b.checkOutDate.split("T")[0],
-        totalGuests: b.totalGuests,
-        totalAmount: b.totalAmount,
-        depositAmount: b.depositAmount,
-        bookingStatus: b.bookingStatus,
-        createdAt: b.createdAt,
-      })) : [];
+      const bookingHistory = bookingsRes.success
+        ? bookingsRes.data.map((b: any) => ({
+            bookingId: b.bookingId,
+            roomNumber: b.room.roomNumber,
+            roomType: b.room.roomType,
+            checkInDate: b.checkInDate.split("T")[0],
+            checkOutDate: b.checkOutDate.split("T")[0],
+            totalGuests: b.totalGuests,
+            totalAmount: b.totalAmount,
+            depositAmount: b.depositAmount,
+            bookingStatus: b.bookingStatus,
+            createdAt: b.createdAt,
+          }))
+        : [];
 
-      // const uploadedDocuments = docsRes.success ? docsRes.data.map((d: any) => ({
-      //   documentId: d.documentId,
-      //   fileName: d.fileName,
-      //   fileUrl: d.fileUrl,
-      //   documentType: d.documentType,
-      //   uploadDate: d.uploadDate.split("T")[0],
-      //   status: d.status,
-      // })) : [];
+      const uploadedDocuments =
+        docsRes?.success && docsRes.data
+          ? docsRes.data.map((d: any) => ({
+              documentId: d.documentID,
+              fileName: d.fileName,
+              fileUrl: d.fileURL,
+              documentType: d.documentType,
+              uploadDate: d.uploadDate.split("T")[0],
+              status: d.status,
+            }))
+          : [];
 
-      // const reviews = reviewsRes.success ? reviewsRes.data.map((r: any) => ({
-      //   reviewId: r.reviewId,
-      //   bookingId: r.bookingId,
-      //   hotelName: r.hotelName,
-      //   roomNumber: r.roomNumber,
-      //   roomType: r.roomType,
-      //   rating: r.rating,
-      //   comment: r.comment,
-      //   reviewDate: r.reviewDate.split("T")[0],
-      // })) : [];
-
-      const uploadedDocuments = docsRes?.success && docsRes.data
-  ? docsRes.data.map((d: any) => ({
-      documentId: d.documentID,
-      fileName: d.fileName,
-      fileUrl: d.fileURL,
-      documentType: d.documentType,
-      uploadDate: d.uploadDate.split("T")[0],
-      status: d.status,
-    }))
-  : [];
-
-      const reviews = Array.isArray(reviewsRes) ? reviewsRes.map((r: any) => ({
-        reviewId: r.reviewID,
-        bookingId: r.bookingID,
-        hotelName: r.hotelName,
-        roomNumber: r.roomNumber, 
-        roomType: r.roomType,
-        rating: r.rating,
-        comment: r.comment,
-        reviewDate: r.reviewDate.split("T")[0],
-      })) : [];
+      const reviews = Array.isArray(reviewsRes)
+        ? reviewsRes.map((r: any) => ({
+            reviewId: r.reviewID,
+            bookingId: r.bookingID,
+            hotelName: r.hotelName,
+            roomNumber: r.roomNumber,
+            roomType: r.roomType,
+            rating: r.rating,
+            comment: r.comment,
+            reviewDate: r.reviewDate.split("T")[0],
+          }))
+        : [];
 
       setSelectedGuest({
         ...guest,
@@ -157,7 +154,7 @@ export default function GuestManagementPage() {
         Gender: updatedData.gender,
       });
 
-      setSelectedGuest(prev => prev ? { ...prev, ...updatedData } : null);
+      setSelectedGuest((prev) => (prev ? { ...prev, ...updatedData } : null));
       setSuccess(true);
       setTimeout(() => {
         setCurrentView("details");
@@ -178,15 +175,33 @@ export default function GuestManagementPage() {
     }
   };
 
+  const [initialGuestIdToOpen] = useState<string | null>(() => {
+    // Capture it once on mount – survives re-renders
+    return (window.history.state as any)?.openGuestId || null;
+  });
+  useEffect(() => {
+    const guestIdToOpen =
+      initialGuestIdToOpen || (location.state as any)?.openGuestId;
+
+    if (guestIdToOpen && guests.length > 0 && currentView === "list") {
+      const guest = guests.find((g) => g.guestId === guestIdToOpen);
+      if (guest) {
+        handleViewDetails(guest);
+        // Clean history state so refresh doesn't reopen
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [guests, currentView, navigate, location.pathname, initialGuestIdToOpen]);
+
   const handleVerifyDocument = async (docId: number) => {
     if (!confirm("Mark this document as verified?")) return;
     try {
       await documentsAPI.verifyDocument(docId);
-      setSelectedGuest(prev =>
+      setSelectedGuest((prev) =>
         prev
           ? {
               ...prev,
-              uploadedDocuments: prev.uploadedDocuments.map(d =>
+              uploadedDocuments: prev.uploadedDocuments.map((d) =>
                 d.documentId === docId ? { ...d, status: "Verified" } : d
               ),
             }
@@ -201,8 +216,10 @@ export default function GuestManagementPage() {
   // Filtered & sorted guests
   const filteredGuests = guests
     .filter((g) => {
-      const matchesStatus = filterStatus === "all" || (filterStatus === "active" && g.isActive);
-      const minBookings = filterMinBookings === "" ? 0 : Number(filterMinBookings);
+      const matchesStatus =
+        filterStatus === "all" || (filterStatus === "active" && g.isActive);
+      const minBookings =
+        filterMinBookings === "" ? 0 : Number(filterMinBookings);
       return matchesStatus && g.totalBookings >= minBookings;
     })
     .sort((a, b) => {
@@ -212,7 +229,10 @@ export default function GuestManagementPage() {
         case "recent":
           if (!a.lastBookingDate) return 1;
           if (!b.lastBookingDate) return -1;
-          return new Date(b.lastBookingDate).getTime() - new Date(a.lastBookingDate).getTime();
+          return (
+            new Date(b.lastBookingDate).getTime() -
+            new Date(a.lastBookingDate).getTime()
+          );
         default:
           return a.fullName.localeCompare(b.fullName);
       }
@@ -220,28 +240,44 @@ export default function GuestManagementPage() {
 
   const stats = {
     total: guests.length,
-    active: guests.filter(g => g.isActive).length,
-    registered: guests.filter(g => g.hasAccount).length,
-    newThisMonth: guests.filter(g => {
+    active: guests.filter((g) => g.isActive).length,
+    registered: guests.filter((g) => g.hasAccount).length,
+    newThisMonth: guests.filter((g) => {
       const created = new Date(g.createdAt);
       const now = new Date();
-      return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+      return (
+        created.getMonth() === now.getMonth() &&
+        created.getFullYear() === now.getFullYear()
+      );
     }).length,
   };
 
   const exportToCSV = () => {
-    const headers = ["Guest ID", "Name", "Email", "Phone", "IC Number", "Total Bookings", "Last Booking", "Member Since"];
-    const rows = filteredGuests.map(g => [
+    const headers = [
+      "Guest ID",
+      "Name",
+      "Email",
+      "Phone",
+      "IC Number",
+      "Total Bookings",
+      "Last Booking",
+      "Member Since",
+    ];
+    const rows = filteredGuests.map((g) => [
       g.guestId,
       g.fullName,
       g.email,
       g.phoneNumber,
       g.icNumber,
       g.totalBookings,
-      g.lastBookingDate ? new Date(g.lastBookingDate).toLocaleDateString("en-MY") : "N/A",
+      g.lastBookingDate
+        ? new Date(g.lastBookingDate).toLocaleDateString("en-MY")
+        : "N/A",
       new Date(g.createdAt).toLocaleDateString("en-MY"),
     ]);
-    const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n");
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -260,14 +296,22 @@ export default function GuestManagementPage() {
       />
 
       {/* Main Content Area */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "ml-20" : "ml-[230px]"}`}>
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          sidebarCollapsed ? "ml-20" : "ml-[230px]"
+        }`}
+      >
         {/* Global Loading (initial load) */}
         {loading && currentView === "list" && (
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
               <RefreshCw className="h-14 w-14 text-sky-600 animate-spin mx-auto mb-6" />
-              <p className="text-xl font-semibold text-gray-800">Loading Guests</p>
-              <p className="text-sm text-gray-500 mt-2">Fetching latest data...</p>
+              <p className="text-xl font-semibold text-gray-800">
+                Loading Guests
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Fetching latest data...
+              </p>
             </div>
           </div>
         )}
@@ -278,7 +322,9 @@ export default function GuestManagementPage() {
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4 border border-red-100">
               <div className="text-center">
                 <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">Oops! Something went wrong</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                  Oops! Something went wrong
+                </h2>
                 <p className="text-gray-600 mb-6">{error}</p>
                 <button
                   onClick={fetchGuests}
@@ -297,7 +343,9 @@ export default function GuestManagementPage() {
           <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
               <RefreshCw className="h-14 w-14 text-sky-600 animate-spin mx-auto mb-6" />
-              <p className="text-xl font-semibold text-gray-800">Loading Guest Details</p>
+              <p className="text-xl font-semibold text-gray-800">
+                Loading Guest Details
+              </p>
               <p className="text-sm text-gray-500 mt-2">Please wait...</p>
             </div>
           </div>
@@ -306,7 +354,7 @@ export default function GuestManagementPage() {
         {/* Actual Views - Only render when not loading */}
         {!loading && !error && !contentLoading && (
           <>
-            {currentView === "list" && (
+            {currentView === "list" && !initialGuestIdToOpen && (
               <GuestListView
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -331,7 +379,7 @@ export default function GuestManagementPage() {
                 onBack={handleBack}
                 onVerifyDocument={handleVerifyDocument}
                 onEdit={handleEdit}
-                navigate={navigate}
+                // navigate={navigate}
               />
             )}
 

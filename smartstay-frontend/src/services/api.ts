@@ -123,30 +123,30 @@ export const bookingsAPI = {
   //   });
   // },
 
- 
-createBooking: async (payload: {
-  GuestID: string;
-  RoomIDs: number[];           
-  CheckInDate: string;
-  CheckOutDate: string;
-  TotalGuests: number;
-  DepositPaid: number;
-  PaymentMethod: "Cash" | "Card";
-}) => {
-  return apiCall<{
-    success: boolean;
-    message: string;
-    data: {
-      bookingIds: number[];
-      totalAmount: number;
-      requiredDeposit: number;
-      confirmed: boolean;
-    };
-  }>('/api/bookings/staff', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-},
+
+  createBooking: async (payload: {
+    GuestID: string;
+    RoomIDs: number[];
+    CheckInDate: string;
+    CheckOutDate: string;
+    TotalGuests: number;
+    DepositPaid: number;
+    PaymentMethod: "Cash" | "Card";
+  }) => {
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data: {
+        bookingIds: number[];
+        totalAmount: number;
+        requiredDeposit: number;
+        confirmed: boolean;
+      };
+    }>('/api/bookings/staff', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 
   sendConfirmationEmail: async (bookingId: number) => {
     return apiCall<{
@@ -276,7 +276,7 @@ createBooking: async (payload: {
       body: JSON.stringify({ status }),
     });
   },
-    getAllBookings: async (params?: {
+  getAllBookings: async (params?: {
     hotelId?: number;
     guestId?: string;
     status?: string;
@@ -391,7 +391,7 @@ export const documentsAPI = {
   uploadDocument: async (formData: FormData) => {
     return fetch(`${API_URL}/api/documents/upload`, {
       method: 'POST',
-      body: formData, 
+      body: formData,
     })
       .then((res) => {
         if (!res.ok) throw new Error('Upload failed');
@@ -404,11 +404,15 @@ export const documentsAPI = {
   },
 
   verifyDocument: async (id: number) => {
-    return apiCall<any>(`/api/documents/${id}/verify`, { method: 'PUT' });
-  },
-
-  deleteDocument: async (id: number) => {
-    return apiCall<any>(`/api/documents/${id}`, { method: 'DELETE' });
+    return apiCall<{
+      success?: boolean;
+      message: string;
+      documentID: number;
+      status: string;
+    }>(`/api/documents/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ Status: "Verified" }),
+    });
   },
 };
 
@@ -790,7 +794,7 @@ export const usersAPI = {
         gender: string;
         createdAt: string;
       };
-    }>(`/api/users/${userId}`);
+    }>(`/api/users/staff/${userId}`);
   },
 
   // GET /api/users → Get all system users (with filters)

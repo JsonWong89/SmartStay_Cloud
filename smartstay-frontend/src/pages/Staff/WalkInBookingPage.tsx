@@ -197,7 +197,7 @@ function WalkInBookingContent({
       );
       setPaymentInfo((p) => ({
         ...p,
-        DepositAmount: Number((total * 0.3).toFixed(2)),
+        DepositAmount: Number((total * 0.2).toFixed(2)),
       }));
     }
 
@@ -244,7 +244,7 @@ function WalkInBookingContent({
     ) + room.pricePerNight * bookingInfo.NumberOfNights;
     setPaymentInfo((p) => ({
       ...p,
-      DepositAmount: Number((total * 0.3).toFixed(2)),
+      DepositAmount: Number((total * 0.2).toFixed(2)),
     }));
 
     if (errors.room) {
@@ -837,8 +837,8 @@ function WalkInBookingContent({
                           <span className="font-bold text-gray-900">RM {totalAmount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Deposit (30%)</span>
-                          <span className="font-medium text-gray-700">RM {(totalAmount * 0.3).toFixed(2)}</span>
+                          <span className="text-gray-600">Deposit (20%)</span>
+                          <span className="font-medium text-gray-700">RM {(totalAmount * 0.2).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>

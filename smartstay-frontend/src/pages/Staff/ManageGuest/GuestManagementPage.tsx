@@ -87,14 +87,36 @@ export default function GuestManagementPage() {
         createdAt: b.createdAt,
       })) : [];
 
-      const uploadedDocuments = docsRes.success ? docsRes.data.map((d: any) => ({
-        documentId: d.documentId,
-        fileName: d.fileName,
-        fileUrl: d.fileUrl,
-        documentType: d.documentType,
-        uploadDate: d.uploadDate.split("T")[0],
-        status: d.status,
-      })) : [];
+      // const uploadedDocuments = docsRes.success ? docsRes.data.map((d: any) => ({
+      //   documentId: d.documentId,
+      //   fileName: d.fileName,
+      //   fileUrl: d.fileUrl,
+      //   documentType: d.documentType,
+      //   uploadDate: d.uploadDate.split("T")[0],
+      //   status: d.status,
+      // })) : [];
+
+      // const reviews = reviewsRes.success ? reviewsRes.data.map((r: any) => ({
+      //   reviewId: r.reviewId,
+      //   bookingId: r.bookingId,
+      //   hotelName: r.hotelName,
+      //   roomNumber: r.roomNumber,
+      //   roomType: r.roomType,
+      //   rating: r.rating,
+      //   comment: r.comment,
+      //   reviewDate: r.reviewDate.split("T")[0],
+      // })) : [];
+
+      const uploadedDocuments = docsRes?.success && docsRes.data
+  ? docsRes.data.map((d: any) => ({
+      documentId: d.documentID,
+      fileName: d.fileName,
+      fileUrl: d.fileURL,
+      documentType: d.documentType,
+      uploadDate: d.uploadDate.split("T")[0],
+      status: d.status,
+    }))
+  : [];
 
       const reviews = Array.isArray(reviewsRes) ? reviewsRes.map((r: any) => ({
         reviewId: r.reviewID,

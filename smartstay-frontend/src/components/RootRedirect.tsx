@@ -23,8 +23,8 @@ const RootRedirect: React.FC = () => {
           navigate("/staff/dashboard");
       }
     } else {
-      // Not authenticated, redirect to login
-      navigate('/login', { replace: true });
+      // Not authenticated, show guest landing page
+      navigate('/guest/dashboard', { replace: true });
     }
   }, [user, isAuthenticated, navigate]);
 

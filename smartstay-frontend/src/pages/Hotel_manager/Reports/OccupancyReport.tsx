@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store";
+import { API_BASE_URL } from "../../../config/api";
 import "../../../styles/reports.css";
 
 Chart.register(...registerables);
@@ -36,7 +37,7 @@ export default function OccupancyReport() {
 
   async function fetchOccupancy() {
     const res = await axios.get<OccupancyResponse>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/occupancy`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/occupancy`
     );
 
     setOccupancyRate(res.data.occupancyRate);

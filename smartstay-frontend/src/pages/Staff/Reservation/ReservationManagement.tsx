@@ -115,9 +115,12 @@ export default function ReservationManagement() {
           return b.guest.email === clicked.guest.email && inDate && outDate;
         });
 
-        const activeRelated = allRelated.filter(
+        let activeRelated = allRelated.filter(
           (b: any) => b.bookingStatus !== "Cancelled"
         );
+        if (activeRelated.length === 0) {
+        activeRelated = allRelated; // Use cancelled data for display
+      }
         if (activeRelated.length === 0)
           throw new Error("No active rooms found");
 

@@ -106,6 +106,14 @@ export default function RoomOperationsPage() {
     }
   };
 
+  const handleStatusUpdate = (newStatus: string) => {
+  setRooms(prevRooms =>
+    prevRooms.map(r =>
+      r.roomId === selectedRoom?.roomId ? { ...r, status: newStatus as any } : r
+    )
+  );
+};
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar - Sidebar Always Visible */}
@@ -180,7 +188,11 @@ export default function RoomOperationsPage() {
                 handlePriceChange={handlePriceChange}
               />
             ) : (
-              <RoomDetailsView room={selectedRoom!} onBack={handleBackToList} />
+              <RoomDetailsView 
+              room={selectedRoom!} 
+              onBack={handleBackToList} 
+              onStatusUpdate={handleStatusUpdate}
+              />
             )}
           </>
         )}

@@ -191,6 +191,13 @@ export default function ReservationDetailsPage({
     refreshDetails();
   };
 
+  const isFullyCancelled = activeBookings.length === 0;
+
+  // Determine if partially cancelled
+  const isPartiallyCancelled =
+    allRelatedBookings.length > activeBookings.length &&
+    activeBookings.length > 0;
+
   return (
     <main className="p-6 max-w-7xl mx-auto">
       <button
@@ -222,6 +229,46 @@ export default function ReservationDetailsPage({
           </div>
         </div>
       </div>
+
+      {/* FULLY CANCELLED BANNER */}
+
+      {isFullyCancelled && (
+        <div className="mb-8 flex items-center gap-3 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
+          <div className="flex-shrink-0">
+            <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
+              <XCircle className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-red-900">
+              This Reservation is Cancelled
+            </p>
+            <p className="text-sm text-red-700 mt-0.5">
+              All rooms have been cancelled. No further actions are possible.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* PARTIALLY CANCELLED WARNING – Same Style */}
+      {isPartiallyCancelled && (
+        <div className="mb-8 flex items-center gap-3 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg shadow-sm">
+          <div className="flex-shrink-0">
+            <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+              <AlertCircle className="h-6 w-6 text-amber-600" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-amber-900">
+              Some Rooms Were Cancelled
+            </p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              {allRelatedBookings.length - activeBookings.length} room(s)
+              removed. The reservation continues with the remaining room(s).
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -279,7 +326,6 @@ export default function ReservationDetailsPage({
           </div>
 
           {/* Rooms Booked */}
-          {/* Rooms Booked */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-lg">
               <Bed className="h-5 w-5 text-purple-600" /> Rooms Booked (
@@ -326,6 +372,25 @@ export default function ReservationDetailsPage({
                     )}
                 </div>
               ))}
+              {/* Show cancelled rooms in gray (for partial cancellation) */}
+              {allRelatedBookings
+                .filter((b) => b.bookingStatus === "Cancelled")
+                .map((b) => (
+                  <div
+                    key={b.bookingId}
+                    className="flex justify-between items-center p-4 rounded-lg border bg-gray-100 border-gray-300 opacity-70"
+                  >
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-600">
+                        Room {b.room.roomNumber}{" "}
+                        <span className="text-red-600">(Cancelled)</span>
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {b.room.roomType} • RM {b.totalAmount.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
             </div>
 
             {/* Warning */}
@@ -553,62 +618,77 @@ export default function ReservationDetailsPage({
               </div>
             )}
           </div>
+          {!isFullyCancelled && (
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">
+                Quick Actions
+              </h3>
+              <div className="space-y-3">
+                {mainBooking.bookingStatus === "Pending" && (
+                  <button
+                    onClick={() => handleAction("confirm")}
+                    className="w-full px-4 py-3 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium transition flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={18} /> Confirm Booking
+                  </button>
+                )}
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              {mainBooking.bookingStatus === "Pending" && (
-                <button
-                  onClick={() => handleAction("confirm")}
-                  className="w-full px-4 py-3 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium transition flex items-center justify-center gap-2"
-                >
-                  <CheckCircle size={18} /> Confirm Booking
-                </button>
-              )}
-              {mainBooking.bookingStatus === "Confirmed" &&
-                (pendingAmount === 0 ? (
+                {mainBooking.bookingStatus === "Confirmed" &&
+                  (pendingAmount === 0 ? (
+                    <button
+                      onClick={() => handleAction("checkin")}
+                      className="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={18} /> Check In Guest
+                    </button>
+                  ) : (
+                    <div className="w-full px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium text-center text-sm">
+                      Full Payment Required for Check-In
+                    </div>
+                  ))}
+
+                {mainBooking.bookingStatus === "CheckedIn" &&
+                  (pendingAmount === 0 ? (
+                    <button
+                      onClick={() => handleAction("checkout")}
+                      className="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={18} /> Check Out Guest
+                    </button>
+                  ) : (
+                    <div className="w-full px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium text-center text-sm">
+                      Full Payment Required for Check-Out
+                    </div>
+                  ))}
+
+                {(mainBooking.bookingStatus === "Pending" ||
+                  mainBooking.bookingStatus === "Confirmed") && (
                   <button
-                    onClick={() => handleAction("checkin")}
-                    className="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition flex items-center justify-center gap-2"
+                    onClick={() => handleAction("cancel")}
+                    className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition flex items-center justify-center gap-2"
                   >
-                    <CheckCircle size={18} /> Check In Guest
+                    <XCircle size={18} /> Cancel Reservation
                   </button>
-                ) : (
-                  <div className="w-full px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium text-center text-sm">
-                    Full Payment Required for Check-In
+                )}
+
+                {(mainBooking.bookingStatus === "CheckedOut" ||
+                  mainBooking.bookingStatus === "Cancelled") && (
+                  <div className="px-4 py-3 rounded-lg bg-gray-100 text-gray-600 font-medium text-center">
+                    Reservation {mainBooking.bookingStatus}
                   </div>
-                ))}
-              {mainBooking.bookingStatus === "CheckedIn" &&
-                (pendingAmount === 0 ? (
-                  <button
-                    onClick={() => handleAction("checkout")}
-                    className="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={18} /> Check Out Guest
-                  </button>
-                ) : (
-                  <div className="w-full px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium text-center text-sm">
-                    Full Payment Required for Check-Out
-                  </div>
-                ))}
-              {(mainBooking.bookingStatus === "Pending" ||
-                mainBooking.bookingStatus === "Confirmed") && (
-                <button
-                  onClick={() => handleAction("cancel")}
-                  className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition flex items-center justify-center gap-2"
-                >
-                  <XCircle size={18} /> Cancel Reservation
-                </button>
-              )}
-              {(mainBooking.bookingStatus === "CheckedOut" ||
-                mainBooking.bookingStatus === "Cancelled") && (
-                <div className="px-4 py-3 rounded-lg bg-gray-100 text-gray-600 font-medium text-center">
-                  Reservation {mainBooking.bookingStatus}
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Show message when fully cancelled */}
+          {isFullyCancelled && (
+            <div className="bg-gray-100 rounded-xl p-8 text-center text-gray-600">
+              <XCircle className="h-16 w-16 mx-auto mb-4 text-red-500" />
+              <p className="text-lg font-semibold">Reservation Cancelled</p>
+              <p className="text-sm mt-2">No actions available</p>
+            </div>
+          )}
 
           <BookingTimeline booking={mainBooking} />
         </div>
@@ -802,4 +882,3 @@ function ConfirmDialog({
     </div>
   );
 }
-

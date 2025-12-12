@@ -64,7 +64,7 @@ import "./styles/modals.css";
 const App: React.FC = () => {
   return (
     <Routes>
-      {/* Default route -> Redirect based on authentication and role */}
+      {/* Root path - redirects based on role */}
       <Route path="/" element={<RootRedirect />} />
 
       <Route path="/login" element={<AuthPage />} />
@@ -73,30 +73,16 @@ const App: React.FC = () => {
       <Route path="/register" element={<AuthPage />} />
 
       {/* Guest Routes */}
-      <Route
-        path="/guest/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={["Guest"]}>
-            <GuestDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/guest/search"
-        element={
-          <ProtectedRoute allowedRoles={["Guest"]}>
-            <RoomSearch />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/guest/room/:roomId"
-        element={
-          <ProtectedRoute allowedRoles={["Guest"]}>
-            <RoomDetails />
-          </ProtectedRoute>
-        }
-      />
+      {/* Public landing page - accessible without login */}
+      <Route path="/guest/dashboard" element={<GuestDashboard />} />
+      
+      {/* Public room search - accessible without login */}
+      <Route path="/guest/search" element={<RoomSearch />} />
+      
+      {/* Public room details - accessible without login */}
+      <Route path="/guest/room/:roomId" element={<RoomDetails />} />
+      
+      {/* Protected guest routes - require authentication */}
       <Route
         path="/guest/booking/:roomId"
         element={

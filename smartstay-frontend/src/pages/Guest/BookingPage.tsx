@@ -28,7 +28,7 @@ const BookingPage: React.FC = () => {
   const [guestEmail, setGuestEmail] = useState(user?.email || '');
   const [guestPhone, setGuestPhone] = useState(user?.phone || '');
   const [guestAddress, setGuestAddress] = useState('');
-  const [specialRequests, setSpecialRequests] = useState('');
+  //const [specialRequests, setSpecialRequests] = useState('');
 
   // Document Upload
   const [idDocument, setIdDocument] = useState<File | null>(null);
@@ -75,6 +75,34 @@ const BookingPage: React.FC = () => {
       fetchRoomDetails();
     }
   }, [roomId]);
+
+  // Fetch guest profile data to pre-fill phone and address
+  useEffect(() => {
+    const fetchGuestProfile = async () => {
+      if (!user?.id) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/Guests/profile/${user.id}`);
+        if (response.ok) {
+          const responseData = await response.json();
+          // Extract data from the success response structure
+          const guestData = responseData.data || responseData;
+          
+          // Pre-fill fields if not already set
+          if (!guestPhone) {
+            setGuestPhone(guestData.phoneNumber || '');
+          }
+          if (!guestAddress) {
+            setGuestAddress(guestData.address || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching guest profile:', error);
+      }
+    };
+
+    fetchGuestProfile();
+  }, [user?.id]);
 
   useEffect(() => {
     if (checkInDate && checkOutDate) {
@@ -132,6 +160,32 @@ const BookingPage: React.FC = () => {
     // Validation
     if (!guestName || !guestEmail || !guestPhone || !guestAddress) {
       alert('Please fill in all required guest information');
+      return;
+    }
+
+    // Validate guest name
+    if (guestName.trim().length < 2) {
+      alert('❌ Guest name must be at least 2 characters');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(guestEmail.trim())) {
+      alert('❌ Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneNumber = guestPhone.replace(/[\s-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(phoneNumber)) {
+      alert('❌ Please enter a valid phone number (8-15 digits)');
+      return;
+    }
+
+    // Validate address
+    if (guestAddress.trim().length < 5) {
+      alert('❌ Please enter a complete address (at least 5 characters)');
       return;
     }
 
@@ -194,7 +248,6 @@ const BookingPage: React.FC = () => {
         await uploadDocument(additionalDoc, docType, user.id);
       }
 
-      // Step 3: Create booking via API - Backend expects PascalCase
       const bookingRequest = {
         GuestID: user.id,
         RoomID: room.id,
@@ -203,8 +256,8 @@ const BookingPage: React.FC = () => {
         TotalGuests: guests,
         TotalAmount: totalPrice,
         DepositPaid: depositAmount,
-        PaymentMethod: "Card", // Default to Card for online bookings
-        SpecialRequests: specialRequests
+        PaymentMethod: "Card", 
+        //SpecialRequests: specialRequests
       };
 
       console.log('Creating booking with payload:', bookingRequest);
@@ -390,7 +443,7 @@ const BookingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mt-4">
+                {/* <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Special Requests (Optional)
                   </label>
@@ -401,7 +454,7 @@ const BookingPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Any special requests or preferences..."
                   />
-                </div>
+                </div> */}
               </div>
 
               {/* Document Upload */}
@@ -418,10 +471,10 @@ const BookingPage: React.FC = () => {
                     </div>
                     <div className="ml-3">
                       <p className="text-sm font-semibold text-red-800">
-                        🔒 MANDATORY: ID Document (IC) Required
+                        🔒 MANDATORY: ID Document (IC) Required / Visa Card / Passport
                       </p>
                       <p className="text-xs text-red-700 mt-1">
-                        All guests must upload a valid identification card before booking
+                        All guests must upload a valid identification card / Visa Card / Passport to be verified before check-in.
                       </p>
                     </div>
                   </div>

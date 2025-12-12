@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
+import { API_BASE_URL } from "../../config/api";
 import "../../styles/bookings.css";
 import "../../styles/modals.css";
 
@@ -44,7 +45,7 @@ export default function ManagerManageBookings() {
     try {
       // Backend GET /api/bookings returns all bookings
       const res = await axios.get<any[]>(
-        `https://localhost:7168/api/bookings`
+        `${API_BASE_URL}/api/bookings`
       );
 
       console.log("All bookings:", res.data);
@@ -140,7 +141,7 @@ export default function ManagerManageBookings() {
   async function updateStatus(id: number, newStatus: string) {
     try {
       const res = await axios.put(
-        `https://localhost:7168/api/bookings/${id}/status`,
+        `${API_BASE_URL}/api/bookings/${id}/status`,
         JSON.stringify(newStatus),
         {
           headers: { "Content-Type": "application/json" },
@@ -165,7 +166,7 @@ export default function ManagerManageBookings() {
   async function openGuestProfile(guestId: string) {
     try {
       const res = await axios.get<any>(
-        `https://localhost:7168/api/guests/${guestId}?hotelId=${user?.hotelId}`
+        `${API_BASE_URL}/api/guests/${guestId}?hotelId=${user?.hotelId}`
       );
 
       setGuestInfo(res.data.data); // ✔ pick the 'data' object from response  

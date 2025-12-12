@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store";
+import { API_BASE_URL } from "../../../config/api";
 import "../../../styles/reports.css";
 
 Chart.register(...registerables, ChartDataLabels); // ⭐ register plugin
@@ -30,7 +31,7 @@ export default function BookingStatusReport() {
 
   async function fetchStats() {
     const res = await axios.get<BookingStatusStat[]>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/bookings`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/bookings`
     );
 
     setStats(res.data);

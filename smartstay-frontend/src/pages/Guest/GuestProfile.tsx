@@ -68,23 +68,22 @@ const GuestProfile: React.FC = () => {
       }
 
       try {
-        // Fetch guest profile - guests endpoint requires hotelId query parameter
-        const guestResponse = await fetch(`${API_BASE_URL}/api/guests/${user.id}?hotelId=1`);
+        // Fetch guest profile using the profile endpoint
+        const guestResponse = await fetch(`${API_BASE_URL}/api/Guests/profile/${user.id}`);
         
         if (guestResponse.ok) {
           const response = await guestResponse.json();
           console.log('Profile data loaded:', response);
           
-          // Extract data from wrapped response
+          // Extract data from the success response structure
           const data = response.data || response;
           
-          // Handle both camelCase and PascalCase from backend
-          setFullName(data.fullName || data.FullName || '');
-          setEmail(data.email || data.Email || '');
-          setPhone(data.phoneNumber || data.PhoneNumber || '');
-          setAddress(data.address || data.Address || '');
-          setGender(data.gender || data.Gender || '');
-          setIcNumber(data.icNumber || data.ICNumber || '');
+          setFullName(data.fullName || '');
+          setEmail(data.email || '');
+          setPhone(data.phoneNumber || '');
+          setAddress(data.address || '');
+          setGender(data.gender || '');
+          setIcNumber(data.icNumber || '');
         } else {
           console.error('Failed to fetch profile:', guestResponse.status);
         }
@@ -129,12 +128,40 @@ const GuestProfile: React.FC = () => {
     
     // Validation
     if (!fullName || !email || !phone) {
-      alert('Please fill in all required fields');
+      showToast('⚠️ Please fill in all required fields', 'warning');
       return;
     }
 
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      showToast('⚠️ Full name must be at least 2 characters', 'warning');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+      showToast('📧 Please enter a valid email address', 'error');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneNumber = phone.replace(/[\s-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(phoneNumber)) {
+      showToast('📱 Please enter a valid phone number (8-15 digits)', 'error');
+      return;
+    }
+
+    // Validate IC Number if provided
+    if (icNumber) {
+      const ic = icNumber.replace(/\D/g, '');
+      if (ic.length < 6 || ic.length > 20) {
+        showToast('🪪 Please enter a valid IC Number or Passport (6-20 characters)', 'error');
+        return;
+      }
+    }
+
     if (!user?.id) {
-      alert('User ID not found');
+      showToast('⚠️ User session not found. Please sign in again.', 'error');
       return;
     }
 

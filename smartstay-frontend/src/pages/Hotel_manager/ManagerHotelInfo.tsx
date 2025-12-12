@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
+import { API_BASE_URL } from "../../config/api";
 import { FaStar } from "react-icons/fa";
 import "../../styles/hotelDetails.css";
 
@@ -51,7 +52,7 @@ export default function HotelInfo() {
   const fetchHotel = async () => {
     try {
       const res = await axios.get<Hotel>(
-        `https://localhost:7168/api/hotels/${user?.hotelId}`
+        `${API_BASE_URL}/api/hotels/${user?.hotelId}`
       );
 
       setHotel(res.data);
@@ -72,7 +73,7 @@ export default function HotelInfo() {
   const fetchReviews = async () => {
     try {
       const res = await axios.get<Review[]>(
-        `https://localhost:7168/api/reviews/hotel/${user?.hotelId}`
+        `${API_BASE_URL}/api/reviews/hotel/${user?.hotelId}`
       );
       setReviews(res.data);
     } catch (err) {
@@ -135,7 +136,7 @@ export default function HotelInfo() {
       };
 
       await axios.put(
-        `https://localhost:7168/api/hotels/${hotel.hotelID}`,
+        `${API_BASE_URL}/api/hotels/${hotel.hotelID}`,
         payload
       );
 

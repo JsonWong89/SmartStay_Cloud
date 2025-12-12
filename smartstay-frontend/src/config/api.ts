@@ -1,7 +1,8 @@
 // API Configuration - Centralized endpoint management
 // Edit this file to change API URLs across the entire application
 
-const API_BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://smartstay-hotel.us-east-1.elasticbeanstalk.com';
+// Export API_BASE_URL for use in other files
+export const API_BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://smartstay-hotel.us-east-1.elasticbeanstalk.com';
 
 export const API_ENDPOINTS = {
   // Base URL

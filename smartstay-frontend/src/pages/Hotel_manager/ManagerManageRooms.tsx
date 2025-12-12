@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
+import { API_BASE_URL } from "../../config/api";
 import "../../styles/rooms.css";
 
 interface Room {
@@ -49,7 +50,7 @@ export default function ManagerManageRooms() {
     try {
       // Fetch all rooms and filter by hotelId on frontend
       const res = await axios.get<any[]>(
-        `https://localhost:7168/api/rooms?hotelId=${user.hotelId}`
+        `${API_BASE_URL}/api/rooms?hotelId=${user.hotelId}`
       );
 
       console.log("All rooms response:", res.data);
@@ -154,7 +155,7 @@ export default function ManagerManageRooms() {
       console.log("Sending payload:", payload);
 
 
-      await axios.post("https://localhost:7168/api/rooms", payload);
+      await axios.post(`${API_BASE_URL}/api/rooms`, payload);
 
       alert("Room added successfully!");
 
@@ -199,7 +200,7 @@ export default function ManagerManageRooms() {
       };
 
       await axios.put(
-        `https://localhost:7168/api/rooms/${selectedRoom.roomID}`,
+        `${API_BASE_URL}/api/rooms/${selectedRoom.roomID}`,
         payload
       );
 
@@ -217,7 +218,7 @@ export default function ManagerManageRooms() {
   async function handleDeleteRoom(id: number) {
     if (!window.confirm("Delete this room?")) return;
 
-    await axios.delete(`https://localhost:7168/api/rooms/${id}`);
+    await axios.delete(`${API_BASE_URL}/api/rooms/${id}`);
     fetchRooms();
   }
 

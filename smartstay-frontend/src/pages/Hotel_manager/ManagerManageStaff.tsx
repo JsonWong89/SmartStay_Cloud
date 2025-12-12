@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuthStore } from "../../store";
+import { API_BASE_URL } from "../../config/api";
 import "../../styles/staff.css";
 
 interface StaffApi {
@@ -98,10 +99,10 @@ export default function ManagerManageStaff() {
 
     try {
       const [staffRes, usersRes] = await Promise.all([
-        axios.get<{ success: boolean; data: StaffApi[] }>(`https://localhost:7168/api/Staff`),
+        axios.get<{ success: boolean; data: StaffApi[] }>(`${API_BASE_URL}/api/Staff`),
 
         axios.get<any[]>(
-          `https://localhost:7168/api/Users`
+          `${API_BASE_URL}/api/Users`
         ),
       ]);
 
@@ -220,7 +221,7 @@ export default function ManagerManageStaff() {
           HireDate: new Date().toISOString(),
         });
 
-        await axios.post("https://localhost:7168/api/Staff", {
+        await axios.post(`${API_BASE_URL}/api/Staff`, {
           HotelID: user.hotelId,
           FullName: newPerson.fullName,
           Gender: newPerson.gender,
@@ -245,7 +246,7 @@ export default function ManagerManageStaff() {
         console.log("Adding receptionist with payload:", payload);
 
         const res: any = await axios.post(
-          "https://localhost:7168/api/Users",
+          `${API_BASE_URL}/api/Users`,
           payload
         );
 
@@ -279,7 +280,7 @@ export default function ManagerManageStaff() {
         };
 
         await axios.put(
-          `https://localhost:7168/api/Staff/${selectedPerson.id}`,
+          `${API_BASE_URL}/api/Staff/${selectedPerson.id}`,
           payload
         );
       }
@@ -294,7 +295,7 @@ export default function ManagerManageStaff() {
         };
 
         await axios.put(
-          `https://localhost:7168/api/Users/${selectedPerson.id}`,
+          `${API_BASE_URL}/api/Users/${selectedPerson.id}`,
           payload
         );
       }
@@ -317,11 +318,11 @@ export default function ManagerManageStaff() {
     try {
       if (row.source === "Staff") {
         await axios.delete(
-          `https://localhost:7168/api/Staff/${row.id}`
+          `${API_BASE_URL}/api/Staff/${row.id}`
         );
       } else {
         await axios.delete(
-          `https://localhost:7168/api/Users/${row.id}`
+          `${API_BASE_URL}/api/Users/${row.id}`
         );
       }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import { API_BASE_URL } from '../../config/api';
 import GuestNavbar from '../../components/GuestNavbar';
 
 interface Room {
@@ -50,7 +51,7 @@ const RoomSearch: React.FC = () => {
         setError(''); // Clear any previous errors
         
         // Build API URL with location parameter if provided
-        let apiUrl = 'https://localhost:7168/api/rooms';
+        let apiUrl = `${API_BASE_URL}/api/rooms`;
         if (cityFilter) {
           apiUrl += `?location=${encodeURIComponent(cityFilter)}`;
         }
@@ -306,7 +307,7 @@ const RoomSearch: React.FC = () => {
             ) : error ? (
               <div className="bg-red-50 border border-red-200 rounded-lg shadow-md p-8 text-center">
                 <p className="text-xl text-red-600 font-semibold">⚠️ {error}</p>
-                <p className="text-gray-600 mt-2">Make sure your backend is running on https://localhost:7168</p>
+                <p className="text-gray-600 mt-2">Make sure your backend API is running and accessible</p>
                 <button 
                   onClick={() => window.location.reload()} 
                   className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md transition"

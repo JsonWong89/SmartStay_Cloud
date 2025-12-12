@@ -29,7 +29,8 @@ import {
 } from "lucide-react";
 import { BookingStatusBadge } from "../../../components/GuestWidgets";
 import { Guest } from "./types";
-import { API_BASE_URL } from '../../../config';
+import { API_BASE_URL } from "../../../config";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = API_BASE_URL;
 
@@ -38,7 +39,7 @@ interface Props {
   onBack: () => void;
   onVerifyDocument: (id: number) => void;
   onEdit: () => void;
-  navigate: (path: string) => void;
+  // navigate: (path: string) => void;
 }
 
 export default function GuestDetailsView({
@@ -46,8 +47,9 @@ export default function GuestDetailsView({
   onBack,
   onVerifyDocument,
   onEdit,
-  navigate,
-}: Props) {
+}: // navigate,
+Props) {
+  const navigate = useNavigate();
   const isActive = guest.isActive;
   const hasRegisteredAccount = guest.hasAccount;
 
@@ -281,12 +283,6 @@ export default function GuestDetailsView({
                     RM {activeMultiRoomBooking.totalAmount.toFixed(2)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-green-600 text-xs">Amount Paid</p>
-                  <p className="font-medium text-green-900">
-                    RM {activeMultiRoomBooking.totalPaid.toFixed(2)}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -395,6 +391,26 @@ export default function GuestDetailsView({
                 <Edit size={16} />
                 Edit Guest Info
               </button>
+              <button
+                onClick={() =>
+                  navigate("/staff/walk-in-booking", {
+                    state: {
+                      guestInfo: {
+                        FullName: guest.fullName,
+                        ICNumber: guest.icNumber,
+                        Email: guest.email,
+                        PhoneNumber: guest.phoneNumber,
+                        Gender: guest.gender || "",
+                        Address: guest.address || "",
+                      },
+                    },
+                  })
+                }
+                className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition flex items-center justify-center gap-2"
+              >
+                <Plus size={16} />
+                Add Booking
+              </button>
             </div>
           </div>
         </div>
@@ -458,11 +474,6 @@ export default function GuestDetailsView({
                             {group.totalPaid > 0 && (
                               <p className="text-xs text-green-600">
                                 Paid: RM {group.totalPaid.toFixed(2)}
-                              </p>
-                            )}
-                            {group.pendingAmount > 0 && (
-                              <p className="text-xs text-amber-600">
-                                Due: RM {group.pendingAmount.toFixed(2)}
                               </p>
                             )}
                           </div>
@@ -533,7 +544,9 @@ export default function GuestDetailsView({
                           </p>
                           <button
                             onClick={() =>
-                              navigate(`/staff/receipt/${main.bookingId}`)
+                              navigate("/staff/receipt/" + main.bookingId, {
+                                state: { returnToGuestId: guest.guestId }, // ← This is all you need
+                              })
                             }
                             className="text-indigo-600 hover:text-indigo-700 text-xs font-medium flex items-center gap-1"
                           >

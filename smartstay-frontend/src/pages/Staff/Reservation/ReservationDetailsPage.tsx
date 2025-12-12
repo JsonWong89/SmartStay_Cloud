@@ -618,62 +618,6 @@ export default function ReservationDetailsPage({
               </div>
             )}
           </div>
-
-          {/* Quick Actions */}
-          {/* <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              {mainBooking.bookingStatus === "Pending" && (
-                <button
-                  onClick={() => handleAction("confirm")}
-                  className="w-full px-4 py-3 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-medium transition flex items-center justify-center gap-2"
-                >
-                  <CheckCircle size={18} /> Confirm Booking
-                </button>
-              )}
-              {mainBooking.bookingStatus === "Confirmed" &&
-                (pendingAmount === 0 ? (
-                  <button
-                    onClick={() => handleAction("checkin")}
-                    className="w-full px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium transition flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={18} /> Check In Guest
-                  </button>
-                ) : (
-                  <div className="w-full px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium text-center text-sm">
-                    Full Payment Required for Check-In
-                  </div>
-                ))}
-              {mainBooking.bookingStatus === "CheckedIn" &&
-                (pendingAmount === 0 ? (
-                  <button
-                    onClick={() => handleAction("checkout")}
-                    className="w-full px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={18} /> Check Out Guest
-                  </button>
-                ) : (
-                  <div className="w-full px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 font-medium text-center text-sm">
-                    Full Payment Required for Check-Out
-                  </div>
-                ))}
-              {(mainBooking.bookingStatus === "Pending" ||
-                mainBooking.bookingStatus === "Confirmed") && (
-                <button
-                  onClick={() => handleAction("cancel")}
-                  className="w-full px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition flex items-center justify-center gap-2"
-                >
-                  <XCircle size={18} /> Cancel Reservation
-                </button>
-              )}
-              {(mainBooking.bookingStatus === "CheckedOut" ||
-                mainBooking.bookingStatus === "Cancelled") && (
-                <div className="px-4 py-3 rounded-lg bg-gray-100 text-gray-600 font-medium text-center">
-                  Reservation {mainBooking.bookingStatus}
-                </div>
-              )}
-            </div>
-          </div> */}
           {!isFullyCancelled && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h3 className="font-semibold text-gray-900 mb-4">

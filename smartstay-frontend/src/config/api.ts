@@ -1,7 +1,7 @@
 // API Configuration - Centralized endpoint management
 // Edit this file to change API URLs across the entire application
 
-const API_BASE_URL = "https://localhost:7168";
+const API_BASE_URL = (import.meta as any).env.VITE__API_URL || 'https://localhost:7168';
 
 export const API_ENDPOINTS = {
   // Base URL

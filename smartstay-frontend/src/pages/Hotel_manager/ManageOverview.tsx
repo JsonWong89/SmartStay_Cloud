@@ -91,11 +91,11 @@ export default function ManagerOverview() {
     revenueChartInstance = new Chart(revenueCanvas, {
       type: "bar",
       data: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun","Total Revenue"],
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         datasets: [
           {
             label: "Revenue (RM)",
-            data: [400, 550, 350, 650, 900, 1100,1350, data?.totalRevenue ?? 0],
+            data: [400, 550, 350, 650, 900, 1100,1350],
             backgroundColor: "#4ade80"
           }
         ]

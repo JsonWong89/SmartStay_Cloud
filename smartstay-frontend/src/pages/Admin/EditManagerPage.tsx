@@ -84,7 +84,7 @@ const EditManagerPage: React.FC = () => {
         setForm({
           fullName: data.fullName ?? data.FullName ?? '',
           email: data.email ?? data.Email ?? '',
-          password: '', // Don't populate existing password
+          password: data.password ?? data.Password ?? '', // Show existing password if backend returns it
           gender: data.gender ?? data.Gender ?? '',
           role: data.role ?? data.Role ?? 'Manager',
           hotelId: hotelIdValue ? hotelIdValue.toString() : '',
@@ -129,8 +129,8 @@ const EditManagerPage: React.FC = () => {
       setMessageType('error');
       return;
     }
-    if (form.password && form.password.length < 6) {
-      setMessage('Password must be at least 6 characters (leave empty to keep current password)');
+    if (!form.password || form.password.length < 6) {
+      setMessage('Password is required and must be at least 6 characters');
       setMessageType('error');
       return;
     }
@@ -147,12 +147,8 @@ const EditManagerPage: React.FC = () => {
         Email: form.email,
         Gender: form.gender,
         Role: form.role,
+        Password: form.password.trim(),
       };
-      
-      // Only include Password field if user wants to update it
-      if (form.password && form.password.trim()) {
-        payload.Password = form.password.trim();
-      }
       
       if (form.hotelId) {
         payload.HotelId = Number(form.hotelId);
@@ -259,18 +255,19 @@ const EditManagerPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="password">New Password (optional)</label>
+                  <label htmlFor="password">Password</label>
                   <input
                     id="password"
                     name="password"
-                    type="password"
+                    type="text"
                     value={form.password}
                     onChange={handleChange}
                     className="input"
-                    placeholder="••••••••"
+                    placeholder="Enter password"
+                    required
                   />
                   <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '12px' }}>
-                    Leave empty to keep current password. Minimum 6 characters if updating.
+                    Minimum 6 characters required
                   </small>
                 </div>
 

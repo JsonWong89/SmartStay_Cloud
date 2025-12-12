@@ -64,8 +64,8 @@ import "./styles/modals.css";
 const App: React.FC = () => {
   return (
     <Routes>
-      {/* Root path - direct to guest dashboard (public) */}
-      <Route path="/" element={<GuestDashboard />} />
+      {/* Root path - redirects based on role */}
+      <Route path="/" element={<RootRedirect />} />
 
       <Route path="/login" element={<AuthPage />} />
 

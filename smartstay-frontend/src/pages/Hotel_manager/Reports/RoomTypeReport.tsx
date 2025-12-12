@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store";
+import { API_BASE_URL } from "../../../config/api";
 
 Chart.register(...registerables);
 
@@ -36,7 +37,7 @@ export default function RoomTypeReport() {
 
   async function fetchStats() {
     const res = await axios.get<RoomTypeStat[]>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/roomtypes`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/roomtypes`
     );
     setStats(res.data);
 

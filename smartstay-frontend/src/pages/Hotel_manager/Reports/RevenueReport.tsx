@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store";
+import { API_BASE_URL } from "../../../config/api";
 import "../../../styles/reports.css";
 
 Chart.register(...registerables);
@@ -59,7 +60,7 @@ export default function RevenueReport() {
   // ───────────── REVENUE ─────────────
   async function fetchRevenue() {
     const res = await axios.get<RevenueResponse>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/revenue`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/revenue`
     );
 
     setTotalRevenue(res.data.totalRevenue);
@@ -92,7 +93,7 @@ export default function RevenueReport() {
   // ───────────── ROOM TYPES ─────────────
   async function fetchRoomTypes() {
     const res = await axios.get<RoomTypeStat[]>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/roomtypes`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/roomtypes`
     );
     setRoomTypes(res.data);
   }
@@ -100,7 +101,7 @@ export default function RevenueReport() {
   // ───────────── BOOKING STATUS ─────────────
   async function fetchBookingStatus() {
     const res = await axios.get<BookingStatusStat[]>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/bookings`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/bookings`
     );
     setBookingStatus(res.data);
   }
@@ -108,7 +109,7 @@ export default function RevenueReport() {
   // ───────────── GENDER ─────────────
   async function fetchGenderStats() {
     const res = await axios.get<{ guests: GenderStat[] }>(
-      `https://localhost:7168/api/reports/${user?.hotelId}/gender`
+      `${API_BASE_URL}/api/reports/${user?.hotelId}/gender`
     );
     setGuestGender(res.data.guests);
   }

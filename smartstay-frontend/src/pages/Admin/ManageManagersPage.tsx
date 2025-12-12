@@ -134,7 +134,7 @@ const ManageManagersPage: React.FC = () => {
         
         // If still generic, provide helpful message
         if (!errorMsg || errorMsg === 'Unknown error occurred' || errorMsg === '[object Object]') {
-          errorMsg = 'Network error: Cannot connect to backend at https://localhost:7168. Make sure your backend is running in Visual Studio.';
+          errorMsg = 'Network error: Cannot connect to backend API. Make sure your backend is running and accessible.';
         }
         
         console.error('Final error message:', errorMsg);

@@ -95,7 +95,7 @@ export default function ManagerOverview() {
         datasets: [
           {
             label: "Revenue (RM)",
-            data: [400, 550, 350, 650, 900, 1100, data?.totalRevenue ?? 0],
+            data: [400, 550, 350, 650, 900, 1100,1350],
             backgroundColor: "#4ade80"
           }
         ]

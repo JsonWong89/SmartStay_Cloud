@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { useAuthStore } from "../../store";
+import { API_BASE_URL } from "../../config/api";
 import "../../styles/profile.css";
 
 
@@ -43,7 +44,7 @@ export default function ManagerProfile() {
 
     async function loadProfile() {
         const res = await axios.get<ManagerProfileResponse>(
-            `https://localhost:7168/api/users/${user?.id}`
+            `${API_BASE_URL}/api/users/${user?.id}`
         );
 
         setForm({
@@ -81,7 +82,7 @@ export default function ManagerProfile() {
 
             // 🔵 UPDATE BACKEND
             await axios.put(
-                `https://localhost:7168/api/users/${form.userId}`,
+                `${API_BASE_URL}/api/users/${form.userId}`,
                 payload
             );
 

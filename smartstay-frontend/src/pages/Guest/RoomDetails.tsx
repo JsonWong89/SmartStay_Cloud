@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../../store';
+import { API_BASE_URL } from '../../config/api';
 import GuestNavbar from '../../components/GuestNavbar';
 
 interface RoomDetail {
@@ -34,7 +35,7 @@ const RoomDetails: React.FC = () => {
         setLoading(true);
         setError('');
         
-        const response = await fetch(`https://localhost:7168/api/rooms/${roomId}`);
+        const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch room details');

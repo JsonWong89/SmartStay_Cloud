@@ -147,9 +147,13 @@ const EditManagerPage: React.FC = () => {
         Email: form.email,
         Gender: form.gender,
         Role: form.role,
-        // Backend requires Password field (use PascalCase)
-        Password: form.password && form.password.trim() ? form.password : "KEEP_CURRENT_PASSWORD",
       };
+      
+      // Only include Password field if user wants to update it
+      if (form.password && form.password.trim()) {
+        payload.Password = form.password.trim();
+      }
+      
       if (form.hotelId) {
         payload.HotelId = Number(form.hotelId);
       } else {

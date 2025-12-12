@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Sidebar from "../../../components/Sidebar";
 import {
   guestsAPI,
@@ -49,7 +49,7 @@ export default function GuestManagementPage() {
         status: filterStatus === "active" ? "active" : undefined,
         minBookings:
           filterMinBookings === "" ? undefined : Number(filterMinBookings),
-        searchQuery: searchQuery || undefined,
+        // searchQuery: searchQuery || undefined,
       });
 
       if (response.success) {
@@ -69,12 +69,48 @@ export default function GuestManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [hotelId, searchQuery, filterStatus, filterMinBookings]);
+  }, [hotelId, filterStatus, filterMinBookings]);
 
   // Initial load
   useEffect(() => {
     fetchGuests();
   }, [fetchGuests]);
+
+  const filteredGuests = useMemo(() => {
+  return guests
+    .filter((g) => {
+      // Search match
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        g.fullName.toLowerCase().includes(query) ||
+        g.email.toLowerCase().includes(query) ||
+        g.phoneNumber.includes(query) ||
+        g.icNumber.includes(query) ||
+        g.guestId.toLowerCase().includes(query);
+
+      // Status filter
+      const matchesStatus =
+        filterStatus === "all" || (filterStatus === "active" && g.isActive);
+
+      // Min bookings filter
+      const minBookings = filterMinBookings === "" ? 0 : Number(filterMinBookings);
+      const matchesMinBookings = g.totalBookings >= minBookings;
+
+      return matchesSearch && matchesStatus && matchesMinBookings;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "bookings":
+          return b.totalBookings - a.totalBookings;
+        case "recent":
+          if (!a.lastBookingDate) return 1;
+          if (!b.lastBookingDate) return -1;
+          return new Date(b.lastBookingDate).getTime() - new Date(a.lastBookingDate).getTime();
+        default:
+          return a.fullName.localeCompare(b.fullName);
+      }
+    });
+}, [guests, searchQuery, filterStatus, filterMinBookings, sortBy]);
 
   // View guest details with full data
   const handleViewDetails = async (guest: Guest) => {
@@ -214,29 +250,29 @@ export default function GuestManagementPage() {
   };
 
   // Filtered & sorted guests
-  const filteredGuests = guests
-    .filter((g) => {
-      const matchesStatus =
-        filterStatus === "all" || (filterStatus === "active" && g.isActive);
-      const minBookings =
-        filterMinBookings === "" ? 0 : Number(filterMinBookings);
-      return matchesStatus && g.totalBookings >= minBookings;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "bookings":
-          return b.totalBookings - a.totalBookings;
-        case "recent":
-          if (!a.lastBookingDate) return 1;
-          if (!b.lastBookingDate) return -1;
-          return (
-            new Date(b.lastBookingDate).getTime() -
-            new Date(a.lastBookingDate).getTime()
-          );
-        default:
-          return a.fullName.localeCompare(b.fullName);
-      }
-    });
+  // const filteredGuests = guests
+  //   .filter((g) => {
+  //     const matchesStatus =
+  //       filterStatus === "all" || (filterStatus === "active" && g.isActive);
+  //     const minBookings =
+  //       filterMinBookings === "" ? 0 : Number(filterMinBookings);
+  //     return matchesStatus && g.totalBookings >= minBookings;
+  //   })
+  //   .sort((a, b) => {
+  //     switch (sortBy) {
+  //       case "bookings":
+  //         return b.totalBookings - a.totalBookings;
+  //       case "recent":
+  //         if (!a.lastBookingDate) return 1;
+  //         if (!b.lastBookingDate) return -1;
+  //         return (
+  //           new Date(b.lastBookingDate).getTime() -
+  //           new Date(a.lastBookingDate).getTime()
+  //         );
+  //       default:
+  //         return a.fullName.localeCompare(b.fullName);
+  //     }
+  //   });
 
   const stats = {
     total: guests.length,

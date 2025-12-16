@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { RefreshCw, AlertCircle } from "lucide-react";
 
 import Sidebar from "../../../components/Sidebar";
@@ -35,11 +35,11 @@ export default function RoomOperationsPage() {
     try {
       const result = await roomsAPI.getAllRooms({
         hotelId: user?.hotelId,
-        status: filterStatus !== "all" ? filterStatus : undefined,
-        roomType: filterType !== "all" ? filterType : undefined,
-        minPrice: filterMinPrice !== "" ? Number(filterMinPrice) : undefined,
-        maxPrice: filterMaxPrice !== "" ? Number(filterMaxPrice) : undefined,
-        searchQuery: searchQuery || undefined,
+        // status: filterStatus !== "all" ? filterStatus : undefined,
+        // roomType: filterType !== "all" ? filterType : undefined,
+        // minPrice: filterMinPrice !== "" ? Number(filterMinPrice) : undefined,
+        // maxPrice: filterMaxPrice !== "" ? Number(filterMaxPrice) : undefined,
+        // searchQuery: searchQuery || undefined,
       });
 
       if (result.success) {
@@ -71,7 +71,7 @@ export default function RoomOperationsPage() {
 
   useEffect(() => {
     fetchRooms();
-  }, [searchQuery, filterStatus, filterType, filterMinPrice, filterMaxPrice]);
+  }, []);
 
   const stats = {
     total: rooms.length,
@@ -83,6 +83,28 @@ export default function RoomOperationsPage() {
         ? ((rooms.filter((r) => r.status === "Occupied").length / rooms.length) * 100).toFixed(1)
         : "0.0",
   };
+  const filteredRooms = useMemo(() => {
+  return rooms.filter((room) => {
+    // Search
+    const query = searchQuery.toLowerCase();
+    const matchesSearch =
+      room.roomNumber.toLowerCase().includes(query) ||
+      room.roomType.toLowerCase().includes(query) ||
+      (room.currentBooking?.guestName?.toLowerCase().includes(query) ?? false);
+
+    // Status
+    const matchesStatus = filterStatus === "all" || room.status === filterStatus;
+
+    // Type
+    const matchesType = filterType === "all" || room.roomType === filterType;
+
+    // Price
+    const matchesMinPrice = filterMinPrice === "" || room.pricePerNight >= Number(filterMinPrice);
+    const matchesMaxPrice = filterMaxPrice === "" || room.pricePerNight <= Number(filterMaxPrice);
+
+    return matchesSearch && matchesStatus && matchesType && matchesMinPrice && matchesMaxPrice;
+  });
+}, [rooms, searchQuery, filterStatus, filterType, filterMinPrice, filterMaxPrice]);
 
   const roomTypes = Array.from(new Set(rooms.map((r) => r.roomType)));
 
@@ -181,7 +203,7 @@ export default function RoomOperationsPage() {
                 setViewMode={setViewMode}
                 showFilters={showFilters}
                 setShowFilters={setShowFilters}
-                filteredRooms={rooms}
+                filteredRooms={filteredRooms}
                 stats={stats}
                 roomTypes={roomTypes}
                 onViewDetails={handleViewDetails}

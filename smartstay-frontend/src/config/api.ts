@@ -2,7 +2,7 @@
 // Edit this file to change API URLs across the entire application
 
 // Export API_BASE_URL for use in other files
-export const API_BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://smartstay-hotel.us-east-1.elasticbeanstalk.com';
+export const API_BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://smartstay-env.eba-kzqre28v.ap-southeast-5.elasticbeanstalk.com';
 
 export const API_ENDPOINTS = {
   // Base URL

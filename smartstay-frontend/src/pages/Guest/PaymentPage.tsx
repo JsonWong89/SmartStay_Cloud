@@ -149,6 +149,24 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
         setError(err instanceof Error ? err.message : 'Payment succeeded but confirmation failed. Please contact support with booking ID: ' + booking.bookingID);
         setProcessing(false);
       }
+      // Trigger serverless notification (e.g., AWS Lambda via API Gateway)
+      try {
+      await fetch('https://orrgntypl5.execute-api.us-east-1.amazonaws.com/development/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestName: booking.guestName,
+          email: booking.guestEmail,
+          hotelName: booking.hotelName,
+          depositAmount: booking.depositAmount,
+          bookingId: booking.bookingID
+        })
+      });
+      console.log("✅ Serverless Notification Triggered");
+    } catch (notifyErr) {
+      // Don't stop the flow if notification fails, just log it
+      console.warn("⚠️ Notification failed:", notifyErr);
+    }
     }
   };
 

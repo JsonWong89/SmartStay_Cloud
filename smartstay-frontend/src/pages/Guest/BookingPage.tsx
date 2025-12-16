@@ -305,25 +305,6 @@ const BookingPage: React.FC = () => {
         throw new Error('Booking was created but no booking ID was returned from the server. Please contact support.');
       }
 
-      // Trigger serverless notification (e.g., AWS Lambda via API Gateway)
-      try {
-      await fetch('https://orrgntypl5.execute-api.us-east-1.amazonaws.com/development/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestName: guestName,
-          email: guestEmail,
-          hotelName: room.hotelName,
-          totalPrice: totalPrice,
-          bookingId: extractedBookingId
-        })
-      });
-      console.log("✅ Serverless Notification Triggered");
-    } catch (notifyErr) {
-      // Don't stop the flow if notification fails, just log it
-      console.warn("⚠️ Notification failed:", notifyErr);
-    }
-
       // Navigate to payment page with booking data
       navigate(`/guest/payment`, { 
         state: { 

@@ -234,12 +234,11 @@ export default function ManagerManageStaff() {
         alert("Staff added successfully!");
       } else {
         const payload = {
-          UserID: "", // Empty string for auto-generation
           FullName: newPerson.fullName,
           Gender: newPerson.gender,
           Email: newPerson.email,
           HotelID: user.hotelId,
-          PasswordHash: "Staff@123",
+          Password: "Staff@123",
           Role: "Receptionist"
         };
 
@@ -287,11 +286,12 @@ export default function ManagerManageStaff() {
       else {
         // RECEPTIONIST UPDATE PAYLOAD (match CreateUserRequest)
         const payload = {
-          email: selectedPerson.email,
-          password: selectedPerson.passwordHash || "Staff@123",
-          fullName: selectedPerson.fullName,
-          role: "Receptionist",
-          hotelID: selectedPerson.hotelID,
+          Email: selectedPerson.email,
+          Password: selectedPerson.passwordHash || "Staff@123",
+          FullName: selectedPerson.fullName,
+          Role: "Receptionist",
+          Gender: selectedPerson.gender,
+          HotelID: selectedPerson.hotelID,
         };
 
         await axios.put(

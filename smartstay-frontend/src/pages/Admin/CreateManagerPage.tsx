@@ -96,14 +96,13 @@ const CreateManagerPage: React.FC = () => {
     setSubmitting(true);
     try {
       const payload: any = {
-        userID: '', // Backend will auto-generate this based on role
-        fullName: form.fullName,
-        email: form.email,
-        passwordHash: form.password, // backend will hash it with BCrypt
-        gender: form.gender,
-        role: 'Manager', // Use 'Manager' instead of 'Hotel Manager' to match DB constraint
+        FullName: form.fullName,
+        Email: form.email,
+        Password: form.password, // backend will hash it with BCrypt
+        Gender: form.gender,
+        Role: 'Manager', // Use 'Manager' instead of 'Hotel Manager' to match DB constraint
       };
-      if (form.hotelId) payload.hotelId = Number(form.hotelId);
+      if (form.hotelId) payload.HotelId = Number(form.hotelId);
 
       const res = await apiPost(API_ENDPOINTS.USERS.BASE, payload);
       const contentType = res.headers.get('content-type') || '';

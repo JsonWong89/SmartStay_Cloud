@@ -34,15 +34,27 @@ const RoomDetails: React.FC = () => {
       try {
         setLoading(true);
         setError('');
-        
+
         const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch room details');
         }
-        
+
         const data = await response.json();
-        setRoom(data);
+        const normalizedRoom: RoomDetail = {
+          id: data.id || data.RoomID || data.RoomId,
+          hotelName: data.hotelName || data.HotelName,
+          roomType: data.roomType || data.RoomType,
+          price: data.price || data.Price || data.pricePerNight || data.PricePerNight,
+          available: data.available || data.Available || data.isAvailable || data.IsAvailable,
+          imageUrl: data.imageUrl || data.ImageUrl || data.imageURL || data.ImageURL,
+          city: data.city || data.City || data.location || data.Location,
+          description: data.description || data.Description,
+          roomNumber: data.roomNumber || data.RoomNumber,
+          hotelID: data.hotelID || data.HotelID
+        };
+        setRoom(normalizedRoom);
       } catch (err) {
         console.error('API Error:', err);
         setError('Could not load room details. Please try again.');
@@ -62,7 +74,7 @@ const RoomDetails: React.FC = () => {
       navigate('/login');
       return;
     }
-    
+
     if (!checkInDate || !checkOutDate) {
       alert('Please select check-in and check-out dates');
       return;
@@ -73,7 +85,7 @@ const RoomDetails: React.FC = () => {
     today.setHours(0, 0, 0, 0);
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
-    
+
     if (checkIn < today) {
       alert('Check-in date cannot be in the past. Please select today or a future date.');
       return;
@@ -88,12 +100,12 @@ const RoomDetails: React.FC = () => {
     // Validation: Max booking window (1 year in advance)
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-    
+
     if (checkIn > oneYearFromNow) {
       alert('Bookings can only be made up to 1 year in advance.');
       return;
     }
-    
+
     navigate(`/guest/booking/${roomId}?checkIn=${checkInDate}&checkOut=${checkOutDate}&guests=${guests}`);
   };
 
@@ -182,11 +194,10 @@ const RoomDetails: React.FC = () => {
                   <p className="text-4xl font-bold text-blue-600">RM{room.price}</p>
                   <p className="text-gray-500">per night</p>
                   <span
-                    className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${
-                      room.available
+                    className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${room.available
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                    }`}
+                      }`}
                   >
                     {room.available ? 'Available' : 'Not Available'}
                   </span>
@@ -231,7 +242,7 @@ const RoomDetails: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Book This Room</h2>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Check-in Date</label>
                 <input
@@ -284,7 +295,7 @@ const RoomDetails: React.FC = () => {
                     <span className="font-semibold">
                       {Math.ceil(
                         (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) /
-                          (1000 * 60 * 60 * 24)
+                        (1000 * 60 * 60 * 24)
                       )}
                     </span>
                   </div>
@@ -296,7 +307,7 @@ const RoomDetails: React.FC = () => {
                         {room.price *
                           Math.ceil(
                             (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) /
-                              (1000 * 60 * 60 * 24)
+                            (1000 * 60 * 60 * 24)
                           )}
                       </span>
                     </div>
@@ -307,11 +318,10 @@ const RoomDetails: React.FC = () => {
               <button
                 onClick={handleBookNow}
                 disabled={!room.available || !checkInDate || !checkOutDate}
-                className={`w-full py-3 px-4 rounded-md font-semibold transition ${
-                  room.available && checkInDate && checkOutDate
+                className={`w-full py-3 px-4 rounded-md font-semibold transition ${room.available && checkInDate && checkOutDate
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {room.available ? 'Book Now' : 'Not Available'}
               </button>

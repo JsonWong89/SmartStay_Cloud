@@ -38,7 +38,7 @@ const RoomSearch: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState(1000);
 
   // Initialize with empty array
-  const [rooms, setRooms] = useState<Room[]>([]); 
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true); // Add loading state
   const [error, setError] = useState('');       // Add error state
 
@@ -49,35 +49,36 @@ const RoomSearch: React.FC = () => {
       try {
         setLoading(true);
         setError(''); // Clear any previous errors
-        
+
         // Build API URL with location parameter if provided
         let apiUrl = `${API_BASE_URL}/api/rooms`;
         if (cityFilter) {
           apiUrl += `?location=${encodeURIComponent(cityFilter)}`;
         }
-        
+
         console.log('Fetching rooms from backend:', apiUrl);
-        const response = await fetch(apiUrl); 
-        
+        const response = await fetch(apiUrl);
+
         console.log('Response status:', response.status);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch rooms');
         }
-        
+
         const data = await response.json();
         console.log('Received data:', data);
         console.log('Number of rooms:', data.length);
-        
+
         // Backend already returns the correct format, just use it directly
+        // Robust mapping to handle potentially different backend cases
         const mappedRooms = data.map((r: any) => ({
-          id: r.id,
-          hotelName: r.hotelName,
-          roomType: r.roomType,
-          price: r.price,
-          available: r.available,
-          imageUrl: r.imageUrl,
-          city: r.city
+          id: r.id || r.RoomID || r.RoomId,
+          hotelName: r.hotelName || r.HotelName,
+          roomType: r.roomType || r.RoomType,
+          price: r.price || r.Price || r.pricePerNight || r.PricePerNight,
+          available: r.available || r.Available || r.isAvailable || r.IsAvailable,
+          imageUrl: r.imageUrl || r.ImageUrl || r.imageURL || r.ImageURL,
+          city: r.city || r.City || r.location || r.Location
         }));
 
         console.log('Mapped rooms:', mappedRooms);
@@ -99,52 +100,52 @@ const RoomSearch: React.FC = () => {
   }, [hotelFilter, roomTypeFilter, maxPrice, guests, rooms]);
 
   const filterRooms = () => {
-    console.log('Filtering rooms...', { 
-      totalRooms: rooms.length, 
-      hotelFilter, 
-      roomTypeFilter, 
-      maxPrice, 
-      guests 
+    console.log('Filtering rooms...', {
+      totalRooms: rooms.length,
+      hotelFilter,
+      roomTypeFilter,
+      maxPrice,
+      guests
     });
-    
+
     let filtered = rooms.filter((room) => {
       // Filter by hotel name
       if (hotelFilter && !room.hotelName.toLowerCase().includes(hotelFilter.toLowerCase())) {
         console.log(`Room ${room.id} filtered out by hotel name`);
         return false;
       }
-      
+
       // City filter is now handled by backend API
       // No need to filter by city here anymore
-      
+
       // Filter by room type
       if (roomTypeFilter && !room.roomType.toLowerCase().includes(roomTypeFilter.toLowerCase())) {
         console.log(`Room ${room.id} filtered out by room type`);
         return false;
       }
-      
+
       // Filter by guest capacity
       const roomCapacity = ROOM_CAPACITY[room.roomType] || 2;
       if (guests > roomCapacity) {
         console.log(`Room ${room.id} (${room.roomType}) filtered out by guest capacity: ${guests} > ${roomCapacity}`);
         return false;
       }
-      
+
       // Filter by price
       if (room.price > maxPrice) {
         console.log(`Room ${room.id} filtered out by price: ${room.price} > ${maxPrice}`);
         return false;
       }
-      
+
       // Filter by availability
       if (!room.available) {
         console.log(`Room ${room.id} filtered out by availability`);
         return false;
       }
-      
+
       return true;
     });
-    
+
     console.log('Filtered rooms count:', filtered.length);
     setFilteredRooms(filtered);
   };
@@ -308,8 +309,8 @@ const RoomSearch: React.FC = () => {
               <div className="bg-red-50 border border-red-200 rounded-lg shadow-md p-8 text-center">
                 <p className="text-xl text-red-600 font-semibold">⚠️ {error}</p>
                 <p className="text-gray-600 mt-2">Make sure your backend API is running and accessible</p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <button
+                  onClick={() => window.location.reload()}
                   className="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md transition"
                 >
                   Retry
@@ -328,10 +329,10 @@ const RoomSearch: React.FC = () => {
                       {/* Room Image */}
                       <div className="md:w-1/3 bg-gray-200 h-64 md:h-auto flex items-center justify-center overflow-hidden">
                         {room.imageUrl ? (
-                          <img 
-                            src={room.imageUrl} 
-                            alt={room.roomType} 
-                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300" 
+                          <img
+                            src={room.imageUrl}
+                            alt={room.roomType}
+                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                           />
                         ) : (
                           /* Fallback if no image exists in DB */

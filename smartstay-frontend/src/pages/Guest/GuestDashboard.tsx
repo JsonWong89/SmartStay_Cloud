@@ -68,7 +68,16 @@ const GuestDashboard: React.FC = () => {
         if (response.ok) {
           const data = await response.json();
           // Get all hotels for featured section
-          setHotels(data);
+          const mappedHotels = data.map((h: any) => ({
+            hotelID: h.hotelID || h.HotelID,
+            hotelName: h.hotelName || h.HotelName,
+            location: h.location || h.Location || h.city || h.City,
+            description: h.description || h.Description,
+            imageUrl: h.imageUrl || h.ImageUrl || h.imageURL || h.ImageURL,
+            rating: h.rating || h.Rating,
+            minRoomPrice: h.minRoomPrice || h.MinRoomPrice
+          }));
+          setHotels(mappedHotels);
         } else {
           console.warn(`Hotels API returned ${response.status}, using mock data`);
           // Fallback to mock data if API endpoint returns error
@@ -157,15 +166,15 @@ const GuestDashboard: React.FC = () => {
       <GuestNavbar />
 
       {/* Hero Section with Background Image */}
-      <div className="relative h-[500px] bg-cover bg-center" style={{backgroundImage: "url('https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1920&q=80')"}}>
+      <div className="relative h-[500px] bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1582719508461-905c673771fd?w=1920&q=80')" }}>
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-black/60"></div>
-        
+
         {/* Hero Content */}
         <div className="relative h-full flex flex-col items-center justify-center text-white px-4">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 text-center">Find Your Perfect Stay</h1>
           <p className="text-xl md:text-2xl mb-8 text-center">Discover amazing hotels to make glass memories</p>
-          
+
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="w-full max-w-4xl">
             <div className="bg-white rounded-xl shadow-2xl p-4 flex flex-wrap md:flex-nowrap gap-4 items-center">
@@ -179,7 +188,7 @@ const GuestDashboard: React.FC = () => {
                   className="w-full outline-none text-gray-800"
                 />
               </div>
-              
+
               <div className="flex items-center flex-1 min-w-[150px] px-4 py-2 border-r border-gray-200">
                 <span className="text-gray-400 mr-2">📅</span>
                 <input
@@ -191,7 +200,7 @@ const GuestDashboard: React.FC = () => {
                   required
                 />
               </div>
-              
+
               <div className="flex items-center flex-1 min-w-[120px] px-4 py-2">
                 <span className="text-gray-400 mr-2">👥</span>
                 <select
@@ -199,12 +208,12 @@ const GuestDashboard: React.FC = () => {
                   onChange={(e) => setGuests(parseInt(e.target.value))}
                   className="w-full outline-none text-gray-800 bg-transparent"
                 >
-                  {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
                     <option key={num} value={num}>{num} Guest{num > 1 ? 's' : ''}</option>
                   ))}
                 </select>
               </div>
-              
+
               <button
                 type="submit"
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition shadow-md hover:shadow-lg whitespace-nowrap"
@@ -274,7 +283,7 @@ const GuestDashboard: React.FC = () => {
               <p className="text-gray-600">No hotels available at the moment</p>
             </div>
           ) : (
-            <div 
+            <div
               id="hotels-container"
               className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide"
               style={{
@@ -283,8 +292,8 @@ const GuestDashboard: React.FC = () => {
               }}
             >
               {hotels.map((hotel) => (
-                <div 
-                  key={hotel.hotelID} 
+                <div
+                  key={hotel.hotelID}
                   className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 group snap-start"
                 >
                   <div className="relative h-56 overflow-hidden">
@@ -301,9 +310,8 @@ const GuestDashboard: React.FC = () => {
                       />
                     ) : null}
                     <div
-                      className={`h-56 bg-gradient-to-br from-blue-400 to-blue-500 items-center justify-center text-white text-6xl ${
-                        hotel.imageUrl ? 'hidden' : 'flex'
-                      }`}
+                      className={`h-56 bg-gradient-to-br from-blue-400 to-blue-500 items-center justify-center text-white text-6xl ${hotel.imageUrl ? 'hidden' : 'flex'
+                        }`}
                     >
                       🏨
                     </div>
@@ -312,7 +320,7 @@ const GuestDashboard: React.FC = () => {
                       <span>{hotel.rating || '4.8'}</span>
                     </div>
                   </div>
-                  
+
                   <div className="p-6">
                     <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-blue-600 transition">{hotel.hotelName}</h3>
                     <div className="flex items-center text-gray-500 text-sm mb-3">
@@ -322,7 +330,7 @@ const GuestDashboard: React.FC = () => {
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                       {hotel.description || 'Premium accommodations with modern amenities'}
                     </p>
-                    
+
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                       <div>
                         <span className="text-gray-500 text-xs block">Starting from</span>
@@ -383,13 +391,12 @@ const GuestDashboard: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        booking.bookingStatus === 'Confirmed' ? 'bg-green-100 text-green-800' :
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking.bookingStatus === 'Confirmed' ? 'bg-green-100 text-green-800' :
                         booking.bookingStatus === 'Cancelled' ? 'bg-red-100 text-red-800' :
-                        booking.bookingStatus === 'CheckedIn' ? 'bg-blue-100 text-blue-800' :
-                        booking.bookingStatus === 'CheckedOut' ? 'bg-gray-100 text-gray-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                          booking.bookingStatus === 'CheckedIn' ? 'bg-blue-100 text-blue-800' :
+                            booking.bookingStatus === 'CheckedOut' ? 'bg-gray-100 text-gray-800' :
+                              'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {booking.bookingStatus}
                       </span>
                       <p className="text-sm text-gray-600 mt-1">Deposit: ${booking.depositAmount}</p>

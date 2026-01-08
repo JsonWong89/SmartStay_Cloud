@@ -47,14 +47,14 @@ const BookingPage: React.FC = () => {
       try {
         setLoading(true);
         const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}`);
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch room details');
         }
-        
+
         const data = await response.json();
         console.log('Room data received:', data);
-        
+
         // Handle both camelCase and PascalCase field names
         setRoom({
           id: data.roomId || data.RoomId || data.id,
@@ -87,7 +87,7 @@ const BookingPage: React.FC = () => {
           const responseData = await response.json();
           // Extract data from the success response structure
           const guestData = responseData.data || responseData;
-          
+
           // Pre-fill fields if not already set
           if (!guestPhone) {
             setGuestPhone(guestData.phoneNumber || '');
@@ -132,9 +132,12 @@ const BookingPage: React.FC = () => {
 
   const uploadDocument = async (file: File, documentType: string, guestId: string) => {
     const formData = new FormData();
+    // Match exact C# property names: GuestID, File, DocumentType
     formData.append('File', file);
     formData.append('GuestID', guestId);
     formData.append('DocumentType', documentType);
+
+    console.log(`Uploading ${documentType} for guest ${guestId}...`);
 
     const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
       method: 'POST',
@@ -143,10 +146,13 @@ const BookingPage: React.FC = () => {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Failed to upload document' }));
+      console.error('Upload failed:', errorData);
       throw new Error(errorData.message || 'Failed to upload document');
     }
 
-    return await response.json();
+    const result = await response.json();
+    console.log('Upload success:', result);
+    return result;
   };
 
   const handleSubmitBooking = async (e: React.FormEvent) => {
@@ -211,7 +217,7 @@ const BookingPage: React.FC = () => {
     today.setHours(0, 0, 0, 0);
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
-    
+
     if (checkIn < today) {
       alert('❌ Check-in date cannot be in the past. Please select today or a future date.');
       return;
@@ -226,7 +232,7 @@ const BookingPage: React.FC = () => {
     // Validation: Max booking window (1 year in advance)
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-    
+
     if (checkIn > oneYearFromNow) {
       alert('❌ Bookings can only be made up to 1 year in advance.');
       return;
@@ -242,9 +248,9 @@ const BookingPage: React.FC = () => {
       // Step 2: Upload additional document if required
       if (isLongTermStay && additionalDoc) {
         console.log('Uploading additional document...');
-        const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' : 
-                       additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' : 
-                       'WorkPermit';
+        const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' :
+          additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' :
+            'WorkPermit';
         await uploadDocument(additionalDoc, docType, user.id);
       }
 
@@ -256,7 +262,7 @@ const BookingPage: React.FC = () => {
         TotalGuests: guests,
         TotalAmount: totalPrice,
         DepositPaid: depositAmount,
-        PaymentMethod: "Card", 
+        PaymentMethod: "Card",
         //SpecialRequests: specialRequests
       };
 
@@ -287,15 +293,15 @@ const BookingPage: React.FC = () => {
 
       // ASP.NET Core serializes BookingID as bookingId (camelCase)
       // Check all possible variations
-      const extractedBookingId = 
-        bookingData.bookingId || 
-        bookingData.bookingID || 
-        bookingData.BookingID || 
-        bookingData.BookingId || 
+      const extractedBookingId =
+        bookingData.bookingId ||
+        bookingData.bookingID ||
+        bookingData.BookingID ||
+        bookingData.BookingId ||
         bookingData.id ||
         bookingData.Id ||
         bookingData.ID;
-      
+
       console.log('Final extracted booking ID:', extractedBookingId);
       console.log('Type of booking ID:', typeof extractedBookingId);
 
@@ -306,8 +312,8 @@ const BookingPage: React.FC = () => {
       }
 
       // Navigate to payment page with booking data
-      navigate(`/guest/payment`, { 
-        state: { 
+      navigate(`/guest/payment`, {
+        state: {
           booking: {
             bookingID: extractedBookingId, // Use bookingID (uppercase) for PaymentPage
             bookingStatus: bookingData.bookingStatus || bookingData.BookingStatus,
@@ -319,7 +325,7 @@ const BookingPage: React.FC = () => {
             checkOutDate: checkOutDate,
             totalGuests: guests
           }
-        } 
+        }
       });
     } catch (err: any) {
       console.error('Booking error:', err);
@@ -364,8 +370,8 @@ const BookingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-50 border border-red-200 rounded-lg shadow-md p-8 text-center">
             <p className="text-xl text-red-600 font-semibold">⚠️ {error}</p>
-            <button 
-              onClick={() => navigate(-1)} 
+            <button
+              onClick={() => navigate(-1)}
               className="mt-4 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md transition"
             >
               Go Back
@@ -383,67 +389,67 @@ const BookingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Booking Form */}
             <div className="lg:col-span-2">
-            <form onSubmit={handleSubmitBooking} className="space-y-6">
-              {/* Guest Information */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">Guest Information</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={guestName}
-                      onChange={(e) => setGuestName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
+              <form onSubmit={handleSubmitBooking} className="space-y-6">
+                {/* Guest Information */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">Guest Information</h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={guestEmail}
+                        onChange={(e) => setGuestEmail(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={guestPhone}
+                        onChange={(e) => setGuestPhone(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="+60123456789"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={guestAddress}
+                        onChange={(e) => setGuestAddress(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={guestEmail}
-                      onChange={(e) => setGuestEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      value={guestPhone}
-                      onChange={(e) => setGuestPhone(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="+60123456789"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={guestAddress}
-                      onChange={(e) => setGuestAddress(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* <div className="mt-4">
+                  {/* <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Special Requests (Optional)
                   </label>
@@ -455,203 +461,203 @@ const BookingPage: React.FC = () => {
                     placeholder="Any special requests or preferences..."
                   />
                 </div> */}
-              </div>
-
-              {/* Document Upload */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">📄 Document Upload</h2>
-                
-                {/* Mandatory Notice */}
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-semibold text-red-800">
-                        🔒 MANDATORY: ID Document (IC) Required / Visa Card / Passport
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        All guests must upload a valid identification card / Visa Card / Passport to be verified before check-in.
-                      </p>
-                    </div>
-                  </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Upload ID Document (IC) <span className="text-red-600 text-lg">*</span>
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleIdUpload}
-                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                      required
-                    />
-                    {idDocument ? (
-                      <p className="mt-2 text-sm text-green-600 font-medium">
-                        ✓ {idDocument.name} uploaded successfully
-                      </p>
-                    ) : (
-                      <p className="mt-2 text-xs text-red-600 font-medium">
-                        ⚠ Please upload your IC/Passport before proceeding
-                      </p>
-                    )}
-                  </div>
 
-                  {isLongTermStay && (
-                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <svg className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="ml-3">
-                          <p className="text-sm font-semibold text-orange-800">
-                            ⏱ Long-Term Stay Detected: {stayDuration} Days
-                          </p>
-                          <p className="text-xs text-orange-700 mt-1">
-                            Stays exceeding 30 days require additional verification documents
-                          </p>
-                        </div>
+                {/* Document Upload */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <h2 className="text-xl font-bold text-gray-800 mb-4">📄 Document Upload</h2>
+
+                  {/* Mandatory Notice */}
+                  <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm font-semibold text-red-800">
+                          🔒 MANDATORY: ID Document (IC) Required / Visa Card / Passport
+                        </p>
+                        <p className="text-xs text-red-700 mt-1">
+                          All guests must upload a valid identification card / Visa Card / Passport to be verified before check-in.
+                        </p>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {isLongTermStay && (
+                  <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        📎 Additional Proof Document <span className="text-red-600 text-lg">*</span>
+                        Upload ID Document (IC) <span className="text-red-600 text-lg">*</span>
                       </label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
-                        onChange={handleAdditionalDocUpload}
+                        onChange={handleIdUpload}
                         className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        required={isLongTermStay}
+                        required
                       />
-                      {additionalDoc ? (
+                      {idDocument ? (
                         <p className="mt-2 text-sm text-green-600 font-medium">
-                          ✓ {additionalDoc.name} uploaded successfully
+                          ✓ {idDocument.name} uploaded successfully
                         </p>
                       ) : (
-                        <p className="mt-2 text-xs text-orange-600 font-medium">
-                          ⚠ Required: Work permit, student visa, or employment letter
+                        <p className="mt-2 text-xs text-red-600 font-medium">
+                          ⚠ Please upload your IC/Passport before proceeding
                         </p>
                       )}
-                      <p className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                        <strong>Accepted documents:</strong> Work Permit, Student Visa, Employment Letter, Sponsorship Letter
-                      </p>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Submit Button */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition text-lg"
-                >
-                  Proceed to Payment →
-                </button>
-                <p className="text-xs text-gray-500 text-center mt-2">
-                  By proceeding, you agree to the terms and conditions
-                </p>
-              </div>
-            </form>
-          </div>
+                    {isLongTermStay && (
+                      <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3">
+                            <p className="text-sm font-semibold text-orange-800">
+                              ⏱ Long-Term Stay Detected: {stayDuration} Days
+                            </p>
+                            <p className="text-xs text-orange-700 mt-1">
+                              Stays exceeding 30 days require additional verification documents
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-          {/* Booking Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Booking Summary</h2>
-              
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-600">Hotel</p>
-                  <p className="font-semibold text-gray-800">{room.hotelName}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">Room Type</p>
-                  <p className="font-semibold text-gray-800">{room.roomType}</p>
-                </div>
-
-                <hr className="border-gray-200" />
-
-                {/* Editable Check-in Date */}
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Check-in Date</label>
-                  <input
-                    type="date"
-                    value={checkInDate}
-                    onChange={(e) => setCheckInDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    required
-                  />
-                </div>
-
-                {/* Editable Check-out Date */}
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Check-out Date</label>
-                  <input
-                    type="date"
-                    value={checkOutDate}
-                    onChange={(e) => setCheckOutDate(e.target.value)}
-                    min={checkInDate ? new Date(new Date(checkInDate).setDate(new Date(checkInDate).getDate() + 1)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    required
-                  />
+                    {isLongTermStay && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-2">
+                          📎 Additional Proof Document <span className="text-red-600 text-lg">*</span>
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={handleAdditionalDocUpload}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          required={isLongTermStay}
+                        />
+                        {additionalDoc ? (
+                          <p className="mt-2 text-sm text-green-600 font-medium">
+                            ✓ {additionalDoc.name} uploaded successfully
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-xs text-orange-600 font-medium">
+                            ⚠ Required: Work permit, student visa, or employment letter
+                          </p>
+                        )}
+                        <p className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                          <strong>Accepted documents:</strong> Work Permit, Student Visa, Employment Letter, Sponsorship Letter
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <p className="text-sm text-gray-600">Duration</p>
-                  <p className="font-semibold text-gray-800">{stayDuration} night{stayDuration !== 1 ? 's' : ''}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">Guests</p>
-                  <p className="font-semibold text-gray-800">{guests} guest{guests !== 1 ? 's' : ''}</p>
-                </div>
-
-                <hr className="border-gray-200" />
-
-                <div>
-                  <p className="text-sm text-gray-600">Price per night</p>
-                  <p className="font-semibold text-gray-800">RM{room.price}</p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-600">Total Price</p>
-                  <p className="text-2xl font-bold text-blue-600">RM{totalPrice.toFixed(2)}</p>
-                </div>
-
-                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                  <p className="text-sm text-gray-600 mb-1">Deposit Required (20%)</p>
-                  <p className="text-xl font-bold text-blue-600">RM{depositAmount.toFixed(2)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Pay now to secure your reservation</p>
-                </div>
-
-                <hr />
-
-                <div>
-                  <p className="text-xs text-gray-500">
-                    <strong>Note:</strong> Deposit is non-refundable upon cancellation
+                {/* Submit Button */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition text-lg"
+                  >
+                    Proceed to Payment →
+                  </button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    By proceeding, you agree to the terms and conditions
                   </p>
+                </div>
+              </form>
+            </div>
+
+            {/* Booking Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">Booking Summary</h2>
+
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-600">Hotel</p>
+                    <p className="font-semibold text-gray-800">{room.hotelName}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600">Room Type</p>
+                    <p className="font-semibold text-gray-800">{room.roomType}</p>
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  {/* Editable Check-in Date */}
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Check-in Date</label>
+                    <input
+                      type="date"
+                      value={checkInDate}
+                      onChange={(e) => setCheckInDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      required
+                    />
+                  </div>
+
+                  {/* Editable Check-out Date */}
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Check-out Date</label>
+                    <input
+                      type="date"
+                      value={checkOutDate}
+                      onChange={(e) => setCheckOutDate(e.target.value)}
+                      min={checkInDate ? new Date(new Date(checkInDate).setDate(new Date(checkInDate).getDate() + 1)).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                      max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600">Duration</p>
+                    <p className="font-semibold text-gray-800">{stayDuration} night{stayDuration !== 1 ? 's' : ''}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600">Guests</p>
+                    <p className="font-semibold text-gray-800">{guests} guest{guests !== 1 ? 's' : ''}</p>
+                  </div>
+
+                  <hr className="border-gray-200" />
+
+                  <div>
+                    <p className="text-sm text-gray-600">Price per night</p>
+                    <p className="font-semibold text-gray-800">RM{room.price}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-gray-600">Total Price</p>
+                    <p className="text-2xl font-bold text-blue-600">RM{totalPrice.toFixed(2)}</p>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <p className="text-sm text-gray-600 mb-1">Deposit Required (20%)</p>
+                    <p className="text-xl font-bold text-blue-600">RM{depositAmount.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500 mt-1">Pay now to secure your reservation</p>
+                  </div>
+
+                  <hr />
+
+                  <div>
+                    <p className="text-xs text-gray-500">
+                      <strong>Note:</strong> Deposit is non-refundable upon cancellation
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
       )}
     </div>

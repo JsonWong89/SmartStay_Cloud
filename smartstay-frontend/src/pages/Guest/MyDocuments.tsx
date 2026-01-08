@@ -6,7 +6,7 @@ import GuestNavbar from "../../components/GuestNavbar";
 
 interface Document {
   documentID: number;
-  guestID: number;
+  guestID: string;
   fileName: string;
   fileURL: string;
   documentType: string;
@@ -38,7 +38,10 @@ const MyDocuments: React.FC = () => {
 
         const result = await response.json();
 
-        const docs = result.success && result.data ? result.data : [];
+        // Handle inconsistent API response structures
+        const docs = result.success !== undefined
+          ? (result.data || [])
+          : (Array.isArray(result) ? result : (result.data || []));
 
         setDocuments(docs);
       } catch (error) {
@@ -90,35 +93,10 @@ const MyDocuments: React.FC = () => {
     });
   };
 
-  const handleViewDocument = async (fileURL: string, fileName: string) => {
-    try {
-      // Try to fetch the document through the API
-      const response = await fetch(
-        `${API_BASE_URL}/api/documents/download?url=${encodeURIComponent(
-          fileURL
-        )}`
-      );
-
-      if (response.ok) {
-        // If API endpoint exists, download the file
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, "_blank");
-        setTimeout(() => window.URL.revokeObjectURL(url), 100);
-      } else {
-        // Fallback: try direct URL access
-        const fullURL =
-          fileURL.startsWith("http://") || fileURL.startsWith("https://")
-            ? fileURL
-            : `${API_BASE_URL}${fileURL}`;
-        window.open(fullURL, "_blank");
-      }
-    } catch (error) {
-      console.error("Error viewing document:", error);
-      alert(
-        "Unable to view document. The file may not be available on the server. Please contact support."
-      );
-    }
+  const handleViewDocument = (documentId: number) => {
+    // Open the view endpoint in a new tab
+    // The backend will generate a signed S3 URL and redirect the browser to it
+    window.open(`${API_BASE_URL}/api/documents/view/${documentId}`, "_blank");
   };
 
   return (
@@ -220,7 +198,7 @@ const MyDocuments: React.FC = () => {
 
                     <button
                       onClick={() =>
-                        handleViewDocument(document.fileURL, document.fileName)
+                        handleViewDocument(document.documentID)
                       }
                       className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition text-sm font-medium"
                     >

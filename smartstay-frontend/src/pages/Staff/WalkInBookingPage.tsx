@@ -337,15 +337,155 @@ function WalkInBookingContent({
     return { exists: false };
   };
 
+  // =============================================
+  // NEW: Process Stripe Card Payment
+  // =============================================
+  const processStripePayment = async (): Promise<boolean> => {
+    if (!stripe || !elements) {
+      alert("Stripe is not loaded. Please refresh the page.");
+      return false;
+    }
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      alert("Card details are missing.");
+      return false;
+    }
+
+    try {
+      // Create payment method with Stripe
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: "card",
+        card: cardElement,
+        billing_details: {
+          name: guestInfo.FullName,
+          email: guestInfo.Email,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Card validation failed");
+      }
+
+      console.log("✅ Stripe Payment Method Created:", paymentMethod?.id);
+      return true; // Card is valid and ready
+    } catch (err: any) {
+      console.error("❌ Stripe Payment Error:", err);
+      alert("Card payment failed: " + err.message);
+      return false;
+    }
+  };
+
+  // const handleSubmit = async () => {
+  //   if (!validateForm()) return;
+
+  //   setIsSubmitting(true);
+
+  //   let guestId: string;
+  //   let guestMessage = "";
+
+  //   try {
+  //     const {
+  //       exists,
+  //       guestId: existingId,
+  //       fullName,
+  //     } = await checkExistingGuest();
+
+  //     if (exists && existingId) {
+  //       guestId = existingId;
+  //       guestMessage = `Guest already registered! Using existing profile: ${fullName}`;
+  //       alert(guestMessage);
+  //     } else {
+  //       const guestRes = await guestsAPI.createGuest({
+  //         FullName: guestInfo.FullName,
+  //         ICNumber: guestInfo.ICNumber,
+  //         Email: guestInfo.Email,
+  //         PhoneNumber: guestInfo.PhoneNumber,
+  //         Address: guestInfo.Address || undefined,
+  //         Gender: guestInfo.Gender || "Other",
+  //       });
+
+  //       if (!guestRes.success)
+  //         throw new Error(guestRes.message || "Failed to register guest");
+
+  //       guestId = guestRes.data.guestId;
+  //       guestMessage = `New guest registered: ${guestRes.data.fullName}`;
+  //       alert(guestMessage);
+  //     }
+
+  //     // Multi-room booking
+  //     const roomIds = selectedRooms.map((r) => r.roomId);
+
+  //     const bookingRes = await bookingsAPI.createBooking({
+  //       GuestID: guestId,
+  //       RoomIDs: roomIds, // Now array!
+  //       CheckInDate: bookingInfo.CheckInDate,
+  //       CheckOutDate: bookingInfo.CheckOutDate,
+  //       TotalGuests: bookingInfo.TotalGuests,
+  //       DepositPaid: paymentInfo.DepositAmount,
+  //       PaymentMethod: paymentInfo.PaymentMethod,
+  //     });
+
+  //     if (!bookingRes.success)
+  //       throw new Error(bookingRes.message || "Booking failed");
+
+  //     alert(
+  //       `Success! ${selectedRooms.length} room(s) booked!\n` +
+  //         `Total: RM ${totalAmount.toFixed(2)}\n` +
+  //         `Deposit: RM ${paymentInfo.DepositAmount.toFixed(2)}`
+  //     );
+
+  //     // Reset form
+  //     setGuestInfo({
+  //       FullName: "",
+  //       ICNumber: "",
+  //       Email: "",
+  //       PhoneNumber: "",
+  //       Address: "",
+  //       Gender: "",
+  //     });
+  //     setBookingInfo({
+  //       CheckInDate: "",
+  //       CheckOutDate: "",
+  //       TotalGuests: 1,
+  //       NumberOfNights: 0,
+  //     });
+  //     setSelectedRooms([]);
+  //     setPaymentInfo({ DepositAmount: 0, PaymentMethod: "Cash" });
+  //     elements?.getElement(CardElement)?.clear();
+  //   } catch (err: any) {
+  //     console.error("Booking error:", err);
+  //     alert(
+  //       "Error: " + (err.message || "Something went wrong. Please try again.")
+  //     );
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
 
-    let guestId: string;
-    let guestMessage = "";
-
     try {
+      // ========================================
+      // STEP 1: If Card payment, validate card first
+      // ========================================
+      if (paymentInfo.PaymentMethod === "Card") {
+        const cardValid = await processStripePayment();
+        if (!cardValid) {
+          setIsSubmitting(false);
+          return; // Stop if card payment fails
+        }
+      }
+
+      // ========================================
+      // STEP 2: Check/Create Guest
+      // ========================================
+      let guestId: string;
+      let guestMessage = "";
+
       const {
         exists,
         guestId: existingId,
@@ -374,12 +514,14 @@ function WalkInBookingContent({
         alert(guestMessage);
       }
 
-      // Multi-room booking
+      // ========================================
+      // STEP 3: Create Booking with Payment
+      // ========================================
       const roomIds = selectedRooms.map((r) => r.roomId);
 
       const bookingRes = await bookingsAPI.createBooking({
         GuestID: guestId,
-        RoomIDs: roomIds, // Now array!
+        RoomIDs: roomIds,
         CheckInDate: bookingInfo.CheckInDate,
         CheckOutDate: bookingInfo.CheckOutDate,
         TotalGuests: bookingInfo.TotalGuests,
@@ -390,10 +532,14 @@ function WalkInBookingContent({
       if (!bookingRes.success)
         throw new Error(bookingRes.message || "Booking failed");
 
+      // ========================================
+      // STEP 4: Success!
+      // ========================================
       alert(
-        `Success! ${selectedRooms.length} room(s) booked!\n` +
+        `✅ Success! ${selectedRooms.length} room(s) booked!\n` +
           `Total: RM ${totalAmount.toFixed(2)}\n` +
-          `Deposit: RM ${paymentInfo.DepositAmount.toFixed(2)}`
+          `Deposit Paid (${paymentInfo.PaymentMethod}): RM ${paymentInfo.DepositAmount.toFixed(2)}\n` +
+          `Balance Due: RM ${balanceDue.toFixed(2)}`
       );
 
       // Reset form
@@ -415,7 +561,7 @@ function WalkInBookingContent({
       setPaymentInfo({ DepositAmount: 0, PaymentMethod: "Cash" });
       elements?.getElement(CardElement)?.clear();
     } catch (err: any) {
-      console.error("Booking error:", err);
+      console.error("❌ Booking error:", err);
       alert(
         "Error: " + (err.message || "Something went wrong. Please try again.")
       );
@@ -423,6 +569,8 @@ function WalkInBookingContent({
       setIsSubmitting(false);
     }
   };
+
+
 
   const filteredRooms = availableRooms
     .filter(

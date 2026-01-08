@@ -302,6 +302,7 @@ const GuestDashboard: React.FC = () => {
                         src={hotel.imageUrl}
                         alt={hotel.hotelName}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                           const fallback = e.currentTarget.nextElementSibling as HTMLElement;

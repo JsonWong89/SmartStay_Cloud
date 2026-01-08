@@ -165,6 +165,7 @@ const RoomDetails: React.FC = () => {
                     src={room.imageUrl}
                     alt={room.roomType}
                     className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <div className="text-9xl">🛏️</div>
@@ -195,8 +196,8 @@ const RoomDetails: React.FC = () => {
                   <p className="text-gray-500">per night</p>
                   <span
                     className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium ${room.available
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
                       }`}
                   >
                     {room.available ? 'Available' : 'Not Available'}
@@ -319,8 +320,8 @@ const RoomDetails: React.FC = () => {
                 onClick={handleBookNow}
                 disabled={!room.available || !checkInDate || !checkOutDate}
                 className={`w-full py-3 px-4 rounded-md font-semibold transition ${room.available && checkInDate && checkOutDate
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
               >
                 {room.available ? 'Book Now' : 'Not Available'}

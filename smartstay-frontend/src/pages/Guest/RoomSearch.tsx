@@ -333,6 +333,7 @@ const RoomSearch: React.FC = () => {
                             src={room.imageUrl}
                             alt={room.roomType}
                             className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                            referrerPolicy="no-referrer"
                           />
                         ) : (
                           /* Fallback if no image exists in DB */

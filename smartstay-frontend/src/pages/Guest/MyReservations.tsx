@@ -210,8 +210,8 @@ const MyReservations: React.FC = () => {
             <button
               onClick={() => setFilterStatus('all')}
               className={`px-4 py-2 rounded-lg font-medium transition ${filterStatus === 'all'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               All Reservations
@@ -219,8 +219,8 @@ const MyReservations: React.FC = () => {
             <button
               onClick={() => setFilterStatus('confirmed')}
               className={`px-4 py-2 rounded-lg font-medium transition ${filterStatus === 'confirmed'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Confirmed
@@ -228,8 +228,8 @@ const MyReservations: React.FC = () => {
             <button
               onClick={() => setFilterStatus('checkedin')}
               className={`px-4 py-2 rounded-lg font-medium transition ${filterStatus === 'checkedin'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Checked In
@@ -237,8 +237,8 @@ const MyReservations: React.FC = () => {
             <button
               onClick={() => setFilterStatus('checkedout')}
               className={`px-4 py-2 rounded-lg font-medium transition ${filterStatus === 'checkedout'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Checked Out
@@ -246,8 +246,8 @@ const MyReservations: React.FC = () => {
             <button
               onClick={() => setFilterStatus('cancelled')}
               className={`px-4 py-2 rounded-lg font-medium transition ${filterStatus === 'cancelled'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Cancelled
@@ -298,6 +298,7 @@ const MyReservations: React.FC = () => {
                               src={reservation.imageUrl}
                               alt={reservation.roomType}
                               className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
                                 e.currentTarget.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
                               }}

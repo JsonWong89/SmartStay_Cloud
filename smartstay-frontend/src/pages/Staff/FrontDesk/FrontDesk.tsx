@@ -287,7 +287,25 @@ export default function FrontDeskApp() {
 
       // Send emails for the first booking only
       if (status === "CheckedIn") {
-        await bookingsAPI.sendCheckIn(ids[0]);
+        const res = await bookingsAPI.sendCheckIn(ids[0]);
+        try {
+      await fetch('https://orrgntypl5.execute-api.us-east-1.amazonaws.com/development/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'Check-In',
+          guestName: res.data?.guestName,
+          email: res.data?.email,
+          // hotelName: booking.hotelName,
+          // depositAmount: booking.depositAmount,
+          bookingId: res.data?.bookingId
+        })
+      });
+      console.log("✅ Serverless Notification Triggered");
+    } catch (notifyErr) {
+      // Don't stop the flow if notification fails, just log it
+      console.warn("⚠️ Notification failed:", notifyErr);
+    }
         alert(`Check-In successful for ${ids.length} room(s) and email sent to guest.`);
       }
 

@@ -9,6 +9,7 @@ type Manager = {
   fullName: string;
   email: string;
   role: string;
+  hotelId?: number | null;
 };
 
 const UpdateManagerPasswordPage: React.FC = () => {
@@ -43,11 +44,14 @@ const UpdateManagerPasswordPage: React.FC = () => {
 
         const data = await res.json();
         
+        const hotelIdValue = data.hotelId ?? data.HotelId ?? data.HotelID ?? data.hotelID;
+        
         setManager({
           userID: data.userID ?? data.UserID,
           fullName: data.fullName ?? data.FullName ?? '',
           email: data.email ?? data.Email ?? '',
           role: data.role ?? data.Role ?? '',
+          hotelId: hotelIdValue ? Number(hotelIdValue) : null,
         });
       } catch (e: any) {
         console.error('Fetch manager failed', e);
@@ -92,6 +96,11 @@ const UpdateManagerPasswordPage: React.FC = () => {
         Role: manager?.role,
         Password: password.trim(),
       };
+      
+      // Preserve hotel assignment
+      if (manager?.hotelId) {
+        payload.HotelId = manager.hotelId;
+      }
 
       const res = await apiPut(API_ENDPOINTS.USERS.BY_ID(id!), payload);
       const contentType = res.headers.get('content-type') || '';

@@ -12,6 +12,16 @@ interface RoomDetails {
   imageUrl?: string;
 }
 
+interface GuestDocument {
+  documentID: number;
+  fileName: string;
+  documentType: string;
+  uploadDate: string;
+  status: string;
+  filePath?: string;
+  guestID?: string;
+}
+
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
@@ -40,17 +50,45 @@ const BookingPage: React.FC = () => {
   // Room data from API
   const [room, setRoom] = useState<RoomDetails | null>(null);
   // Document states
-  const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<GuestDocument[]>([]);
   const [useExistingId, setUseExistingId] = useState(false);
   const [selectedIdDocId, setSelectedIdDocId] = useState<number | null>(null);
   const [useExistingAdditional, setUseExistingAdditional] = useState(false);
   const [selectedAdditionalDocId, setSelectedAdditionalDocId] = useState<number | null>(null);
-
   const [isLongTermStay, setIsLongTermStay] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper to format date correctly (handling UTC vs Local)
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    // If the input doesn't have timezone info (e.g. "2026-01-08T14:40:00"), 
+    // and we know backend sends UTC, we might need to treat it as UTC.
+    // However, usually "Z" is preferred. If "Z" is missing, we append it.
+    // This is a safety check.
+    const isoString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+    const d = new Date(isoString);
+
+    // Check if valid date
+    if (isNaN(d.getTime())) {
+      // Fallback for already correct dates or different formats
+      return new Date(dateString).toLocaleString();
+    }
+
+    return d.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   // Load existing documents
   useEffect(() => {
     const fetchDocuments = async () => {
+      // ... existing code ...
+      // (omitted for brevity, assume replaced logic)
       if (!user?.id) return;
       try {
         const response = await fetch(`${API_BASE_URL}/api/documents/guest/${user.id}`);
@@ -68,6 +106,198 @@ const BookingPage: React.FC = () => {
     };
     fetchDocuments();
   }, [user?.id]);
+
+  // ... (keeping fetchRoomDetails and other useEffects same)
+
+  // ... (handle uploads same)
+
+  const handleSubmitBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    if (!room || !user?.id) {
+      // ... validations ...
+      alert('Missing room or user information');
+      return;
+    }
+    // ... (rest of validations same) ...
+    // Validation
+    if (!guestName || !guestEmail || !guestPhone || !guestAddress) {
+      alert('Please fill in all required guest information');
+      return;
+    }
+
+    // Validate guest name
+    if (guestName.trim().length < 2) {
+      alert('❌ Guest name must be at least 2 characters');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(guestEmail.trim())) {
+      alert('❌ Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneNumber = guestPhone.replace(/[\s-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(phoneNumber)) {
+      alert('❌ Please enter a valid phone number (8-15 digits)');
+      return;
+    }
+
+    // Validate address
+    if (guestAddress.trim().length < 5) {
+      alert('❌ Please enter a complete address (at least 5 characters)');
+      return;
+    }
+
+    // MANDATORY: ID document (IC) must be uploaded or selected
+    if (!useExistingId && !idDocument) {
+      alert('❌ ID Document (IC) is mandatory for all bookings. Please upload your identification card.');
+      return;
+    }
+    if (useExistingId && !selectedIdDocId) {
+      alert('❌ Please select an existing ID document.');
+      return;
+    }
+
+    // CONDITIONAL: Additional proof required for long-term stays (> 30 days)
+    if (isLongTermStay) {
+      if (!useExistingAdditional && !additionalDoc) {
+        alert(`❌ Additional proof document is required for long-term stays (${stayDuration} days). Please upload Visa, Employment Letter, or Work Permit.`);
+        return;
+      }
+      if (useExistingAdditional && !selectedAdditionalDocId) {
+        alert(`❌ Please select an existing additional proof document.`);
+        return;
+      }
+    }
+
+    if (!checkInDate || !checkOutDate) {
+      alert('Please select check-in and check-out dates');
+      return;
+    }
+
+    // Validation: No past dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkIn = new Date(checkInDate);
+    const checkOut = new Date(checkOutDate);
+
+    if (checkIn < today) {
+      alert('❌ Check-in date cannot be in the past. Please select today or a future date.');
+      return;
+    }
+
+    // Validation: Check-out must be after check-in
+    if (checkOut <= checkIn) {
+      alert('❌ Check-out date must be at least one day after check-in date.');
+      return;
+    }
+
+    // Validation: Max booking window (1 year in advance)
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+    if (checkIn > oneYearFromNow) {
+      alert('❌ Bookings can only be made up to 1 year in advance.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Step 1: Upload ID document ONLY if new upload selected
+      if (!useExistingId && idDocument) {
+        console.log('Uploading ID document...');
+        await uploadDocument(idDocument, 'ID', user.id);
+      } else {
+        console.log('Using existing ID document:', selectedIdDocId);
+      }
+
+      // Step 2: Upload additional document if required and new upload selected
+      if (isLongTermStay) {
+        if (!useExistingAdditional && additionalDoc) {
+          console.log('Uploading additional document...');
+          const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' :
+            additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' :
+              'WorkPermit';
+          await uploadDocument(additionalDoc, docType, user.id);
+        } else {
+          console.log('Using existing additional document:', selectedAdditionalDocId);
+        }
+      }
+
+      const bookingRequest = {
+        GuestID: user.id,
+        RoomID: room.id,
+        CheckInDate: checkInDate,
+        CheckOutDate: checkOutDate,
+        TotalGuests: guests,
+        TotalAmount: totalPrice,
+        DepositPaid: depositAmount,
+        PaymentMethod: "Card",
+        //SpecialRequests: specialRequests
+      };
+
+      console.log('Creating booking with payload:', bookingRequest);
+
+      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingRequest)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create booking' }));
+        throw new Error(errorData.message || `Booking failed (HTTP ${response.status})`);
+      }
+
+      const result = await response.json();
+      console.log('Booking API response:', result);
+
+      const bookingData = result.data || result;
+
+      // ASP.NET Core serializes BookingID as bookingId (camelCase)
+      const extractedBookingId =
+        bookingData.bookingId ||
+        bookingData.bookingID ||
+        bookingData.BookingID ||
+        bookingData.BookingId ||
+        bookingData.id ||
+        bookingData.Id ||
+        bookingData.ID;
+
+      if (!extractedBookingId) throw new Error('No Booking ID returned');
+
+      navigate(`/guest/payment`, {
+        state: {
+          booking: {
+            bookingID: extractedBookingId,
+            bookingStatus: bookingData.bookingStatus || bookingData.BookingStatus,
+            totalAmount: bookingData.totalAmount || bookingData.TotalAmount || totalPrice,
+            depositAmount: bookingData.depositAmount || bookingData.DepositAmount || depositAmount,
+            hotelName: room.hotelName,
+            roomType: room.roomType,
+            checkInDate: checkInDate,
+            checkOutDate: checkOutDate,
+            totalGuests: guests
+          }
+        }
+      });
+    } catch (err: any) {
+      console.error('Booking error:', err);
+      alert(`Failed to create booking: ${err.message}`);
+      setIsSubmitting(false); // Only enable if failed. If success, we navigate away.
+    }
+  };
+
+
+
 
   // Fetch room details
   useEffect(() => {
@@ -183,203 +413,9 @@ const BookingPage: React.FC = () => {
     return result;
   };
 
-  const handleSubmitBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    if (!room || !user?.id) {
-      alert('Missing room or user information');
-      return;
-    }
 
-    // Validation
-    if (!guestName || !guestEmail || !guestPhone || !guestAddress) {
-      alert('Please fill in all required guest information');
-      return;
-    }
 
-    // Validate guest name
-    if (guestName.trim().length < 2) {
-      alert('❌ Guest name must be at least 2 characters');
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    if (!emailRegex.test(guestEmail.trim())) {
-      alert('❌ Please enter a valid email address');
-      return;
-    }
-
-    // Validate phone number format
-    const phoneNumber = guestPhone.replace(/[\s-]/g, '');
-    if (!/^\+?\d{8,15}$/.test(phoneNumber)) {
-      alert('❌ Please enter a valid phone number (8-15 digits)');
-      return;
-    }
-
-    // Validate address
-    if (guestAddress.trim().length < 5) {
-      alert('❌ Please enter a complete address (at least 5 characters)');
-      return;
-    }
-
-    // MANDATORY: ID document (IC) must be uploaded or selected
-    if (!useExistingId && !idDocument) {
-      alert('❌ ID Document (IC) is mandatory for all bookings. Please upload your identification card.');
-      return;
-    }
-    if (useExistingId && !selectedIdDocId) {
-      alert('❌ Please select an existing ID document.');
-      return;
-    }
-
-    // CONDITIONAL: Additional proof required for long-term stays (> 30 days)
-    if (isLongTermStay) {
-      if (!useExistingAdditional && !additionalDoc) {
-        alert(`❌ Additional proof document is required for long-term stays (${stayDuration} days). Please upload Visa, Employment Letter, or Work Permit.`);
-        return;
-      }
-      if (useExistingAdditional && !selectedAdditionalDocId) {
-        alert(`❌ Please select an existing additional proof document.`);
-        return;
-      }
-    }
-
-    if (!checkInDate || !checkOutDate) {
-      alert('Please select check-in and check-out dates');
-      return;
-    }
-
-    // Validation: No past dates
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
-
-    if (checkIn < today) {
-      alert('❌ Check-in date cannot be in the past. Please select today or a future date.');
-      return;
-    }
-
-    // Validation: Check-out must be after check-in
-    if (checkOut <= checkIn) {
-      alert('❌ Check-out date must be at least one day after check-in date.');
-      return;
-    }
-
-    // Validation: Max booking window (1 year in advance)
-    const oneYearFromNow = new Date();
-    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-
-    if (checkIn > oneYearFromNow) {
-      alert('❌ Bookings can only be made up to 1 year in advance.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // Step 1: Upload ID document ONLY if new upload selected
-      if (!useExistingId && idDocument) {
-        console.log('Uploading ID document...');
-        await uploadDocument(idDocument, 'ID', user.id);
-      } else {
-        console.log('Using existing ID document:', selectedIdDocId);
-      }
-
-      // Step 2: Upload additional document if required and new upload selected
-      if (isLongTermStay) {
-        if (!useExistingAdditional && additionalDoc) {
-          console.log('Uploading additional document...');
-          const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' :
-            additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' :
-              'WorkPermit';
-          await uploadDocument(additionalDoc, docType, user.id);
-        } else {
-          console.log('Using existing additional document:', selectedAdditionalDocId);
-        }
-      }
-
-      const bookingRequest = {
-        GuestID: user.id,
-        RoomID: room.id,
-        CheckInDate: checkInDate,
-        CheckOutDate: checkOutDate,
-        TotalGuests: guests,
-        TotalAmount: totalPrice,
-        DepositPaid: depositAmount,
-        PaymentMethod: "Card",
-        //SpecialRequests: specialRequests
-      };
-
-      console.log('Creating booking with payload:', bookingRequest);
-
-      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingRequest)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to create booking' }));
-        throw new Error(errorData.message || `Booking failed (HTTP ${response.status})`);
-      }
-
-      const result = await response.json();
-      console.log('Booking API response:', result);
-      console.log('Full response structure:', JSON.stringify(result, null, 2));
-
-      // Extract booking data from response - handle different response structures
-      const bookingData = result.data || result;
-      console.log('Extracted booking data:', bookingData);
-      console.log('Full booking data:', JSON.stringify(bookingData, null, 2));
-      console.log('All keys in bookingData:', Object.keys(bookingData));
-
-      // ASP.NET Core serializes BookingID as bookingId (camelCase)
-      // Check all possible variations
-      const extractedBookingId =
-        bookingData.bookingId ||
-        bookingData.bookingID ||
-        bookingData.BookingID ||
-        bookingData.BookingId ||
-        bookingData.id ||
-        bookingData.Id ||
-        bookingData.ID;
-
-      console.log('Final extracted booking ID:', extractedBookingId);
-      console.log('Type of booking ID:', typeof extractedBookingId);
-
-      if (!extractedBookingId) {
-        console.error('Failed to extract booking ID from:', bookingData);
-        console.error('Available keys:', Object.keys(bookingData));
-        throw new Error('Booking was created but no booking ID was returned from the server. Please contact support.');
-      }
-
-      // Navigate to payment page with booking data
-      navigate(`/guest/payment`, {
-        state: {
-          booking: {
-            bookingID: extractedBookingId, // Use bookingID (uppercase) for PaymentPage
-            bookingStatus: bookingData.bookingStatus || bookingData.BookingStatus,
-            totalAmount: bookingData.totalAmount || bookingData.TotalAmount || totalPrice,
-            depositAmount: bookingData.depositAmount || bookingData.DepositAmount || depositAmount,
-            hotelName: room.hotelName,
-            roomType: room.roomType,
-            checkInDate: checkInDate,
-            checkOutDate: checkOutDate,
-            totalGuests: guests
-          }
-        }
-      });
-    } catch (err: any) {
-      console.error('Booking error:', err);
-      alert(`Failed to create booking: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -596,7 +632,7 @@ const BookingPage: React.FC = () => {
                                 .filter(d => d.documentType === 'ID' || d.documentType === 'Passport')
                                 .map(doc => (
                                   <option key={doc.documentID} value={doc.documentID}>
-                                    {doc.fileName} ({new Date(doc.uploadDate).toLocaleDateString()}) - {doc.status}
+                                    {doc.fileName} ({formatDate(doc.uploadDate)}) - {doc.status}
                                   </option>
                                 ))
                               }
@@ -692,7 +728,7 @@ const BookingPage: React.FC = () => {
                                   .filter(d => ['Visa', 'EmploymentLetter', 'WorkPermit'].includes(d.documentType))
                                   .map(doc => (
                                     <option key={doc.documentID} value={doc.documentID}>
-                                      {doc.fileName} ({doc.documentType}) - {doc.status}
+                                      {doc.fileName} ({formatDate(doc.uploadDate)}) - {doc.status}
                                     </option>
                                   ))
                                 }
@@ -715,10 +751,17 @@ const BookingPage: React.FC = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="bg-white rounded-lg shadow-md p-6 relative">
+                  {isSubmitting && (
+                    <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center z-10 rounded-lg">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                      <p className="text-sm text-blue-600 font-medium">Processing Booking...</p>
+                    </div>
+                  )}
                   <button
                     type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition text-lg"
+                    disabled={isSubmitting}
+                    className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition text-lg ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     Proceed to Payment →
                   </button>

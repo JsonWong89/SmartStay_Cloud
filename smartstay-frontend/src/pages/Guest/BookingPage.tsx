@@ -39,7 +39,35 @@ const BookingPage: React.FC = () => {
 
   // Room data from API
   const [room, setRoom] = useState<RoomDetails | null>(null);
+  // Document states
+  const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
+  const [useExistingId, setUseExistingId] = useState(false);
+  const [selectedIdDocId, setSelectedIdDocId] = useState<number | null>(null);
+  const [useExistingAdditional, setUseExistingAdditional] = useState(false);
+  const [selectedAdditionalDocId, setSelectedAdditionalDocId] = useState<number | null>(null);
+
   const [isLongTermStay, setIsLongTermStay] = useState(false);
+
+  // Load existing documents
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/documents/guest/${user.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          // Handle various response structures
+          const docs = result.success !== undefined
+            ? (result.data || [])
+            : (Array.isArray(result) ? result : (result.data || []));
+          setExistingDocuments(docs);
+        }
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+      }
+    };
+    fetchDocuments();
+  }, [user?.id]);
 
   // Fetch room details
   useEffect(() => {
@@ -195,16 +223,26 @@ const BookingPage: React.FC = () => {
       return;
     }
 
-    // MANDATORY: ID document (IC) must be uploaded
-    if (!idDocument) {
+    // MANDATORY: ID document (IC) must be uploaded or selected
+    if (!useExistingId && !idDocument) {
       alert('❌ ID Document (IC) is mandatory for all bookings. Please upload your identification card.');
+      return;
+    }
+    if (useExistingId && !selectedIdDocId) {
+      alert('❌ Please select an existing ID document.');
       return;
     }
 
     // CONDITIONAL: Additional proof required for long-term stays (> 30 days)
-    if (isLongTermStay && !additionalDoc) {
-      alert(`❌ Additional proof document is required for long-term stays (${stayDuration} days). Please upload Visa, Employment Letter, or Work Permit.`);
-      return;
+    if (isLongTermStay) {
+      if (!useExistingAdditional && !additionalDoc) {
+        alert(`❌ Additional proof document is required for long-term stays (${stayDuration} days). Please upload Visa, Employment Letter, or Work Permit.`);
+        return;
+      }
+      if (useExistingAdditional && !selectedAdditionalDocId) {
+        alert(`❌ Please select an existing additional proof document.`);
+        return;
+      }
     }
 
     if (!checkInDate || !checkOutDate) {
@@ -241,17 +279,25 @@ const BookingPage: React.FC = () => {
     try {
       setLoading(true);
 
-      // Step 1: Upload ID document
-      console.log('Uploading ID document...');
-      await uploadDocument(idDocument, 'ID', user.id);
+      // Step 1: Upload ID document ONLY if new upload selected
+      if (!useExistingId && idDocument) {
+        console.log('Uploading ID document...');
+        await uploadDocument(idDocument, 'ID', user.id);
+      } else {
+        console.log('Using existing ID document:', selectedIdDocId);
+      }
 
-      // Step 2: Upload additional document if required
-      if (isLongTermStay && additionalDoc) {
-        console.log('Uploading additional document...');
-        const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' :
-          additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' :
-            'WorkPermit';
-        await uploadDocument(additionalDoc, docType, user.id);
+      // Step 2: Upload additional document if required and new upload selected
+      if (isLongTermStay) {
+        if (!useExistingAdditional && additionalDoc) {
+          console.log('Uploading additional document...');
+          const docType = additionalDoc.name.toLowerCase().includes('visa') ? 'Visa' :
+            additionalDoc.name.toLowerCase().includes('employment') ? 'EmploymentLetter' :
+              'WorkPermit';
+          await uploadDocument(additionalDoc, docType, user.id);
+        } else {
+          console.log('Using existing additional document:', selectedAdditionalDocId);
+        }
       }
 
       const bookingRequest = {
@@ -487,75 +533,185 @@ const BookingPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-800 mb-2">
-                        Upload ID Document (IC) <span className="text-red-600 text-lg">*</span>
-                      </label>
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={handleIdUpload}
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        required
-                      />
-                      {idDocument ? (
-                        <p className="mt-2 text-sm text-green-600 font-medium">
-                          ✓ {idDocument.name} uploaded successfully
-                        </p>
-                      ) : (
-                        <p className="mt-2 text-xs text-red-600 font-medium">
-                          ⚠ Please upload your IC/Passport before proceeding
-                        </p>
-                      )}
-                    </div>
-
-                    {isLongTermStay && (
-                      <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
-                        <div className="flex">
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="ml-3">
-                            <p className="text-sm font-semibold text-orange-800">
-                              ⏱ Long-Term Stay Detected: {stayDuration} Days
-                            </p>
-                            <p className="text-xs text-orange-700 mt-1">
-                              Stays exceeding 30 days require additional verification documents
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {isLongTermStay && (
+                    <div className="space-y-4">
+                      {/* ID Document Section */}
                       <div>
                         <label className="block text-sm font-semibold text-gray-800 mb-2">
-                          📎 Additional Proof Document <span className="text-red-600 text-lg">*</span>
+                          ID Document (IC) / Passport <span className="text-red-600 text-lg">*</span>
                         </label>
-                        <input
-                          type="file"
-                          accept="image/*,.pdf"
-                          onChange={handleAdditionalDocUpload}
-                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                          required={isLongTermStay}
-                        />
-                        {additionalDoc ? (
-                          <p className="mt-2 text-sm text-green-600 font-medium">
-                            ✓ {additionalDoc.name} uploaded successfully
-                          </p>
-                        ) : (
-                          <p className="mt-2 text-xs text-orange-600 font-medium">
-                            ⚠ Required: Work permit, student visa, or employment letter
-                          </p>
+
+                        {/* Toggle for ID Document */}
+                        {existingDocuments.some(d => d.documentType === 'ID' || d.documentType === 'Passport') && (
+                          <div className="flex gap-4 mb-3">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                checked={!useExistingId}
+                                onChange={() => setUseExistingId(false)}
+                                className="text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">Upload New</span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                checked={useExistingId}
+                                onChange={() => setUseExistingId(true)}
+                                className="text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">Select Existing</span>
+                            </label>
+                          </div>
                         )}
-                        <p className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                          <strong>Accepted documents:</strong> Work Permit, Student Visa, Employment Letter, Sponsorship Letter
-                        </p>
+
+                        {!useExistingId ? (
+                          <div>
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={handleIdUpload}
+                              className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                              required={!useExistingId}
+                            />
+                            {idDocument ? (
+                              <p className="mt-2 text-sm text-green-600 font-medium">
+                                ✓ {idDocument.name} uploaded successfully
+                              </p>
+                            ) : (
+                              <p className="mt-2 text-xs text-red-600 font-medium">
+                                ⚠ Please upload your IC/Passport before proceeding
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <select
+                              value={selectedIdDocId || ''}
+                              onChange={(e) => setSelectedIdDocId(Number(e.target.value))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              required={useExistingId}
+                            >
+                              <option value="">-- Select an existing document --</option>
+                              {existingDocuments
+                                .filter(d => d.documentType === 'ID' || d.documentType === 'Passport')
+                                .map(doc => (
+                                  <option key={doc.documentID} value={doc.documentID}>
+                                    {doc.fileName} ({new Date(doc.uploadDate).toLocaleDateString()}) - {doc.status}
+                                  </option>
+                                ))
+                              }
+                            </select>
+                            {selectedIdDocId && (
+                              <p className="mt-2 text-sm text-blue-600 font-medium">
+                                ✓ Document selected
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      {isLongTermStay && (
+                        <div className="bg-orange-50 border-l-4 border-orange-500 p-4">
+                          <div className="flex">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm font-semibold text-orange-800">
+                                ⏱ Long-Term Stay Detected: {stayDuration} Days
+                              </p>
+                              <p className="text-xs text-orange-700 mt-1">
+                                Stays exceeding 30 days require additional verification documents
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {isLongTermStay && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-800 mb-2">
+                            📎 Additional Proof Document <span className="text-red-600 text-lg">*</span>
+                          </label>
+
+                          {/* Toggle for Additional Document */}
+                          {existingDocuments.some(d => ['Visa', 'EmploymentLetter', 'WorkPermit'].includes(d.documentType)) && (
+                            <div className="flex gap-4 mb-3">
+                              <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  checked={!useExistingAdditional}
+                                  onChange={() => setUseExistingAdditional(false)}
+                                  className="text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">Upload New</span>
+                              </label>
+                              <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  checked={useExistingAdditional}
+                                  onChange={() => setUseExistingAdditional(true)}
+                                  className="text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">Select Existing</span>
+                              </label>
+                            </div>
+                          )}
+
+                          {!useExistingAdditional ? (
+                            <>
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                onChange={handleAdditionalDocUpload}
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                required={isLongTermStay && !useExistingAdditional}
+                              />
+                              {additionalDoc ? (
+                                <p className="mt-2 text-sm text-green-600 font-medium">
+                                  ✓ {additionalDoc.name} uploaded successfully
+                                </p>
+                              ) : (
+                                <p className="mt-2 text-xs text-orange-600 font-medium">
+                                  ⚠ Required: Work permit, student visa, or employment letter
+                                </p>
+                              )}
+                            </>
+                          ) : (
+                            <div>
+                              <select
+                                value={selectedAdditionalDocId || ''}
+                                onChange={(e) => setSelectedAdditionalDocId(Number(e.target.value))}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required={isLongTermStay && useExistingAdditional}
+                              >
+                                <option value="">-- Select an existing document --</option>
+                                {existingDocuments
+                                  .filter(d => ['Visa', 'EmploymentLetter', 'WorkPermit'].includes(d.documentType))
+                                  .map(doc => (
+                                    <option key={doc.documentID} value={doc.documentID}>
+                                      {doc.fileName} ({doc.documentType}) - {doc.status}
+                                    </option>
+                                  ))
+                                }
+                              </select>
+                              {selectedAdditionalDocId && (
+                                <p className="mt-2 text-sm text-blue-600 font-medium">
+                                  ✓ Document selected
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          <p className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                            <strong>Accepted documents:</strong> Work Permit, Student Visa, Employment Letter, Sponsorship Letter
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
                 </div>
 
                 {/* Submit Button */}

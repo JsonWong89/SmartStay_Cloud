@@ -200,7 +200,7 @@ const MyDocuments: React.FC = () => {
                       onClick={() =>
                         handleViewDocument(document.documentID)
                       }
-                      className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition text-sm font-medium"
+                      className="ml-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition text-sm font-medium cursor-pointer"
                     >
                       View
                     </button>

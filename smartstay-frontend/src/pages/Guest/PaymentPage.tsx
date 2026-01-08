@@ -27,7 +27,7 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
   const elements = useElements();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  
+
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
@@ -150,7 +150,8 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
         setProcessing(false);
       }
       // Trigger serverless notification (e.g., AWS Lambda via API Gateway)
-      try {
+      //move to backend
+      /*try {
       await fetch('https://orrgntypl5.execute-api.us-east-1.amazonaws.com/development/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,7 +167,7 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
     } catch (notifyErr) {
       // Don't stop the flow if notification fails, just log it
       console.warn("⚠️ Notification failed:", notifyErr);
-    }
+    }*/
     }
   };
 
@@ -192,7 +193,7 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Payment Information</h2>
-        
+
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Card Details
@@ -234,11 +235,10 @@ const CheckoutForm: React.FC<{ booking: BookingData }> = ({ booking }) => {
         <button
           type="submit"
           disabled={!stripe || processing || succeeded}
-          className={`w-full py-3 px-4 rounded-md font-semibold text-white transition ${
-            processing || succeeded
+          className={`w-full py-3 px-4 rounded-md font-semibold text-white transition ${processing || succeeded
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-700'
-          }`}
+            }`}
         >
           {processing ? 'Processing...' : succeeded ? 'Payment Successful!' : `Pay $${booking.depositAmount.toFixed(2)}`}
         </button>
@@ -285,7 +285,7 @@ const PaymentPage: React.FC = () => {
   }
 
   const nights = Math.ceil(
-    (new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / 
+    (new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) /
     (1000 * 60 * 60 * 24)
   );
 
@@ -319,7 +319,7 @@ const PaymentPage: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Booking Summary</h2>
-              
+
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Booking ID</p>

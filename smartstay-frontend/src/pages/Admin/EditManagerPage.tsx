@@ -139,7 +139,7 @@ const EditManagerPage: React.FC = () => {
         Email: form.email,
         Gender: form.gender,
         Role: form.role,
-        Password: 'KEEP_CURRENT_PASSWORD',
+        // Don't send Password field when editing manager details
       };
       
       if (form.hotelId) {

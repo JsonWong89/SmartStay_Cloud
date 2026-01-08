@@ -88,8 +88,8 @@ const CreateHotelPage: React.FC = () => {
       setMessageType('error');
       return;
     }
-    if (form.description.length > 100) {
-      setMessage('Description must be 100 characters or less');
+    if (form.description.length > 200) {
+      setMessage('Description must be 200 characters or less');
       setMessageType('error');
       return;
     }
@@ -234,7 +234,7 @@ const CreateHotelPage: React.FC = () => {
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label htmlFor="description">Description (max 100 characters)</label>
+                <label htmlFor="description">Description (max 200 characters)</label>
                 <textarea
                   id="description"
                   name="description"
@@ -243,11 +243,11 @@ const CreateHotelPage: React.FC = () => {
                   className="input"
                   placeholder="A brief description of the hotel..."
                   rows={3}
-                  maxLength={100}
+                  maxLength={200}
                   style={{ resize: 'vertical' }}
                 />
                 <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '12px' }}>
-                  {form.description.length}/100 characters
+                  {form.description.length}/200 characters
                 </small>
               </div>
 

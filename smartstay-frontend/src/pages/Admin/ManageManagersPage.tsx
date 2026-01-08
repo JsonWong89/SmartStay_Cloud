@@ -357,6 +357,20 @@ const ManageManagersPage: React.FC = () => {
                                 >
                                   Edit
                                 </Link>
+                                <Link
+                                  to={`/admin/manage-managers/update-password/${m.userID}`}
+                                  className="btn-secondary"
+                                  style={{
+                                    padding: '6px 5px',
+                                    fontSize: '13px',
+                                    textDecoration: 'none',
+                                    background: '#fef3c7',
+                                    color: '#92400e',
+                                    border: '1px solid #fde68a'
+                                  }}
+                                >
+                                  Update Password
+                                </Link>
                                 <button
                                   onClick={() => handleDelete(m.userID, m.fullName)}
                                   className="btn-secondary"

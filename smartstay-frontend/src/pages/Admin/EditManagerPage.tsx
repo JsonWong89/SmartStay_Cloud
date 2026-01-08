@@ -7,7 +7,6 @@ import { API_ENDPOINTS, apiGet, apiPut } from '../../config/api';
 type FormState = {
   fullName: string;
   email: string;
-  password: string;
   gender: string;
   role: string;
   hotelId: string;
@@ -24,7 +23,6 @@ const EditManagerPage: React.FC = () => {
   const [form, setForm] = useState<FormState>({
     fullName: '',
     email: '',
-    password: '',
     gender: '',
     role: 'Manager',
     hotelId: '',
@@ -35,7 +33,6 @@ const EditManagerPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
-  const [originalPassword, setOriginalPassword] = useState<string>(''); // Track original password
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -78,18 +75,13 @@ const EditManagerPage: React.FC = () => {
         
         // Normalize case-insensitive properties
         const hotelIdValue = data.hotelId ?? data.HotelId ?? data.HotelID ?? data.hotelID;
-        const passwordValue = data.password ?? data.Password ?? '';
         
         console.log('Fetched manager data:', data);
         console.log('Extracted hotelId:', hotelIdValue);
         
-        // Store original password to compare later
-        setOriginalPassword(passwordValue);
-        
         setForm({
           fullName: data.fullName ?? data.FullName ?? '',
           email: data.email ?? data.Email ?? '',
-          password: passwordValue, // Show existing password
           gender: data.gender ?? data.Gender ?? '',
           role: data.role ?? data.Role ?? 'Manager',
           hotelId: hotelIdValue ? hotelIdValue.toString() : '',
@@ -134,11 +126,6 @@ const EditManagerPage: React.FC = () => {
       setMessageType('error');
       return;
     }
-    if (form.password && form.password.trim().length > 0 && form.password.trim().length < 6) {
-      setMessage('Password must be at least 6 characters');
-      setMessageType('error');
-      return;
-    }
     if (form.hotelId && isNaN(Number(form.hotelId))) {
       setMessage('Hotel ID must be a number');
       setMessageType('error');
@@ -152,24 +139,8 @@ const EditManagerPage: React.FC = () => {
         Email: form.email,
         Gender: form.gender,
         Role: form.role,
+        Password: 'KEEP_CURRENT_PASSWORD',
       };
-      
-      // Only send password if it was actually changed
-      const currentPassword = form.password ? form.password.trim() : '';
-      const hasPasswordChanged = currentPassword !== originalPassword;
-      
-      if (hasPasswordChanged) {
-        if (currentPassword === '') {
-          // Password was cleared - send placeholder
-          payload.Password = "KEEP_CURRENT_PASSWORD";
-        } else {
-          // Password was changed - send new password
-          payload.Password = currentPassword;
-        }
-      } else {
-        // Password unchanged - send placeholder
-        payload.Password = "KEEP_CURRENT_PASSWORD";
-      }
       
       if (form.hotelId) {
         payload.HotelId = Number(form.hotelId);
@@ -273,22 +244,6 @@ const EditManagerPage: React.FC = () => {
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="password">Password (optional)</label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="text"
-                    value={form.password}
-                    onChange={handleChange}
-                    className="input"
-                    placeholder="Leave empty to keep current password"
-                  />
-                  <small style={{ display: 'block', marginTop: '4px', color: '#6b7280', fontSize: '12px' }}>
-                    Leave empty to keep current password, or enter new password (min 6 characters)
-                  </small>
                 </div>
 
                 <div className="form-group">

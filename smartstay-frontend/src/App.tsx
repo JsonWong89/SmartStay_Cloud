@@ -55,6 +55,7 @@ import CreateHotelPage from "./pages/Admin/CreateHotelPage";
 import EditHotelPage from "./pages/Admin/EditHotelPage";
 import CreateManagerPage from "./pages/Admin/CreateManagerPage";
 import EditManagerPage from "./pages/Admin/EditManagerPage";
+import UpdateManagerPasswordPage from "./pages/Admin/UpdateManagerPasswordPage";
 import CreateRoomPage from "./pages/Admin/CreateRoomPage";
 import EditRoomPage from "./pages/Admin/EditRoomPage";
 
@@ -234,6 +235,14 @@ const App: React.FC = () => {
         element={
           <ProtectedRoute allowedRoles={["Admin"]}>
             <EditManagerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/manage-managers/update-password/:id"
+        element={
+          <ProtectedRoute allowedRoles={["Admin"]}>
+            <UpdateManagerPasswordPage />
           </ProtectedRoute>
         }
       />

@@ -31,6 +31,9 @@ export default function ManagerManageRooms() {
   const [showEdit, setShowEdit] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
+  const [newRoomFile, setNewRoomFile] = useState<File | null>(null);
+  const [selectedRoomFile, setSelectedRoomFile] = useState<File | null>(null);
+
   const [newRoom, setNewRoom] = useState({
     number: "",
     type: "Deluxe",
@@ -138,19 +141,35 @@ export default function ManagerManageRooms() {
         alert("You are not assigned to a hotel yet.");
         return;
       }
-      if (!newRoom.image) {
+      // Check if file is selected (we prefer the file over the base64 string for upload)
+      if (!newRoomFile && !newRoom.image) {
         alert("Please select an image");
         return;
       }
+
+      let finalImageUrl = newRoom.image;
+
+      if (newRoomFile) {
+        const formData = new FormData();
+        formData.append('file', newRoomFile);
+
+        const uploadRes = await axios.post(`${API_BASE_URL}/api/rooms/upload-image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        finalImageUrl = (uploadRes.data as any).url;
+        console.log("Image uploaded to S3:", finalImageUrl);
+      }
+
       // Backend expects Room object, not FormData
-      const payload = {
+      payload = {
         hotelID: user?.hotelId,
         roomNumber: newRoom.number,
         roomType: newRoom.type,
         pricePerNight: parseFloat(newRoom.price),
         status: newRoom.status,
         description: newRoom.description,
-        imageURL: newRoom.image,
+        imageURL: finalImageUrl,
       };
       console.log("Sending payload:", payload);
 
@@ -168,6 +187,7 @@ export default function ManagerManageRooms() {
         description: "",
         image: "",
       });
+      setNewRoomFile(null);
       fetchRooms();
     }
     catch (err: any) {
@@ -189,6 +209,20 @@ export default function ManagerManageRooms() {
     if (!selectedRoom) return;
 
     try {
+      let finalImageUrl = selectedRoom.imageUrl;
+
+      if (selectedRoomFile) {
+        const formData = new FormData();
+        formData.append('file', selectedRoomFile);
+
+        const uploadRes = await axios.post(`${API_BASE_URL}/api/rooms/upload-image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        finalImageUrl = (uploadRes.data as any).url;
+        console.log("New image uploaded to S3:", finalImageUrl);
+      }
+
       const payload = {
         hotelID: selectedRoom.hotelID,
         roomNumber: selectedRoom.roomNumber,
@@ -196,7 +230,7 @@ export default function ManagerManageRooms() {
         pricePerNight: selectedRoom.pricePerNight,
         status: selectedRoom.status,
         description: selectedRoom.description,
-        ImageURL: selectedRoom.imageUrl,
+        ImageURL: finalImageUrl,
       };
 
       await axios.put(
@@ -206,6 +240,7 @@ export default function ManagerManageRooms() {
 
       alert("Room updated successfully!");
       setShowEdit(false);
+      setSelectedRoomFile(null);
       fetchRooms();
     } catch (err: any) {
       alert("Failed to update room: " + (err.response?.data?.message || err.message));
@@ -317,6 +352,8 @@ export default function ManagerManageRooms() {
                       onClick={() => {
                         setSelectedRoom(r);
                         setShowEdit(true);
+                        setNewPreview(null);
+                        setSelectedRoomFile(null);
                       }}
                     >
                       Edit
@@ -373,11 +410,153 @@ export default function ManagerManageRooms() {
                 const file = e.target.files?.[0];
                 if (!file) return;
 
+                setNewRoomFile(file); // Store file for upload
+
                 const reader = new FileReader();
                 reader.onloadend = () => {
                   setNewRoom({ ...newRoom, image: reader.result as string });
                 };
                 reader.readAsDataURL(file);
+              }}
+            />
+
+            {/* Preview */}
+            {newRoom.image && (
+              <img
+                src={newRoom.image}
+                alt="Preview"
+                style={{
+                  width: "100%",
+                  height: 180,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  margin: "10px 0",
+                  border: "1px solid #ddd",
+                }}
+              />
+            )}
+
+            {/* Error message */}
+            {!newRoom.image && (
+              <p style={{ color: "red", fontSize: "14px", marginTop: "4px" }}>
+                Please select room image
+              </p>
+            )}
+
+
+            {/* Room Number */}
+            <label style={{ fontWeight: 600 }}>Room Number</label>
+            <input
+              placeholder="Room Number"
+              value={newRoom.number}
+              onChange={(e) => setNewRoom({ ...newRoom, number: e.target.value })}
+            />
+
+            {/* Room Type */}
+            <label style={{ fontWeight: 600 }}>Room Type</label>
+            <select
+              value={newRoom.type}
+              onChange={(e) => setNewRoom({ ...newRoom, type: e.target.value })}
+            >
+              <option>Deluxe</option>
+              <option>Suite</option>
+              <option>Standard</option>
+              <option>Family</option>
+            </select>
+
+            {/* Price */}
+            <label style={{ fontWeight: 600 }}>Price Per Night (RM)</label>
+            <input
+              type="number"
+              placeholder="Price"
+              value={newRoom.price}
+              onChange={(e) => setNewRoom({ ...newRoom, price: e.target.value })}
+            />
+
+            {/* Status */}
+            <label style={{ fontWeight: 600 }}>Status</label>
+            <select
+              value={newRoom.status}
+              onChange={(e) => setNewRoom({ ...newRoom, status: e.target.value })}
+            >
+              <option>Available</option>
+              <option>Occupied</option>
+              <option>Maintenance</option>
+            </select>
+
+            {/* Description */}
+            <label style={{ fontWeight: 600 }}>Description</label>
+            <textarea
+              placeholder="Description"
+              value={newRoom.description}
+              onChange={(e) => setNewRoom({ ...newRoom, description: e.target.value })}
+            />
+
+            {/* Buttons */}
+            <div className="modal-actions">
+              <button className="btn-add" onClick={handleAddRoom}>Add</button>
+              <button className="btn-cancel" onClick={() => setShowAdd(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* EDIT MODAL */}
+      {showEdit && selectedRoom && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Edit Room</h3>
+
+            {/* Show current image */}
+            <label style={{ fontWeight: 600 }}>Current Image</label>
+            <img
+              src={newPreview || selectedRoom.imageUrl}
+              alt="Room Preview"
+              style={{
+                width: "100%",
+                height: 180,
+                objectFit: "cover",
+                borderRadius: 8,
+                marginBottom: 12,
+                border: "1px solid #ddd",
+              }}
+            />
+            {/* Change image button */}
+            <button
+              className="btn-edit"
+              style={{ marginBottom: 10 }}
+              onClick={() => document.getElementById("editImageInput")?.click()}
+            >
+              Change Image
+            </button>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              id="editImageInput"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setSelectedRoomFile(file); // Store file for upload
+
+                  const reader = new FileReader();
+
+                  reader.onloadend = () => {
+                    const base64 = reader.result as string;
+
+                    // Update selectedRoom with new Base64 image (just for preview in UI)
+                    // Note: we don't assume the backend takes this base64 anymore
+                    // We just use it for immediate visual feedback
+
+                    // Update preview
+                    setNewPreview(base64);
+                  };
+
+                  reader.readAsDataURL(file);
+                }
               }}
             />
 

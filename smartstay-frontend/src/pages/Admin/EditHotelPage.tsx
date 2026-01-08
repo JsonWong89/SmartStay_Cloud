@@ -41,6 +41,8 @@ const EditHotelPage: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -94,6 +96,12 @@ const EditHotelPage: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setMessage('');
@@ -112,12 +120,33 @@ const EditHotelPage: React.FC = () => {
 
     setSubmitting(true);
     try {
+      let finalImageUrl = form.imageUrl;
+
+      // Step 0: Upload Image if selected
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const uploadRes = await fetch(`${API_ENDPOINTS.HOTELS.BASE}/upload-image`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const uploadData = await uploadRes.json();
+        finalImageUrl = uploadData.url;
+        console.log('Image uploaded successfully:', finalImageUrl);
+      }
+
       const payload: any = {
         hotelName: form.hotelName.trim(),
         address: form.address.trim() || null,
         city: form.city.trim() || null,
         description: form.description.trim() || null,
-        imageUrl: form.imageUrl.trim() || null,
+        imageUrl: finalImageUrl || null,
         phoneNumber: form.phoneNumber.trim() || null,
         email: form.email.trim() || null,
         managerID: form.managerID || null,
@@ -128,7 +157,7 @@ const EditHotelPage: React.FC = () => {
       const data = contentType.includes('application/json')
         ? await res.json()
         : { message: await res.text() };
-        
+
       if (!res.ok) {
         throw new Error(data?.message || `Failed to update hotel (HTTP ${res.status})`);
       }
@@ -263,16 +292,22 @@ const EditHotelPage: React.FC = () => {
               </div>
 
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label htmlFor="imageUrl">Image URL</label>
+                <label htmlFor="imageFile">Hotel Image</label>
                 <input
-                  id="imageUrl"
-                  name="imageUrl"
-                  type="url"
-                  value={form.imageUrl}
-                  onChange={handleChange}
+                  id="imageFile"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
                   className="input"
-                  placeholder="https://example.com/hotel-image.jpg"
                 />
+                <small style={{ display: 'block', marginTop: '4px', color: '#6b7280' }}>
+                  Current URL: {form.imageUrl || 'None'}
+                </small>
+                {imageFile && (
+                  <small style={{ display: 'block', marginTop: '4px', color: '#10b981' }}>
+                    New File Selected: {imageFile.name}
+                  </small>
+                )}
               </div>
 
               <div className="form-group">

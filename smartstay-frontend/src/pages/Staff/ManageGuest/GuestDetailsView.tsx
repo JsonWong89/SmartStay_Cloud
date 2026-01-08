@@ -48,7 +48,7 @@ export default function GuestDetailsView({
   onVerifyDocument,
   onEdit,
 }: // navigate,
-Props) {
+  Props) {
   const navigate = useNavigate();
   const isActive = guest.isActive;
   const hasRegisteredAccount = guest.hasAccount;
@@ -194,17 +194,17 @@ Props) {
           <p className="text-2xl font-bold text-gray-900">
             {guest.lastBookingDate
               ? new Date(guest.lastBookingDate).toLocaleDateString("en-MY", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
               : "N/A"}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {guest.lastBookingDate
               ? new Date(guest.lastBookingDate).toLocaleDateString("en-MY", {
-                  year: "numeric",
-                })
+                year: "numeric",
+              })
               : "Never booked"}
           </p>
         </div>
@@ -625,9 +625,13 @@ Props) {
                           </span>
                         )}
                         <a
-                          href={`${API_URL}${doc.fileUrl}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.open(`${API_BASE_URL}/api/documents/view/${doc.documentId}`, "_blank");
+                          }}
+                          className="text-gray-600 hover:text-purple-600 transition"
+                          title="View Document"
                         >
                           <DownloadIcon size={18} />
                         </a>

@@ -111,11 +111,17 @@ export default function HotelInfo() {
   }
 
   const handleImageChange = async (e: any) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const f = e.target.files[0];
+    if (!f) return;
 
-    const base64 = await fileToBase64(file);
-    setPreviewImage(base64);
+    setFile(f);
+
+    // Preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewImage(reader.result as string);
+    };
+    reader.readAsDataURL(f);
   };
 
 
@@ -123,6 +129,20 @@ export default function HotelInfo() {
   // Save updates
   const handleSave = async () => {
     try {
+      let finalImageUrl = hotel.imageUrl;
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file); // API expects 'file'
+
+        const uploadRes = await axios.post(`${API_BASE_URL}/api/Hotels/upload-image`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        finalImageUrl = (uploadRes.data as any).url;
+        console.log("Hotel image uploaded to S3:", finalImageUrl);
+      }
+
       const payload = {
         hotelName: form.hotelName,
         address: hotel.address,
@@ -131,7 +151,7 @@ export default function HotelInfo() {
         phoneNumber: form.phoneNumber,
         email: form.email,
         rating: hotel.rating,
-        imageUrl: previewImage || hotel.imageUrl,
+        imageUrl: finalImageUrl,
         managerID: hotel.managerID,
       };
 
@@ -148,6 +168,7 @@ export default function HotelInfo() {
 
       alert("Hotel updated successfully!");
       setEditMode(false);
+      setFile(null); // Clear file
       fetchHotel();
     } catch (err) {
       console.error("UPDATE HOTEL ERROR:", err);

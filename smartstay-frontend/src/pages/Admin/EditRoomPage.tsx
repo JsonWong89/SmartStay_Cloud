@@ -42,6 +42,8 @@ const EditRoomPage: React.FC = () => {
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
   useEffect(() => {
     const fetchHotels = async () => {
       setLoadingHotels(true);
@@ -78,13 +80,13 @@ const EditRoomPage: React.FC = () => {
       setLoading(true);
       try {
         const res = await apiGet(API_ENDPOINTS.ROOMS.BY_ID(id));
-        
+
         if (!res.ok) {
           throw new Error(`Failed to fetch room (HTTP ${res.status})`);
         }
 
         const data = await res.json();
-        
+
         setForm({
           hotelId: (data.hotelId ?? data.HotelID ?? data.hotelID)?.toString() ?? '',
           roomNumber: data.roomNumber ?? data.RoomNumber ?? '',
@@ -110,6 +112,12 @@ const EditRoomPage: React.FC = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -140,18 +148,18 @@ const EditRoomPage: React.FC = () => {
     }
 
     setSubmitting(true);
-    
+
     // Check for duplicate room number in the same hotel (excluding current room)
     try {
       const checkRes = await apiGet(API_ENDPOINTS.ROOMS.BASE);
       if (checkRes.ok) {
         const rooms = await checkRes.json();
-        const duplicate = rooms.find((r: any) => 
+        const duplicate = rooms.find((r: any) =>
           (r.roomID ?? r.RoomID) !== Number(id) && // Exclude current room
-          (r.hotelID ?? r.hotelId) === Number(form.hotelId) && 
+          (r.hotelID ?? r.hotelId) === Number(form.hotelId) &&
           (r.roomNumber ?? r.RoomNumber) === form.roomNumber.trim()
         );
-        
+
         if (duplicate) {
           setMessage(`Room number "${form.roomNumber}" already exists in this hotel. Please use a different room number.`);
           setMessageType('error');
@@ -163,9 +171,30 @@ const EditRoomPage: React.FC = () => {
       console.error('Failed to check for duplicates', e);
     }
     try {
+      let finalImageUrl = form.imageUrl;
+
+      // Upload Image if selected
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const uploadRes = await fetch(`${API_ENDPOINTS.ROOMS.BASE}/upload-image`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload image');
+        }
+
+        const uploadData = await uploadRes.json();
+        finalImageUrl = uploadData.url;
+        console.log('Image uploaded successfully:', finalImageUrl);
+      }
+
       // Find the selected hotel object
       const selectedHotel = hotels.find(h => h.hotelID === Number(form.hotelId));
-      
+
       const payload = {
         HotelID: Number(form.hotelId),
         Hotel: selectedHotel ? {
@@ -181,7 +210,7 @@ const EditRoomPage: React.FC = () => {
         PricePerNight: Number(form.pricePerNight),
         Status: form.status,
         Description: form.description || "",
-        ImageUrl: form.imageUrl || "",
+        ImageUrl: finalImageUrl || "",
       };
 
       console.log("Updating room with payload:", payload);
@@ -191,7 +220,7 @@ const EditRoomPage: React.FC = () => {
       const data = contentType.includes('application/json')
         ? await res.json()
         : { message: await res.text() };
-      
+
       if (!res.ok) {
         throw new Error(data?.message || `Failed to update room (HTTP ${res.status})`);
       }
@@ -225,8 +254,8 @@ const EditRoomPage: React.FC = () => {
         <div className="content-card">
           <div className="card-header" style={{ gap: 12 }}>
             <h2 style={{ marginRight: 'auto', margin: 0 }}>Room Details</h2>
-            <Link 
-              to="/admin/rooms" 
+            <Link
+              to="/admin/rooms"
               className="btn-secondary"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
@@ -244,9 +273,9 @@ const EditRoomPage: React.FC = () => {
               <p>Loading room data...</p>
             ) : (
               <form onSubmit={handleSubmit} className="form-grid">
-                <div style={{ 
-                  gridColumn: '1 / -1', 
-                  padding: '12px 16px', 
+                <div style={{
+                  gridColumn: '1 / -1',
+                  padding: '12px 16px',
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   borderRadius: '8px',
                   color: 'white',
@@ -304,9 +333,9 @@ const EditRoomPage: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ 
-                  gridColumn: '1 / -1', 
-                  padding: '12px 16px', 
+                <div style={{
+                  gridColumn: '1 / -1',
+                  padding: '12px 16px',
                   background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                   borderRadius: '8px',
                   color: 'white',
@@ -349,9 +378,9 @@ const EditRoomPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div style={{ 
-                  gridColumn: '1 / -1', 
-                  padding: '12px 16px', 
+                <div style={{
+                  gridColumn: '1 / -1',
+                  padding: '12px 16px',
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   borderRadius: '8px',
                   color: 'white',
@@ -363,16 +392,22 @@ const EditRoomPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="imageUrl">Image URL (optional)</label>
+                  <label htmlFor="imageFile">Room Image (optional)</label>
                   <input
-                    id="imageUrl"
-                    name="imageUrl"
-                    type="url"
-                    value={form.imageUrl}
-                    onChange={handleChange}
+                    id="imageFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
                     className="input"
-                    placeholder="https://example.com/room-image.jpg"
                   />
+                  <small style={{ display: 'block', marginTop: '4px', color: '#6b7280' }}>
+                    Current URL: {form.imageUrl || 'None'}
+                  </small>
+                  {imageFile && (
+                    <small style={{ display: 'block', marginTop: '4px', color: '#10b981' }}>
+                      New File Selected: {imageFile.name}
+                    </small>
+                  )}
                 </div>
 
                 <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -389,16 +424,16 @@ const EditRoomPage: React.FC = () => {
                 </div>
 
                 <div className="form-actions" style={{ marginTop: '24px' }}>
-                  <button 
-                    type="submit" 
-                    className="btn-primary" 
+                  <button
+                    type="submit"
+                    className="btn-primary"
                     disabled={submitting}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                   >
                     {submitting ? '⏳ Updating...' : '💾 Update Room'}
                   </button>
-                  <Link 
-                    to="/admin/rooms" 
+                  <Link
+                    to="/admin/rooms"
                     className="btn-secondary"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >

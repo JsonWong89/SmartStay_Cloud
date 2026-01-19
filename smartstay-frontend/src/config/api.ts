@@ -7,27 +7,27 @@ export const API_BASE_URL = (import.meta as any).env.VITE_API_URL || 'http://sma
 export const API_ENDPOINTS = {
   // Base URL
   BASE: API_BASE_URL,
-  
+
   // Authentication
   AUTH: {
     LOGIN: `${API_BASE_URL}/api/Auth/login`,
     REGISTER: `${API_BASE_URL}/api/Auth/register`,
     LOGOUT: `${API_BASE_URL}/api/Auth/logout`,
   },
-  
+
   // Users Management (Full CRUD)
   USERS: {
     BASE: `${API_BASE_URL}/api/Users`,
     BY_ID: (id: string) => `${API_BASE_URL}/api/Users/${id}`,
   },
-  
+
   // Hotels Management (Full CRUD)
   HOTELS: {
     BASE: `${API_BASE_URL}/api/Hotels`,
     BY_ID: (id: string) => `${API_BASE_URL}/api/Hotels/${id}`,
     MANAGERS: `${API_BASE_URL}/api/Hotels/managers`,
   },
-  
+
   // Rooms Management (Full CRUD)
   ROOMS: {
     BASE: `${API_BASE_URL}/api/Rooms`,
@@ -35,7 +35,7 @@ export const API_ENDPOINTS = {
     DEBUG: `${API_BASE_URL}/api/Rooms/debug`,
     BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/Rooms?hotelId=${hotelId}`,
   },
-  
+
   // Bookings (Full CRUD)
   BOOKINGS: {
     BASE: `${API_BASE_URL}/api/Bookings`,
@@ -44,7 +44,7 @@ export const API_ENDPOINTS = {
     CANCEL: (id: string) => `${API_BASE_URL}/api/Bookings/${id}/cancel`,
     SEND_CONFIRMATION: (id: string) => `${API_BASE_URL}/api/Bookings/${id}/send-confirmation`,
   },
-  
+
   // Documents
   DOCUMENTS: {
     UPLOAD: `${API_BASE_URL}/api/Documents/upload`,
@@ -52,13 +52,13 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `${API_BASE_URL}/api/Documents/${id}`,
     UPDATE_STATUS: (id: string) => `${API_BASE_URL}/api/Documents/${id}/status`,
   },
-  
+
   // Hotel Managers
   HOTEL_MANAGERS: {
     BASE: `${API_BASE_URL}/api/HotelManagers`,
     BY_USER_AND_HOTEL: (userId: string, hotelId: string) => `${API_BASE_URL}/api/HotelManagers/${userId}/${hotelId}`,
   },
-  
+
   // Payments
   PAYMENTS: {
     CREATE_INTENT: `${API_BASE_URL}/api/Payments/create-payment-intent`,
@@ -67,7 +67,7 @@ export const API_ENDPOINTS = {
     RECEIPT: (bookingId: string) => `${API_BASE_URL}/api/Payments/booking/${bookingId}/receipt`,
     BY_GUEST: (guestId: string) => `${API_BASE_URL}/api/Payments/guest/${guestId}`,
   },
-  
+
   // Reviews
   REVIEWS: {
     BASE: `${API_BASE_URL}/api/Reviews`,
@@ -76,25 +76,25 @@ export const API_ENDPOINTS = {
     BY_GUEST: (guestId: string) => `${API_BASE_URL}/api/Reviews/guest/${guestId}`,
     BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/Reviews/hotel/${hotelId}`,
   },
-  
+
   // Legacy endpoints (kept for backward compatibility - may not exist)
   RATE_PLANS: {
     BASE: `${API_BASE_URL}/api/RatePlans`,
     BY_ID: (id: string) => `${API_BASE_URL}/api/RatePlans/${id}`,
     BY_HOTEL: (hotelId: string) => `${API_BASE_URL}/api/RatePlans?hotelId=${hotelId}`,
   },
-  
+
   DAILY_METRICS: {
     BASE: `${API_BASE_URL}/api/DailyMetrics`,
     BY_ID: (id: string) => `${API_BASE_URL}/api/DailyMetrics/${id}`,
   },
-  
+
   REPORTS: {
     DAILY_METRICS: `${API_BASE_URL}/api/Reports/daily-metrics`,
     REVENUE: `${API_BASE_URL}/api/Reports/revenue`,
     BOOKINGS: `${API_BASE_URL}/api/Reports/bookings`,
   },
-  
+
   // System
   SYSTEM: {
     HEALTH: `${API_BASE_URL}/api/health`,

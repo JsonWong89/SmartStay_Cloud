@@ -98,32 +98,6 @@ export const dashboardAPI = {
 // Bookings API
 export const bookingsAPI = {
 
-  // Create a new booking
-  // createBooking: async (payload: {
-  //   GuestID: string;
-  //   RoomID: number;
-  //   CheckInDate: string;
-  //   CheckOutDate: string;
-  //   TotalGuests: number;
-  //   DepositPaid: number;
-  //   PaymentMethod: "Cash" | "Card";
-  // }) => {
-  //   return apiCall<{
-  //     success: boolean;
-  //     message: string;
-  //     data: {
-  //       bookingId: number;
-  //       bookingStatus: string;
-  //       totalAmount: number;
-  //       depositAmount: number;
-  //     };
-  //   }>('/api/bookings', {
-  //     method: 'POST',
-  //     body: JSON.stringify(payload),
-  //   });
-  // },
-
-
   createBooking: async (payload: {
     GuestID: string;
     RoomIDs: number[];
@@ -581,15 +555,6 @@ export const guestsAPI = {
     });
   },
 
-  // // Delete guest (only if no active bookings)
-  // deleteGuest: async (guestId: string, hotelId: number) => {
-  //   return apiCall<{
-  //     success: boolean;
-  //     message: string;
-  //   }>(`/api/guests/${guestId}?hotelId=${hotelId}`, {
-  //     method: 'DELETE',
-  //   });
-  // },
 };
 
 type AvailableRoom = {
@@ -716,37 +681,6 @@ export const staffAPI = {
     return apiCall<any>(`/api/Staff/${id}`);
   },
 
-  // createStaff: async (data: {
-  //   hotelID: number;
-  //   fullName: string;
-  //   position: string;
-  //   contactNumber: string;
-  //   email: string;
-  //   gender: string;
-  //   hireDate?: string;
-  // }) => {
-  //   return apiCall<any>('/api/Staff', {
-  //     method: 'POST',
-  //     body: JSON.stringify(data),
-  //   });
-  // },
-
-  // updateStaff: async (id: number, data: Partial<{
-  //   fullName: string;
-  //   position: string;
-  //   contactNumber: string;
-  //   email: string;
-  //   gender: string;
-  // }>) => {
-  //   return apiCall<any>(`/api/Staff/${id}`, {
-  //     method: 'PUT',
-  //     body: JSON.stringify(data),
-  //   });
-  // },
-
-  // deleteStaff: async (id: number) => {
-  //   return apiCall<any>(`/api/Staff/${id}`, { method: 'DELETE' });
-  // },
 };
 
 // Users API
@@ -772,31 +706,16 @@ export const usersAPI = {
     }>(`/api/users/staff/${userId}`);
   },
 
-  // GET /api/users → Get all system users (with filters)
-  getAllUsers: async (filters?: {
-    role?: string;
-    hotelId?: number;
-    searchQuery?: string;
-  }) => {
-    const params = new URLSearchParams();
-    if (filters?.role && filters.role !== 'all') params.append('role', filters.role);
-    if (filters?.hotelId) params.append('hotelId', filters.hotelId.toString());
-    if (filters?.searchQuery) params.append('searchQuery', filters.searchQuery);
-
-    const query = params.toString();
-    return apiCall<{
-      success: boolean;
-      data: Array<{
-        userId: string;
-        fullName: string;
-        email: string;
-        role: string;
-        hotelId: number | null;
-        hotelName: string | null;
-        gender: string;
-        createdAt: string;
-      }>;
-    }>(`/api/users${query ? `?${query}` : ''}`);
+  getAllUsers: async () => {
+    return apiCall<Array<{
+      userID: string;
+      fullName: string;
+      email: string;
+      role: string;
+      hotelID: number | null;
+      gender: string;
+      createdAt: string;
+    }>>('/api/users');
   },
 
 

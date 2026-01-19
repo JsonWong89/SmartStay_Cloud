@@ -36,18 +36,15 @@ export default function ReservationListPage({
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  // Group active bookings only
   const groupedReservations = useMemo(() => {
     const groups = new Map<string, Booking[]>();
 
-    // First pass: collect ALL bookings (including cancelled)
     bookings.forEach((booking) => {
       const key = `${booking.guest.email}-${booking.checkInDate}-${booking.checkOutDate}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(booking);
     });
 
-    // Second pass: for each group, filter out cancelled rooms UNLESS the entire group is cancelled
     const result: Booking[][] = [];
 
     groups.forEach((groupBookings) => {
@@ -55,34 +52,16 @@ export default function ReservationListPage({
         (b) => b.bookingStatus !== "Cancelled"
       );
 
-      // If there are active rooms → show only active ones
       if (activeBookings.length > 0) {
         result.push(activeBookings);
-      }
-      // If ALL rooms are cancelled → show ONE cancelled booking (so row appears)
-      else {
-        // Pick any cancelled booking (usually all same status)
+      } else {
         result.push([groupBookings[0]]);
       }
     });
 
     return result;
   }, [bookings]);
-  // const groupedReservations = useMemo(() => {
-  //   const groups = new Map<string, Booking[]>();
 
-  //   bookings.forEach((booking) => {
-  //     // if (booking.bookingStatus === "Cancelled") return;
-
-  //     const key = `${booking.guest.email}-${booking.checkInDate}-${booking.checkOutDate}`;
-  //     if (!groups.has(key)) groups.set(key, []);
-  //     groups.get(key)!.push(booking);
-  //   });
-
-  //   return Array.from(groups.values());
-  // }, [bookings]);
-
-  // Filter groups
   const filteredGroups = useMemo(() => {
     return groupedReservations.filter((group) => {
       const main = group[0];
@@ -103,7 +82,6 @@ export default function ReservationListPage({
     });
   }, [groupedReservations, filters]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = groupedReservations.length;
     const checkedIn = groupedReservations.filter(
@@ -119,7 +97,6 @@ export default function ReservationListPage({
     return { total, checkedIn, totalRevenue, pendingPayments };
   }, [bookings, groupedReservations]);
 
-  // Export CSV
   const exportToCSV = () => {
     const headers = [
       "Reservation ID(s)",
@@ -165,30 +142,11 @@ export default function ReservationListPage({
     a.click();
   };
 
-  // Get financials including payments from cancelled rooms
-  // const getGroupFinancials = (group: Booking[]) => {
-  //   const main = group[0];
-  //   const totalAmount = group.reduce((s, b) => s + b.totalAmount, 0);
-
-  //   const allRelated = bookings.filter(
-  //     (b) =>
-  //       b.guest.email === main.guest.email &&
-  //       b.checkInDate === main.checkInDate &&
-  //       b.checkOutDate === main.checkOutDate
-  //   );
-
-  //   const totalPaid = allRelated.reduce((s, b) => s + b.totalPaid, 0);
-  //   const pending = totalAmount - totalPaid;
-
-  //   return { totalAmount, totalPaid, pending };
-  // };
   const getGroupFinancials = (group: Booking[]) => {
     const main = group[0];
 
-    // Current total = only active rooms
     const currentTotalAmount = group.reduce((sum, b) => sum + b.totalAmount, 0);
 
-    // Total paid = ALL payments ever made (including from cancelled rooms)
     const allRelatedBookings = bookings.filter(
       (b) =>
         b.guest.email === main.guest.email &&
@@ -211,19 +169,19 @@ export default function ReservationListPage({
   };
 
   return (
-    <main className="p-4 sm:p-6 lg:p-8">
+    <main className="min-h-screen bg-gray-50 px-4 py-5 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
-              <Calendar className="h-6 w-6 text-red-600" />
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-red-100 flex-shrink-0">
+              <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                 Reservation Management
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 mt-0.5">
                 Manage all hotel reservations
               </p>
             </div>
@@ -232,14 +190,14 @@ export default function ReservationListPage({
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2.5 rounded-lg font-medium border flex items-center gap-2 transition ${
+              className={`flex items-center gap-2 px-4 py-2 sm:py-2.5 rounded-lg font-medium border transition whitespace-nowrap ${
                 showFilters
                   ? "bg-sky-600 text-white border-sky-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 active:bg-gray-100"
               }`}
             >
               <Filter size={18} />
-              Filters{" "}
+              Filters
               {showFilters ? (
                 <ChevronUp size={16} />
               ) : (
@@ -249,7 +207,7 @@ export default function ReservationListPage({
 
             <button
               onClick={exportToCSV}
-              className="px-4 py-2.5 rounded-lg bg-white text-gray-700 border border-gray-300 font-medium hover:bg-gray-50 transition flex items-center gap-2"
+              className="flex items-center gap-2 px-4 py-2 sm:py-2.5 rounded-lg bg-white text-gray-700 border border-gray-300 font-medium hover:bg-gray-50 active:bg-gray-100 transition whitespace-nowrap"
             >
               <Download size={18} />
               Export
@@ -257,8 +215,8 @@ export default function ReservationListPage({
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-6 mb-6">
           <StatCard
             title="Total"
             value={stats.total}
@@ -285,10 +243,10 @@ export default function ReservationListPage({
           />
         </div>
 
-        {/* Filters */}
+        {/* Filters Panel */}
         {showFilters && (
-          <div className="bg-white rounded-xl shadow-sm p-5 mb-6 border border-gray-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 mb-6 border border-gray-200">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <FilterSelect
                 label="Status"
                 value={filters.status}
@@ -328,44 +286,45 @@ export default function ReservationListPage({
         )}
       </div>
 
-      {/* New Walk-in */}
-      <div className="mb-6 text-right">
+      {/* New Walk-in Button */}
+      <div className="mb-6 flex justify-end">
         <a
           href="/staff/walk-in-booking"
-          className="inline-block px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition shadow-sm"
+          className="inline-block px-4 py-2 sm:px-5 sm:py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg transition shadow-sm"
         >
           + New Walk-in Guest
         </a>
       </div>
 
-      {/* Table */}
+      {/* Table + Mobile Cards Container */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        {/* Desktop/Tablet Table View */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase">
                   Booking ID
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden sm:table-cell">
+                <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase hidden sm:table-cell">
                   Guest
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden md:table-cell">
+                <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase hidden md:table-cell">
                   Rooms
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">
+                <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">
                   Dates
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">
+                <th className="px-3 py-3 sm:px-4 text-center text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">
                   Guests
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">
+                <th className="px-3 py-3 sm:px-4 text-right text-xs font-semibold text-gray-600 uppercase hidden xl:table-cell">
                   Payment
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-3 py-3 sm:px-4 text-center text-xs font-semibold text-gray-600 uppercase">
                   Status
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-3 py-3 sm:px-4 text-right text-xs font-semibold text-gray-600 uppercase">
                   Actions
                 </th>
               </tr>
@@ -373,8 +332,8 @@ export default function ReservationListPage({
             <tbody className="divide-y divide-gray-200">
               {filteredGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-gray-500">
-                    <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <td colSpan={8} className="py-12 sm:py-16 text-center text-gray-500">
+                    <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-gray-300" />
                     <p className="font-medium">No reservations found</p>
                     <p className="text-sm mt-1">Try adjusting your filters</p>
                   </td>
@@ -394,93 +353,86 @@ export default function ReservationListPage({
                       key={group.map((b) => b.bookingId).join("-")}
                       className="hover:bg-gray-50 transition"
                     >
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-3 sm:px-4 py-4">
                         <div>
-                          <p className="font-bold text-gray-900">
+                          <p className="font-bold text-gray-900 text-sm sm:text-base">
                             #{main.bookingId}
                             {roomCount > 1 && ` +${roomCount - 1}`}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-0.5">
                             {main.createdAt}
                           </p>
-                          <p className="text-xs text-gray-500 sm:hidden">
+                          <p className="text-xs text-gray-500 sm:hidden mt-1">
                             {main.guest.fullName}
                           </p>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 hidden sm:table-cell">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-sky-100 flex items-center justify-center">
-                            <User className="h-5 w-5 text-sky-600" />
+                      <td className="px-3 py-3 sm:px-4 py-4 hidden sm:table-cell">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
+                            <User className="h-4.5 w-4.5 sm:h-5 sm:w-5 text-sky-600" />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900 truncate max-w-[180px]">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 truncate text-sm sm:text-base max-w-[160px] sm:max-w-[180px]">
                               {main.guest.fullName}
                             </p>
-                            <p className="text-xs text-gray-500 truncate max-w-[180px]">
+                            <p className="text-xs text-gray-500 truncate mt-0.5 max-w-[160px] sm:max-w-[180px]">
                               {main.guest.email}
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 hidden md:table-cell">
-                        <p className="font-medium">Room {roomList}</p>
-                        <p className="text-xs text-gray-600">
+                      <td className="px-3 py-3 sm:px-4 py-4 hidden md:table-cell">
+                        <p className="font-medium text-sm sm:text-base">Room {roomList}</p>
+                        <p className="text-xs text-gray-600 mt-0.5">
                           {roomCount} room{roomCount > 1 ? "s" : ""}
                         </p>
                       </td>
 
-                      <td className="px-4 py-4 text-xs hidden lg:table-cell">
+                      <td className="px-3 py-3 sm:px-4 py-4 text-xs hidden lg:table-cell">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
                             <Calendar className="h-4 w-4 text-green-600" />
                             <span>{main.checkInDate}</span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
                             <Calendar className="h-4 w-4 text-red-600" />
                             <span>{main.checkOutDate}</span>
                           </div>
-                          <p className="text-sky-600 text-xs font-medium">
+                          <p className="text-sky-600 text-xs font-medium mt-1">
                             {main.numberOfNights} night(s)
                           </p>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 text-center hidden xl:table-cell">
+                      <td className="px-3 py-3 sm:px-4 py-4 text-center hidden xl:table-cell">
                         <div className="flex items-center justify-center gap-1">
                           <Users size={16} className="text-gray-500" />
-                          <span className="font-medium">
-                            {main.totalGuests}
-                          </span>
+                          <span className="font-medium">{main.totalGuests}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 text-right hidden xl:table-cell">
+                      <td className="px-3 py-3 sm:px-4 py-4 text-right hidden xl:table-cell">
                         <div className="text-sm">
-                          <p className="font-bold">
-                            RM {totalAmount.toFixed(2)}
-                          </p>
-                          <p className="text-green-600 text-xs">
+                          <p className="font-bold">RM {totalAmount.toFixed(2)}</p>
+                          <p className="text-green-600 text-xs mt-0.5">
                             Paid: RM {totalPaid.toFixed(2)}
                           </p>
                           {pending > 0 && (
-                            <p className="text-orange-600 text-xs">
+                            <p className="text-orange-600 text-xs mt-0.5">
                               Due: RM {pending.toFixed(2)}
                             </p>
                           )}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-3 sm:px-4 py-4">
                         <div className="flex justify-center">
-                          {/* <BookingStatusBadge status={main.bookingStatus} /> */}
                           <BookingStatusBadge
                             status={
-                              group.every(
-                                (b) => b.bookingStatus === "Cancelled"
-                              )
+                              group.every((b) => b.bookingStatus === "Cancelled")
                                 ? "Cancelled"
                                 : main.bookingStatus
                             }
@@ -488,10 +440,10 @@ export default function ReservationListPage({
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 text-right">
+                      <td className="px-3 py-3 sm:px-4 py-4 text-right">
                         <button
                           onClick={() => openBookingDetails(main.bookingId)}
-                          className="p-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition"
+                          className="p-2 sm:p-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition"
                         >
                           <Eye size={18} />
                         </button>
@@ -504,73 +456,102 @@ export default function ReservationListPage({
           </table>
         </div>
 
-        {/* Mobile Cards */}
-        <div className="sm:hidden">
-          {filteredGroups.map((group) => {
-            const main = group[0];
-            const roomCount = group.length;
-            const roomList = group.map((b) => b.room.roomNumber).join(" + ");
-            const { totalAmount, totalPaid, pending } =
-              getGroupFinancials(group);
+        {/* Mobile Cards View */}
+        <div className="md:hidden divide-y divide-gray-200">
+          {filteredGroups.length === 0 ? (
+            <div className="py-12 sm:py-16 text-center text-gray-500">
+              <FileText className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium">No reservations found</p>
+              <p className="text-sm mt-1">Try adjusting your filters</p>
+            </div>
+          ) : (
+            filteredGroups.map((group) => {
+              const main = group[0];
+              const roomCount = group.length;
+              const roomList = group.map((b) => b.room.roomNumber).join(" + ");
+              const { totalAmount, totalPaid, pending } =
+                getGroupFinancials(group);
 
-            return (
-              <div
-                key={group.map((b) => b.bookingId).join("-")}
-                className="border-b border-gray-200 p-4"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-bold text-lg">
-                      #{main.bookingId}
-                      {roomCount > 1 && ` +${roomCount - 1}`}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {main.guest.fullName}
-                    </p>
+              return (
+                <div
+                  key={group.map((b) => b.bookingId).join("-")}
+                  className="p-4 hover:bg-gray-50 transition"
+                >
+                  <div className="flex justify-between items-start gap-3 mb-4">
+                    <div className="min-w-0">
+                      <p className="font-bold text-base">
+                        #{main.bookingId}
+                        {roomCount > 1 && ` +${roomCount - 1}`}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {main.guest.fullName}
+                      </p>
+                    </div>
+                    <BookingStatusBadge
+                      status={
+                        group.every((b) => b.bookingStatus === "Cancelled")
+                          ? "Cancelled"
+                          : main.bookingStatus
+                      }
+                    />
                   </div>
-                  <BookingStatusBadge status={main.bookingStatus} />
-                </div>
 
-                <div className="space-y-2 text-sm">
-                  <p>
-                    <span className="text-gray-600">Rooms:</span> {roomList}
-                  </p>
-                  <p>
-                    <span className="text-gray-600">Dates:</span>{" "}
-                    {main.checkInDate} → {main.checkOutDate}
-                  </p>
-                  <p>
-                    <span className="text-gray-600">Guests:</span>{" "}
-                    {main.totalGuests}
-                  </p>
-
-                  <div className="flex justify-between items-end pt-3 border-t">
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                     <div>
+                      <p className="text-gray-500 text-xs">Rooms</p>
+                      <p className="font-medium">Room {roomList}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {roomCount} room{roomCount > 1 ? "s" : ""}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500 text-xs">Dates</p>
+                      <p className="font-medium">
+                        {main.checkInDate} → {main.checkOutDate}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500 text-xs">Guests</p>
+                      <p className="font-medium">{main.totalGuests}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-gray-500 text-xs">Total</p>
+                      <p className="font-bold">RM {totalAmount.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t">
+                    <div className="w-full sm:w-auto">
                       <p className="font-bold">RM {totalAmount.toFixed(2)}</p>
                       {pending > 0 && (
-                        <p className="text-xs text-amber-600">
+                        <p className="text-xs text-amber-600 mt-1">
                           Due: RM {pending.toFixed(2)}
                         </p>
                       )}
                     </div>
+
                     <button
                       onClick={() => openBookingDetails(main.bookingId)}
-                      className="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium"
+                      className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-medium transition min-w-[120px] sm:min-w-auto"
                     >
                       View Details
                     </button>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
     </main>
   );
 }
 
-// Reusable components
+// Reusable components ────────────────────────────────────────────────
+
 const StatCard = ({
   title,
   value,
@@ -597,13 +578,15 @@ const StatCard = ({
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm p-5 border border-gray-200 border-l-8 ${borderColors[color]}`}
+      className={`bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 border-l-8 ${borderColors[color]}`}
     >
-      <div className="flex items-center gap-2">
-        <div className={`p-3 rounded-lg ${colors[color]}`}>{icon}</div>
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className={`p-2.5 sm:p-3 rounded-lg ${colors[color]}`}>{icon}</div>
         <div>
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-xs sm:text-sm text-gray-500">{title}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">
+            {value}
+          </p>
         </div>
       </div>
     </div>
@@ -626,7 +609,7 @@ const FilterSelect = ({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
+      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm transition"
     >
       <option value="all">All Status</option>
       <option value="Pending">Pending</option>
@@ -655,7 +638,7 @@ const FilterDate = ({
       type="date"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
+      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm transition"
     />
   </div>
 );
@@ -681,7 +664,7 @@ const FilterSearch = ({
         placeholder="Guest, room, ID..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
+        className="w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm transition"
       />
     </div>
   </div>

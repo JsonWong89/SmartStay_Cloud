@@ -94,6 +94,24 @@ const CreateHotelPage: React.FC = () => {
       return;
     }
 
+    // Check if selected manager is already assigned to another hotel
+    if (form.managerID) {
+      try {
+        const managerRes = await apiGet(API_ENDPOINTS.USERS.BY_ID(form.managerID));
+        if (managerRes.ok) {
+          const managerData = await managerRes.json();
+          const existingHotelID = managerData.hotelId ?? managerData.HotelId ?? managerData.HotelID ?? managerData.hotelID;
+          if (existingHotelID) {
+            setMessage(`This manager is already assigned to another hotel. Each manager can only manage one hotel.`);
+            setMessageType('error');
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to check manager assignment', e);
+      }
+    }
+
     setSubmitting(true);
     try {
       let finalImageUrl = form.imageUrl;

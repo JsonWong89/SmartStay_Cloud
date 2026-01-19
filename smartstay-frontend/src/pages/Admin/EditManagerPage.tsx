@@ -132,6 +132,25 @@ const EditManagerPage: React.FC = () => {
       return;
     }
 
+    // Check if selected hotel already has a different manager
+    if (form.hotelId) {
+      try {
+        const hotelRes = await apiGet(API_ENDPOINTS.HOTELS.BY_ID(form.hotelId));
+        if (hotelRes.ok) {
+          const hotelData = await hotelRes.json();
+          const existingManagerID = hotelData.managerID ?? hotelData.ManagerID;
+          // Only show error if the hotel has a different manager (not this one)
+          if (existingManagerID && existingManagerID.toString() !== id) {
+            setMessage(`This hotel already has a different manager assigned. Each hotel can only have one manager.`);
+            setMessageType('error');
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to check hotel manager', e);
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload: any = {

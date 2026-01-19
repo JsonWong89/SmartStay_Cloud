@@ -343,32 +343,7 @@ export const reviewsAPI = {
     }>>(`/api/reviews/guest/${guestId}`);
   },
 
-  // submitReview: async (payload: {
-  //   BookingID: number;
-  //   GuestID: string;
-  //   Rating: number;
-  //   Comment?: string;
-  // }) => {
-  //   return apiCall<{
-  //     success: boolean;
-  //     message: string;
-  //     data: { reviewId: number; rating: number; reviewDate: string };
-  //   }>('/api/reviews', {
-  //     method: 'POST',
-  //     body: JSON.stringify(payload),
-  //   });
-  // },
-
-  // updateReview: async (id: number, payload: { Rating?: number; Comment?: string }) => {
-  //   return apiCall<any>(`/api/reviews/${id}`, {
-  //     method: 'PUT',
-  //     body: JSON.stringify(payload),
-  //   });
-  // },
-
-  // deleteReview: async (id: number) => {
-  //   return apiCall<any>(`/api/reviews/${id}`, { method: 'DELETE' });
-  // },
+  
 };
 
 // Documents API

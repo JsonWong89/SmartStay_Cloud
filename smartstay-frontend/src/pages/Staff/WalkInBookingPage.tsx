@@ -533,13 +533,30 @@ function WalkInBookingContent({
         throw new Error(bookingRes.message || "Booking failed");
 
       // ========================================
-      // STEP 4: Success!
+      // STEP 4: Send Confirmation Email
+      // ========================================
+      let emailSentMessage = "Confirmation email sent.";
+      try {
+        const bookingIds = bookingRes.data.bookingIds;
+        if (bookingIds && bookingIds.length > 0) {
+          // Send a single confirmation for the whole transaction, using the first booking ID
+          await bookingsAPI.sendConfirmationEmail(bookingIds[0]);
+          console.log(`✅ Confirmation email sent for booking transaction (primary ID: ${bookingIds[0]}).`);
+        }
+      } catch (emailError) {
+        console.error("❌ Failed to send confirmation email:", emailError);
+        emailSentMessage = "Warning: Could not send confirmation email.";
+      }
+
+      // ========================================
+      // STEP 5: Success!
       // ========================================
       alert(
         `✅ Success! ${selectedRooms.length} room(s) booked!\n` +
           `Total: RM ${totalAmount.toFixed(2)}\n` +
           `Deposit Paid (${paymentInfo.PaymentMethod}): RM ${paymentInfo.DepositAmount.toFixed(2)}\n` +
-          `Balance Due: RM ${balanceDue.toFixed(2)}`
+          `Balance Due: RM ${balanceDue.toFixed(2)}\n\n` +
+          `${emailSentMessage}`
       );
 
       // Reset form

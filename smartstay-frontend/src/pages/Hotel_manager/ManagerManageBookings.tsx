@@ -36,6 +36,10 @@ export default function ManagerManageBookings() {
   const [showGuestPopup, setShowGuestPopup] = useState(false);
   const [guestInfo, setGuestInfo] = useState<any>(null);
 
+  // Room ID to Room Type map for quick lookup
+  const [roomMap, setRoomMap] = useState<Map<number, string>>(new Map());
+
+
   const fetchBookings = async () => {
     if (!user?.hotelId) {
       console.log("No hotelId for fetching bookings");
@@ -62,14 +66,7 @@ export default function ManagerManageBookings() {
         bookingID: String(b.bookingID || b.BookingID),
         guestID: b.guestID || b.GuestID,
         roomID: b.roomID || b.RoomID,
-        roomType:
-          b.roomType ||
-          b.RoomType ||
-          b.room?.roomType ||
-          b.room?.RoomType ||
-          b.Room?.roomType ||
-          b.Room?.RoomType ||
-          "",
+       roomType: roomMap.get(b.roomID || b.RoomID) || "",
         hotelName: b.hotelName || b.HotelName || "",
         checkInDate: b.checkInDate || b.CheckInDate,
         checkOutDate: b.checkOutDate || b.CheckOutDate,
@@ -81,7 +78,6 @@ export default function ManagerManageBookings() {
       }));
 
       setBookings(mappedBookings);
-      setFilteredBookings(mappedBookings);
     } catch (err) {
       console.error("BOOKING ERROR:", err);
     }
@@ -89,9 +85,44 @@ export default function ManagerManageBookings() {
     setLoading(false);
   };
 
+
+  const fetchRooms = async () => {
+  if (!user?.hotelId) return;
+
+  try {
+    const res = await axios.get<any[]>(
+      `${API_BASE_URL}/api/rooms?hotelId=${user.hotelId}`
+    );
+
+    // Map: roomID → roomType
+    const map = new Map<number, string>();
+    res.data.forEach((r: any) => {
+      map.set(r.roomID || r.RoomID, r.roomType || r.RoomType);
+    });
+
+    setRoomMap(map);
+  } catch (err) {
+    console.error("ROOM FETCH ERROR:", err);
+  }
+};
+
+
   useEffect(() => {
     fetchBookings();
+    fetchRooms();
   }, [user?.hotelId]);
+
+    //JOIN ROOM TYPE AFTER ROOMS LOAD  ✅ PASTE HERE
+  useEffect(() => {
+    if (!roomMap.size) return;
+
+    setBookings(prev =>
+      prev.map(b => ({
+        ...b,
+        roomType: roomMap.get(b.roomID) || ""
+      }))
+    );
+  }, [roomMap]);
 
   // 🔢 KPI COUNTS
   const totalBookings = bookings.length;

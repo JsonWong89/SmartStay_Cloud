@@ -359,7 +359,7 @@ const MyReservations: React.FC = () => {
                               onClick={() => handleViewReceipt(reservation.bookingID)}
                               className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition"
                             >
-                              📄 View Receipt
+                              View Receipt
                             </button>
 
                             {canCancelBooking(reservation) && (
@@ -367,7 +367,7 @@ const MyReservations: React.FC = () => {
                                 onClick={() => handleCancelReservation(reservation.bookingID)}
                                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm transition"
                               >
-                                ✗ Cancel Booking
+                                Cancel Booking
                               </button>
                             )}
 
@@ -376,7 +376,7 @@ const MyReservations: React.FC = () => {
                                 onClick={() => handleWriteReview(reservation.bookingID)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition"
                               >
-                                ⭐ Write Review
+                                Write Review
                               </button>
                             )}
                           </div>

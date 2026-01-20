@@ -13,7 +13,7 @@ interface BookingDetails {
 
 const ReviewPage: React.FC = () => {
   const navigate = useNavigate();
-  const { reservationId } = useParams<{ reservationId: string }>();
+  const { bookingId } = useParams<{ bookingId: string }>();
   const user = useAuthStore((state) => state.user);
 
   const [rating, setRating] = useState(0);
@@ -31,10 +31,10 @@ const ReviewPage: React.FC = () => {
   // Fetch booking details
   useEffect(() => {
     const fetchBooking = async () => {
-      if (!reservationId) return;
+      if (!bookingId) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${reservationId}`);
+        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`);
         if (response.ok) {
           const data = await response.json();
           setBooking(data);
@@ -51,7 +51,7 @@ const ReviewPage: React.FC = () => {
     };
 
     fetchBooking();
-  }, [reservationId, navigate]);
+  }, [bookingId, navigate]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +66,7 @@ const ReviewPage: React.FC = () => {
       return;
     }
 
-    if (!user?.id || !reservationId) {
+    if (!user?.id || !bookingId) {
       alert('Invalid user or booking information');
       return;
     }
@@ -75,17 +75,16 @@ const ReviewPage: React.FC = () => {
 
     try {
       // Combine all ratings and comments into a detailed comment
-      const detailedComment = `${reviewTitle ? reviewTitle + '\n\n' : ''}${reviewText}${
-        cleanliness || service || facilities || valueForMoney
-          ? '\n\nDetailed Ratings: Cleanliness: ' + (cleanliness || 'N/A') + 
-            ', Service: ' + (service || 'N/A') + 
-            ', Facilities: ' + (facilities || 'N/A') + 
-            ', Value: ' + (valueForMoney || 'N/A')
-          : ''
-      }`;
+      const detailedComment = `${reviewTitle ? reviewTitle + '\n\n' : ''}${reviewText}${cleanliness || service || facilities || valueForMoney
+        ? '\n\nDetailed Ratings: Cleanliness: ' + (cleanliness || 'N/A') +
+        ', Service: ' + (service || 'N/A') +
+        ', Facilities: ' + (facilities || 'N/A') +
+        ', Value: ' + (valueForMoney || 'N/A')
+        : ''
+        }`;
 
       const reviewData = {
-        bookingID: parseInt(reservationId),
+        bookingID: parseInt(bookingId),
         guestID: user.id,
         rating,
         comment: detailedComment,
@@ -159,7 +158,7 @@ const ReviewPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">⭐ Write a Review</h1>
+              <h1 className="text-2xl font-bold text-gray-800">Write a Review</h1>
               <p className="text-sm text-gray-600">Share your experience</p>
             </div>
             <button
@@ -188,144 +187,143 @@ const ReviewPage: React.FC = () => {
             </button>
           </div>
         ) : (
-        <form onSubmit={handleSubmitReview} className="space-y-6">
-          {/* Reservation Info */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Your Stay</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmitReview} className="space-y-6">
+            {/* Reservation Info */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">Your Stay</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Hotel</p>
+                  <p className="font-semibold">{booking.hotelName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Room Type</p>
+                  <p className="font-semibold">{booking.roomType}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Check-in</p>
+                  <p className="font-semibold">{new Date(booking.checkInDate).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Check-out</p>
+                  <p className="font-semibold">{new Date(booking.checkOutDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Overall Rating */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">
+                Overall Rating <span className="text-red-500">*</span>
+              </h2>
+              <div className="flex flex-col items-center">
+                {renderStars(rating, setRating, hoveredRating)}
+                <p className="mt-2 text-gray-600">
+                  {rating === 0 && 'Click to rate'}
+                  {rating === 1 && 'Poor'}
+                  {rating === 2 && 'Fair'}
+                  {rating === 3 && 'Good'}
+                  {rating === 4 && 'Very Good'}
+                  {rating === 5 && 'Excellent'}
+                </p>
+              </div>
+            </div>
+
+            {/* Detailed Ratings */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Detailed Ratings</h2>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Cleanliness</span>
+                  {renderSmallStars(cleanliness, setCleanliness)}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Service</span>
+                  {renderSmallStars(service, setService)}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Facilities</span>
+                  {renderSmallStars(facilities, setFacilities)}
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Value for Money</span>
+                  {renderSmallStars(valueForMoney, setValueForMoney)}
+                </div>
+              </div>
+            </div>
+
+            {/* Review Text */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Your Review</h2>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Review Title (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={reviewTitle}
+                  onChange={(e) => setReviewTitle(e.target.value)}
+                  placeholder="Summarize your experience"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
               <div>
-                <p className="text-sm text-gray-600">Hotel</p>
-                <p className="font-semibold">{booking.hotelName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Room Type</p>
-                <p className="font-semibold">{booking.roomType}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Check-in</p>
-                <p className="font-semibold">{new Date(booking.checkInDate).toLocaleDateString()}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Check-out</p>
-                <p className="font-semibold">{new Date(booking.checkOutDate).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Overall Rating */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Overall Rating <span className="text-red-500">*</span>
-            </h2>
-            <div className="flex flex-col items-center">
-              {renderStars(rating, setRating, hoveredRating)}
-              <p className="mt-2 text-gray-600">
-                {rating === 0 && 'Click to rate'}
-                {rating === 1 && 'Poor'}
-                {rating === 2 && 'Fair'}
-                {rating === 3 && 'Good'}
-                {rating === 4 && 'Very Good'}
-                {rating === 5 && 'Excellent'}
-              </p>
-            </div>
-          </div>
-
-          {/* Detailed Ratings */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Detailed Ratings</h2>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-700">Cleanliness</span>
-                {renderSmallStars(cleanliness, setCleanliness)}
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-700">Service</span>
-                {renderSmallStars(service, setService)}
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-700">Facilities</span>
-                {renderSmallStars(facilities, setFacilities)}
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-gray-700">Value for Money</span>
-                {renderSmallStars(valueForMoney, setValueForMoney)}
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Experience <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  rows={6}
+                  placeholder="Tell us about your stay... What did you like? What could be improved?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Minimum 10 characters ({reviewText.length}/10)
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Review Text */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Your Review</h2>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Review Title (Optional)
-              </label>
-              <input
-                type="text"
-                value={reviewTitle}
-                onChange={(e) => setReviewTitle(e.target.value)}
-                placeholder="Summarize your experience"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Guidelines */}
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+              <h3 className="font-semibold text-blue-800 mb-2">Review Guidelines</h3>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• Be honest and constructive</li>
+                <li>• Focus on your personal experience</li>
+                <li>• Avoid inappropriate language</li>
+                <li>• Don't include personal information</li>
+              </ul>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Your Experience <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                rows={6}
-                placeholder="Tell us about your stay... What did you like? What could be improved?"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Minimum 10 characters ({reviewText.length}/10)
-              </p>
-            </div>
-          </div>
-
-          {/* Guidelines */}
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
-            <h3 className="font-semibold text-blue-800 mb-2">Review Guidelines</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Be honest and constructive</li>
-              <li>• Focus on your personal experience</li>
-              <li>• Avoid inappropriate language</li>
-              <li>• Don't include personal information</li>
-            </ul>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={submitting}
-              className={`flex-1 font-bold py-3 px-4 rounded-md transition ${
-                submitting
+            {/* Submit Button */}
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`flex-1 font-bold py-3 px-4 rounded-md transition ${submitting
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {submitting ? 'Submitting...' : 'Submit Review'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/guest/reservations')}
-              disabled={submitting}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-md transition disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+                  }`}
+              >
+                {submitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/guest/reservations')}
+                disabled={submitting}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-md transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>

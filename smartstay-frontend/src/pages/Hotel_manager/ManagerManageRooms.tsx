@@ -359,12 +359,12 @@ export default function ManagerManageRooms() {
                       Edit
                     </button>
 
-                    <button
+                    {/* <button
                       className="btn-delete"
                       onClick={() => handleDeleteRoom(r.roomID)}
                     >
                       Delete
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

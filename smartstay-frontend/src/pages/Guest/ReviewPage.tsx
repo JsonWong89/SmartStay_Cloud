@@ -34,7 +34,7 @@ const ReviewPage: React.FC = () => {
       if (!bookingId) return;
 
       try {
-        const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}`);
+        const response = await fetch(`${API_BASE_URL}/api/bookings/${bookingId}`);
         if (response.ok) {
           const data = await response.json();
           setBooking(data);
@@ -90,7 +90,7 @@ const ReviewPage: React.FC = () => {
         comment: detailedComment,
       };
 
-      const response = await fetch(`${API_BASE_URL}/reviews`, {
+      const response = await fetch(`${API_BASE_URL}/api/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData),
